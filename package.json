@@ -1,0 +1,19 @@
+{
+  "name": "painted-cave",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "The Painted Cave: Visualizing the Pure Land — interactive audiovisual installation for the Harvard CAMLab Cave",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "three": "^0.166.0",
+    "tone": "^15.0.4"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}

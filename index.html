@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Painted Cave — Visualizing the Pure Land</title>
+    <style>
+      /* The installation is pure black; the page must never show browser chrome colors. */
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        overflow: hidden;
+      }
+      #app-canvas {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+      }
+      body.hide-cursor { cursor: none; }
+    </style>
+  </head>
+  <body>
+    <canvas id="app-canvas"></canvas>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
