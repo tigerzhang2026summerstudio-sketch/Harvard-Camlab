@@ -7,6 +7,8 @@
  */
 import * as THREE from 'three';
 import { config } from './config/config.js';
+import { MidiManager } from './core/MidiManager.js';
+import { DebugOverlay } from './ui/DebugOverlay.js';
 
 // ── Renderer ──────────────────────────────────────────────────────────
 const canvas = document.getElementById('app-canvas');
@@ -60,6 +62,18 @@ beaconGeo.setAttribute('position', new THREE.Float32BufferAttribute([0, -config.
 const beacon = new THREE.Points(beaconGeo, beaconMat);
 scene.add(beacon);
 
+// ── Input (Step 2): MIDI + keyboard fallback + monitor ────────────────
+const midi = new MidiManager();
+const overlay = new DebugOverlay(midi);
+midi.init();
+
+// Until the particle engine lands (Step 3), prove the input path visually:
+// every key strike kicks the beacon's brightness, scaled by velocity, and
+// decays smoothly (no hard flicker — seizure safety).
+let strikePulse = 0;
+midi.on('key', (e) => { if (e.on) strikePulse = Math.min(1.5, strikePulse + e.velocity); });
+midi.on('pad', (e) => { if (e.on) strikePulse = Math.min(1.5, strikePulse + 0.8); });
+
 // ── Main loop ─────────────────────────────────────────────────────────
 const clock = new THREE.Clock();
 let elapsed = 0;
@@ -67,9 +81,11 @@ let elapsed = 0;
 renderer.setAnimationLoop(() => {
   const dt = clock.getDelta();
   elapsed += dt;
+  overlay.tick(dt);
 
   // Slow breathing pulse — smooth fade, never a flicker (seizure safety).
-  beaconMat.opacity = 0.25 + 0.2 * Math.sin(elapsed * 0.8);
+  strikePulse *= Math.exp(-dt * 3);
+  beaconMat.opacity = 0.25 + 0.2 * Math.sin(elapsed * 0.8) + 0.55 * strikePulse;
 
   renderer.render(scene, camera);
 });
