@@ -1,0 +1,199 @@
+/**
+ * ParticleSystem — the core engine: one pooled THREE.Points with a custom
+ * shader. The CPU only WRITES spawn data (origin, velocity, color, birth
+ * time) into a ring buffer; every frame of motion, fading and sizing is
+ * computed in the vertex shader from uTime. No per-particle JS ever runs
+ * per frame, which is what makes 10⁵–10⁶ particles feasible.
+ *
+ * Usage:  ps.burst({ x, y, color, count, speed, ... })  from anywhere;
+ *         ps.update(time, ppwu) once per frame.
+ */
+import * as THREE from 'three';
+import { config } from '../config/config.js';
+
+const vertexShader = /* glsl */ `
+  uniform float uTime;
+  uniform float uPPWU;       // screen pixels per world unit (ortho camera)
+  uniform float uSizeScale;  // artist knob: global particle size multiplier
+
+  attribute vec3  aOrigin;
+  attribute vec3  aVelocity;
+  attribute vec3  aColor;
+  attribute float aSize;     // world units
+  attribute float aBirth;    // uTime at spawn; negative = dead slot
+  attribute float aLife;     // seconds
+  attribute float aSeed;     // 0..1 per-particle randomness
+
+  varying vec3  vColor;
+  varying float vAlpha;
+
+  void main() {
+    float age = uTime - aBirth;
+    if (aLife <= 0.0 || age < 0.0 || age >= aLife) {
+      // Dead slot: throw the vertex outside the clip volume, costs nothing.
+      gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+      gl_PointSize = 0.0;
+      vColor = vec3(0.0);
+      vAlpha = 0.0;
+      return;
+    }
+
+    float t = age / aLife;
+
+    // Analytic drag integration: velocity decays, position converges —
+    // a burst blooms outward fast then hangs in the air like seed-down.
+    float drag = 1.8;
+    vec3 pos = aOrigin + aVelocity * (1.0 - exp(-drag * age)) / drag;
+
+    // Buoyant lift + seeded wander so settled motes keep drifting gently.
+    float w = aSeed * 6.2831853;
+    float lift = age * 14.0 * (0.3 + 0.7 * fract(aSeed * 7.31));
+    pos.x += sin(age * 0.9 + w * 3.0) * 6.0 * t;
+    pos.y += lift + cos(age * 0.7 + w * 5.0) * 4.0 * t;
+
+    float fadeIn  = smoothstep(0.0, 0.12, t);
+    float fadeOut = 1.0 - smoothstep(0.55, 1.0, t);
+    vAlpha = fadeIn * fadeOut;
+    vColor = aColor;
+
+    gl_PointSize = aSize * uPPWU * uSizeScale
+                 * (0.7 + 0.5 * fadeIn) * (1.0 - 0.35 * t);
+
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+  }
+`;
+
+const fragmentShader = /* glsl */ `
+  uniform float uIntensity; // >1 pushes cores past 1.0 so bloom catches them
+
+  varying vec3  vColor;
+  varying float vAlpha;
+
+  void main() {
+    float d = distance(gl_PointCoord, vec2(0.5));
+    float core = smoothstep(0.5, 0.05, d);     // soft round mote
+    if (core <= 0.001) discard;
+    float hot = core * core;                   // brighter center
+    vec3 col = vColor * uIntensity * (0.65 + 0.6 * hot);
+    gl_FragColor = vec4(col, vAlpha * core);
+  }
+`;
+
+export class ParticleSystem {
+  constructor(scene) {
+    const qs = config.qualityScale[config.quality];
+    this.capacity = Math.floor(config.particles.maxCount * qs.particleScale);
+    this.cursor = 0; // ring-buffer write head
+
+    const geo = new THREE.BufferGeometry();
+    const cap = this.capacity;
+    this.attrs = {
+      aOrigin:   new THREE.BufferAttribute(new Float32Array(cap * 3), 3),
+      aVelocity: new THREE.BufferAttribute(new Float32Array(cap * 3), 3),
+      aColor:    new THREE.BufferAttribute(new Float32Array(cap * 3), 3),
+      aSize:     new THREE.BufferAttribute(new Float32Array(cap), 1),
+      aBirth:    new THREE.BufferAttribute(new Float32Array(cap).fill(-1), 1),
+      aLife:     new THREE.BufferAttribute(new Float32Array(cap), 1),
+      aSeed:     new THREE.BufferAttribute(new Float32Array(cap), 1),
+    };
+    for (const [name, attr] of Object.entries(this.attrs)) {
+      attr.setUsage(THREE.DynamicDrawUsage);
+      geo.setAttribute(name, attr);
+    }
+    // Three needs a 'position' attribute to compute draw count; alias origin.
+    geo.setAttribute('position', this.attrs.aOrigin);
+    geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 1e6); // never cull
+
+    this.uniforms = {
+      uTime:      { value: 0 },
+      uPPWU:      { value: 1 },
+      uSizeScale: { value: 1 },
+      uIntensity: { value: config.particles.intensity },
+    };
+
+    const mat = new THREE.ShaderMaterial({
+      vertexShader,
+      fragmentShader,
+      uniforms: this.uniforms,
+      transparent: true,
+      blending: THREE.AdditiveBlending, // light adds to light; black stays black
+      depthWrite: false,
+      depthTest: false,
+    });
+
+    this.points = new THREE.Points(geo, mat);
+    this.points.frustumCulled = false;
+    scene.add(this.points);
+
+    this.time = 0;
+    this.scratchColor = new THREE.Color();
+  }
+
+  /** Once per frame. ppwu = renderer pixels per world unit (for point size). */
+  update(time, ppwu) {
+    this.time = time;
+    this.uniforms.uTime.value = time;
+    this.uniforms.uPPWU.value = ppwu;
+  }
+
+  /**
+   * Spawn a radial bloom of particles.
+   * { x, y, color, count, speed, size, life, upBias, spread, jitter }
+   * color: THREE.Color (or anything THREE.Color accepts). speed/size/life
+   * are means; each particle randomizes around them.
+   */
+  burst({
+    x = 0, y = 0, color = '#ffffff', count = 500,
+    speed = 120, size = 4, life = 2.4, upBias = 0.3,
+    spread = 1, jitter = 8,
+  }) {
+    const c = this.scratchColor.set(color);
+    const { aOrigin, aVelocity, aColor, aSize, aBirth, aLife, aSeed } = this.attrs;
+    const n = Math.min(count, this.capacity);
+    const start = this.cursor;
+
+    for (let k = 0; k < n; k += 1) {
+      const i = (start + k) % this.capacity;
+      const i3 = i * 3;
+
+      aOrigin.array[i3]     = x + (Math.random() - 0.5) * jitter * 2;
+      aOrigin.array[i3 + 1] = y + (Math.random() - 0.5) * jitter * 2;
+      aOrigin.array[i3 + 2] = 0;
+
+      // Radial direction, biased upward — light rises.
+      const ang = Math.random() * Math.PI * 2;
+      const r = (0.25 + 0.75 * Math.random() ** 1.5) * speed * spread;
+      aVelocity.array[i3]     = Math.cos(ang) * r;
+      aVelocity.array[i3 + 1] = Math.sin(ang) * r + speed * upBias * Math.random();
+      aVelocity.array[i3 + 2] = 0;
+
+      // Slight per-particle tint drift keeps large bursts from looking flat.
+      const v = 0.85 + Math.random() * 0.3;
+      aColor.array[i3]     = c.r * v;
+      aColor.array[i3 + 1] = c.g * v;
+      aColor.array[i3 + 2] = c.b * v;
+
+      aSize.array[i]  = size * (0.5 + Math.random());
+      aBirth.array[i] = this.time;
+      aLife.array[i]  = life * (0.6 + 0.8 * Math.random());
+      aSeed.array[i]  = Math.random();
+    }
+
+    this.markUpdated(start, n);
+    this.cursor = (start + n) % this.capacity;
+    return n;
+  }
+
+  /** Push only the written spans to the GPU (ring buffer may wrap → 2 spans). */
+  markUpdated(start, n) {
+    const spans = start + n <= this.capacity
+      ? [[start, n]]
+      : [[start, this.capacity - start], [0, (start + n) % this.capacity]];
+    for (const attr of Object.values(this.attrs)) {
+      for (const [s, len] of spans) {
+        attr.addUpdateRange(s * attr.itemSize, len * attr.itemSize);
+      }
+      attr.needsUpdate = true;
+    }
+  }
+}

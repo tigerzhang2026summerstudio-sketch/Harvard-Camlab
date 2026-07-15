@@ -9,6 +9,8 @@ import * as THREE from 'three';
 import { config } from './config/config.js';
 import { MidiManager } from './core/MidiManager.js';
 import { DebugOverlay } from './ui/DebugOverlay.js';
+import { ParticleSystem } from './visual/ParticleSystem.js';
+import { Postprocessing } from './visual/Postprocessing.js';
 
 // ── Renderer ──────────────────────────────────────────────────────────
 const canvas = document.getElementById('app-canvas');
@@ -38,9 +40,20 @@ function layoutCamera() {
   camera.updateProjectionMatrix();
 }
 
+// ── Visual engine ─────────────────────────────────────────────────────
+const particles = new ParticleSystem(scene);
+const post = new Postprocessing(renderer, scene, camera);
+
+// Screen pixels per world unit — keeps particle sizes proportional when
+// the window (or projector wall) changes.
+function pixelsPerWorldUnit() {
+  return (window.innerHeight * renderer.getPixelRatio()) / config.worldHeight;
+}
+
 function onResize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   layoutCamera();
+  post.setSize(window.innerWidth, window.innerHeight);
 }
 window.addEventListener('resize', onResize);
 onResize();
@@ -67,12 +80,39 @@ const midi = new MidiManager();
 const overlay = new DebugOverlay(midi);
 midi.init();
 
-// Until the particle engine lands (Step 3), prove the input path visually:
-// every key strike kicks the beacon's brightness, scaled by velocity, and
-// decays smoothly (no hard flicker — seizure safety).
-let strikePulse = 0;
-midi.on('key', (e) => { if (e.on) strikePulse = Math.min(1.5, strikePulse + e.velocity); });
-midi.on('pad', (e) => { if (e.on) strikePulse = Math.min(1.5, strikePulse + 0.8); });
+// ── Key → burst of light (test wiring; Act 1 proper arrives in Step 5) ──
+// Pitch decides WHERE and WHAT COLOR: low notes = deep beryl blooms low on
+// the left; rising pitch travels right and climbs, shifting gold → white.
+// Velocity decides HOW MUCH: count, size, speed all scale with the strike.
+const lerp = (a, b, t) => a + (b - a) * t;
+const colBeryl = new THREE.Color(config.palette.beryl);
+const colGold = new THREE.Color(config.palette.gold);
+const colWhite = new THREE.Color(config.palette.white);
+const burstColor = new THREE.Color();
+
+function keyBurst(note, velocity) {
+  const kb = config.keyBurst;
+  const qs = config.qualityScale[config.quality];
+  const pitch = THREE.MathUtils.clamp((note - kb.noteLow) / (kb.noteHigh - kb.noteLow), 0, 1);
+  const power = velocity ** kb.velocityCurve;
+
+  if (pitch < 0.7) burstColor.lerpColors(colBeryl, colGold, pitch / 0.7);
+  else burstColor.lerpColors(colGold, colWhite, (pitch - 0.7) / 0.3);
+
+  particles.burst({
+    x: (pitch - 0.5) * config.worldWidth * kb.xSpan,
+    y: lerp(kb.yLowFrac, kb.yHighFrac, pitch) * config.worldHeight,
+    color: burstColor,
+    count: Math.round(lerp(kb.countMin, kb.countMax, power) * qs.particleScale),
+    speed: lerp(kb.speedMin, kb.speedMax, power),
+    size: lerp(kb.sizeMin, kb.sizeMax, power),
+    life: lerp(kb.lifeMin, kb.lifeMax, power),
+    upBias: kb.upBias,
+    jitter: kb.jitter,
+  });
+}
+
+midi.on('key', (e) => { if (e.on) keyBurst(e.note, e.velocity); });
 
 // ── Main loop ─────────────────────────────────────────────────────────
 const clock = new THREE.Clock();
@@ -84,11 +124,21 @@ renderer.setAnimationLoop(() => {
   overlay.tick(dt);
 
   // Slow breathing pulse — smooth fade, never a flicker (seizure safety).
-  strikePulse *= Math.exp(-dt * 3);
-  beaconMat.opacity = 0.25 + 0.2 * Math.sin(elapsed * 0.8) + 0.55 * strikePulse;
+  beaconMat.opacity = 0.25 + 0.2 * Math.sin(elapsed * 0.8);
 
-  renderer.render(scene, camera);
+  particles.update(elapsed, pixelsPerWorldUnit());
+  post.render();
 });
+
+// Dev-only handle for debugging from the browser console (also lets tests
+// drive frames manually where requestAnimationFrame is throttled).
+if (import.meta.env.DEV) {
+  window.__paintedCave = {
+    midi, particles, post, keyBurst, renderer,
+    now: () => elapsed,
+    ppwu: pixelsPerWorldUnit,
+  };
+}
 
 // ── Shell key toggles ─────────────────────────────────────────────────
 window.addEventListener('keydown', (e) => {

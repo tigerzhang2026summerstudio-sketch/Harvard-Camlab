@@ -38,7 +38,29 @@ export const config = {
   particles: {
     // Total pooled particle budget (scaled by quality, see below).
     maxCount: 300_000,
-    baseSizePx: 2.2,        // base point size at world scale 1
+    // Emissive intensity of each mote. >1 lets bloom catch the cores;
+    // too high and dense clusters blow out to white fog.
+    intensity: 1.12,
+  },
+
+  // ── KEY BURSTS (Act 1 blooms; sizes/speeds are in world units) ─────
+  keyBurst: {
+    noteLow: 48,        // this played range spreads across the panorama…
+    noteHigh: 72,       // …low-left/beryl → high-right/gold-white
+    xSpan: 0.88,        // fraction of worldWidth the keys cover
+    yLowFrac: -0.32,    // low notes bloom near the ground…
+    yHighFrac: 0.24,    // …high notes bloom in the sky (fractions of height)
+    countMin: 180,      // particles per burst at velocity 0…
+    countMax: 900,      // …and at full strike (× quality particleScale)
+    speedMin: 110,
+    speedMax: 330,
+    sizeMin: 2.2,
+    sizeMax: 4.8,
+    lifeMin: 1.8,
+    lifeMax: 3.4,
+    upBias: 0.35,       // how much bursts rise (light is buoyant)
+    jitter: 14,         // spawn-point scatter
+    velocityCurve: 1.3, // >1 = soft touches stay small, hard hits blossom
   },
 
   // ── QUALITY ────────────────────────────────────────────────────────
@@ -52,9 +74,9 @@ export const config = {
 
   // ── POSTPROCESSING ─────────────────────────────────────────────────
   bloom: {
-    strength: 0.9,    // overall glow amount (K7 refines this live)
-    radius: 0.6,
-    threshold: 0.15,  // keep high enough that black stays black
+    strength: 0.55,   // overall glow amount (K7 refines this live)
+    radius: 0.5,
+    threshold: 0.2,   // keep high enough that black stays black
   },
 
   // ── ACTS & TRANSITIONS (thresholds/durations, seconds) ─────────────
