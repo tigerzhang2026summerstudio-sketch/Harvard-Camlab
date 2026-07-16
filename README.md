@@ -52,17 +52,31 @@ While keyboard play is ON, letters are notes — so use **Shift** for the
 global toggles (Shift+M, Shift+D, …). With a MIDI device connected and
 keyboard play OFF, plain letters work.
 
-## Act 3 pad assignments (edit in `config.js` → `act3.padMap`)
+## The sixteen contemplations — one story per pad
 
-| Pad | Invocation |
-| --- | ---------- |
-| A1 | Amitāyus assembles on the throne |
-| A2 / A3 | Avalokiteśvara / Mahāsthāmaprāpta flank him |
-| A4–A8, B1–B4 | The nine grades of rebirth (humblest → highest lotus) |
-| B5 | Blossom rain |
-| B6 | Vaidehī's awakening — she dissolves into light |
-| B7 | *(reserved)* |
-| B8 | Begin dissolution (coda) |
+The Contemplation Sutra teaches sixteen visualizations; the MPK has
+sixteen pads. Each press shows the story's caption and plays its vision
+(edit in `config.js` → `act3.padMap` / `stories`):
+
+| Pad | Story | Vision |
+| --- | ----- | ------ |
+| A1 | 第一观 The Setting Sun | an ember sun sinks in the west (+ Cave 217 mural of Vaidehī before the sun) |
+| A2 | 第二观 Water & Ice | a clear wave sweeps the ground |
+| A3 | 第三观 The Beryl Ground | the freeze surges (fills the ground meter) |
+| A4 | 第七观 The Lotus Throne | the throne story |
+| A5 | 第八观 The Image | the Buddha half-condenses — an image only |
+| A6 | 第九观 The True Body | the Buddha mural fully assembles |
+| A7 / A8 | 第十/十一观 The Bodhisattvas | Avalokiteśvara / Mahāsthāmaprāpta |
+| B1 | 第十二观 The Universal Vision | side murals condense + flowers rain |
+| B2 | 第十三观 The Mixed Vision | the vision flickers (+ music-sky mural) |
+| B3 / B4 / B5 | 第十四–十六观 The Nine Rebirths | three souls each: high / middle / low lotuses |
+| B6 | 开悟 The Awakening | Vaidehī dissolves; the vision holds radiant |
+| B7 | 缘起 The Prison | flashback — the Cave 217 prison mural condenses |
+| B8 | 归寂 Dissolution | the vision releases into the coda |
+
+The four growth knobs also tell theirs: K1 = 第四观 trees, K2 = 第五观
+ponds, K3 = 第六观 towers of music, K4 = the wind (captions appear the
+first time each is raised).
 
 Keyboard: digits `1–8` are the pads of the current bank; `9` flips bank A/B.
 

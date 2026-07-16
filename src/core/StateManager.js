@@ -144,18 +144,23 @@ export class StateManager {
         break;
       }
       case 'act3': {
-        // The assembly, in order; then blossom rain, awakening, dissolution.
+        // The sixteen contemplations, told in the sutra's order.
         const script = [
-          { bank: 'A', index: 0, wait: 4 },   // Amitāyus
-          { bank: 'A', index: 1, wait: 2.5 }, // Avalokiteśvara
-          { bank: 'A', index: 2, wait: 3 },   // Mahāsthāmaprāpta
-          { bank: 'A', index: 3, wait: 1.5 }, // nine grades of rebirth…
-          { bank: 'A', index: 5, wait: 1.5 },
-          { bank: 'A', index: 7, wait: 1.5 },
-          { bank: 'B', index: 1, wait: 1.5 },
-          { bank: 'B', index: 3, wait: 2.5 },
-          { bank: 'B', index: 4, wait: 4 },   // blossom rain
-          { bank: 'B', index: 5, wait: 8 },   // Vaidehī's awakening — long hold
+          { bank: 'B', index: 6, wait: 9 },   // the prison (the frame story)
+          { bank: 'A', index: 0, wait: 10 },  // the setting sun
+          { bank: 'A', index: 1, wait: 7 },   // water & ice
+          { bank: 'A', index: 2, wait: 7 },   // the beryl ground
+          { bank: 'A', index: 3, wait: 7 },   // the lotus throne
+          { bank: 'A', index: 4, wait: 8 },   // the image
+          { bank: 'A', index: 5, wait: 8 },   // the true body
+          { bank: 'A', index: 6, wait: 6 },   // Avalokiteśvara
+          { bank: 'A', index: 7, wait: 7 },   // Mahāsthāmaprāpta
+          { bank: 'B', index: 0, wait: 9 },   // universal vision + flower rain
+          { bank: 'B', index: 1, wait: 8 },   // the mixed vision
+          { bank: 'B', index: 2, wait: 5 },   // highest rebirths
+          { bank: 'B', index: 3, wait: 5 },   // middle rebirths
+          { bank: 'B', index: 4, wait: 6 },   // lowest rebirths
+          { bank: 'B', index: 5, wait: 12 },  // Vaidehī's awakening — long hold
           { bank: 'B', index: 7, wait: 2 },   // dissolution → coda
         ];
         const step = script[Math.min(this.autoStep, script.length - 1)];

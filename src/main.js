@@ -107,6 +107,9 @@ state.on('pad', (e) => act3.onPad(e));
 const tutorial = new Tutorial(state, midi);
 const captions = new Captions(state, midi);
 const transitions = new Transitions(state, particles, post);
+// The knobs and pads each tell their contemplation through the captions.
+act2.captions = captions;
+act3.captions = captions;
 
 // Audio: score crossfades + accents. The browser only allows sound after
 // a real gesture, so the first click/keypress unlocks it (MIDI can't).

@@ -188,12 +188,28 @@ export class AudioManager {
     } else if (action === 'avalokitesvara' || action === 'mahasthamaprapta') {
       this.gongSynth.triggerAttackRelease('G2', '1m', now, 0.7);
       this.choirSynth.triggerAttackRelease(['G4', 'D5'], '2n', now, 0.55);
-    } else if (action.startsWith('grade:')) {
-      const grade = Number(action.split(':')[1]);
-      this.gongSynth.triggerAttackRelease(
-        Tone.Frequency(41 + grade * 3, 'midi'), '2n', now, 0.5 + grade * 0.04,
-      );
-    } else if (action === 'blossomRain') {
+    } else if (action === 'sun') {
+      this.gongSynth.triggerAttackRelease('D2', '1m', now, 0.6);
+      this.choirSynth.triggerAttackRelease(['D4', 'A4'], '1m', now, 0.4);
+    } else if (action === 'water') {
+      for (let i = 0; i < 4; i += 1) {
+        this.chimeSynth.triggerAttackRelease(
+          Tone.Frequency(87 - PENTATONIC[i], 'midi'), '4n', now + i * 0.22, 0.3,
+        );
+      }
+    } else if (action === 'groundFreeze') {
+      this.gongSynth.triggerAttackRelease('E3', '2n', now, 0.55);
+    } else if (action === 'throne' || action === 'image') {
+      this.choirSynth.triggerAttackRelease(['E4', 'B4'], '2n', now, 0.5);
+    } else if (action === 'prison') {
+      this.gongSynth.triggerAttackRelease('A1', '1m', now, 0.45);
+    } else if (action.startsWith('grades')) {
+      for (const [i, grade] of (config.act3.gradeGroups[action] ?? []).entries()) {
+        this.gongSynth.triggerAttackRelease(
+          Tone.Frequency(41 + grade * 3, 'midi'), '2n', now + i * 0.3, 0.5 + grade * 0.04,
+        );
+      }
+    } else if (action === 'universal' || action === 'mixed') {
       for (let i = 0; i < 5; i += 1) {
         const deg = PENTATONIC[i % PENTATONIC.length];
         this.chimeSynth.triggerAttackRelease(

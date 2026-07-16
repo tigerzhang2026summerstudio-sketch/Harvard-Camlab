@@ -183,6 +183,15 @@ export const config = {
       seedSpeed: 90,      // horizontal drift speed at full wind
       rotMax: 0.018,      // whole-world mandala sway (radians) at full wind
     },
+    // Each growth knob tells its contemplation the first time it is
+    // raised in Act 2 ([title, line] captions).
+    knobStories: [
+      ['第四观 · THE JEWELED TREES', 'Seven rows of jeweled trees rise —\nevery leaf a different light.'],
+      ['第五观 · THE PONDS', 'Ponds of the eight virtues; each drop\nspeaks the Dharma as it falls.'],
+      ['第六观 · THE TOWERS OF MUSIC', 'Five hundred jeweled towers, and in the sky\ninstruments that sound themselves.'],
+      ['风 · THE WIND', 'A soft wind turns the light;\nthe whole paradise breathes.'],
+    ],
+
     // K5–K8 refinement ranges
     refine: {
       warmthDefault: 0.5,      // neutral color temperature
@@ -192,15 +201,44 @@ export const config = {
     },
   },
 
-  // ── ACT 3 — the assembly & rebirth ─────────────────────────────────
+  // ── ACT 3 — the sixteen contemplations ─────────────────────────────
+  // The sutra teaches SIXTEEN contemplations; the MPK has sixteen pads.
+  // Each pad tells one story: its caption appears and its vision plays.
+  // Change assignments here, not in code.
   act3: {
-    // What each pad summons. Change assignments here, not in code.
     padMap: {
-      A1: 'amitabha', A2: 'avalokitesvara', A3: 'mahasthamaprapta',
-      A4: 'grade:0', A5: 'grade:1', A6: 'grade:2', A7: 'grade:3', A8: 'grade:4',
-      B1: 'grade:5', B2: 'grade:6', B3: 'grade:7', B4: 'grade:8',
-      B5: 'blossomRain', B6: 'awakening', B7: 'captions', B8: 'dissolution',
+      A1: 'sun', A2: 'water', A3: 'groundFreeze', A4: 'throne',
+      A5: 'image', A6: 'amitabha', A7: 'avalokitesvara', A8: 'mahasthamaprapta',
+      B1: 'universal', B2: 'mixed', B3: 'gradesHigh', B4: 'gradesMid',
+      B5: 'gradesLow', B6: 'awakening', B7: 'prison', B8: 'dissolution',
     },
+
+    // Every pad's story — [title, line] shown as a caption when pressed.
+    stories: {
+      prison: ['缘起 · THE PRISON', 'Queen Vaidehī, imprisoned by her own son, begged the Buddha:\nreveal to me a land without sorrow.'],
+      sun: ['第一观 · THE SETTING SUN', 'Face the west. See the sun about to set,\nhanging in the sky like a suspended drum.'],
+      water: ['第二观 · WATER & ICE', 'See water, clear and still —\nthen see it freeze to shining, translucent ice.'],
+      groundFreeze: ['第三观 · THE BERYL GROUND', 'The ice becomes beryl: a ground of light,\nlevel as the palm of a hand.'],
+      throne: ['第七观 · THE LOTUS THRONE', 'On the jeweled ground a great lotus unfolds —\na seat awaiting the Buddha of Infinite Life.'],
+      image: ['第八观 · THE IMAGE', 'First see his image only: golden, seated on the lotus —\nthe mind that makes the Buddha is the Buddha.'],
+      amitabha: ['第九观 · THE TRUE BODY', 'Amitāyus himself: his body the gold\nof a hundred thousand million suns.'],
+      avalokitesvara: ['第十观 · AVALOKITEŚVARA', 'The bodhisattva of compassion at his left hand,\na standing Buddha shining in her crown.'],
+      mahasthamaprapta: ['第十一观 · MAHĀSTHĀMAPRĀPTA', 'The bodhisattva of great power at his right hand —\nwhere he walks, worlds tremble into bloom.'],
+      universal: ['第十二观 · THE UNIVERSAL VISION', 'See yourself born there, seated in a lotus bud —\nflowers of light rain over the whole land.'],
+      mixed: ['第十三观 · THE MIXED VISION', 'Now vast, now small, now image, now true —\nthe vision flickers between all of his forms.'],
+      gradesHigh: ['第十四观 · THE HIGHEST REBIRTHS', 'Those of deepest devotion rise on diamond daises,\nwelcomed by the entire holy assembly.'],
+      gradesMid: ['第十五观 · THE MIDDLE REBIRTHS', 'The middle-born arrive in lotuses\nthat open after a night and a day.'],
+      gradesLow: ['第十六观 · THE LOWEST REBIRTHS', 'Even the greatest sinner, saying the Name ten times,\nis met at death by a lotus of gold.'],
+      awakening: ['开悟 · THE AWAKENING', 'Seeing the land, Vaidehī rejoiced;\nher mind opened like a lotus at first light.'],
+      dissolution: ['归寂 · DISSOLUTION', 'What was visualized into being\nreturns to the dark that held it.'],
+    },
+
+    // Grade groups for the three rebirth pads (soul-mote heights/colors).
+    gradeGroups: { gradesHigh: [8, 7, 6], gradesMid: [5, 4, 3], gradesLow: [2, 1, 0] },
+    // Timed story visions (sun sinking, water sweeping)
+    sun: { durationSec: 8, x: -0.27, yTopFrac: 0.30, yEndFrac: 0.02 },
+    water: { sweepSec: 2.6 },
+    storyFlash: { inSec: 2.2, holdSec: 7, outSec: 3.5 },
     throne: { riseSec: 5 },     // the great lotus throne rises on act entry
     figures: {
       assembleSec: 4.5,         // how long a figure takes to materialize
@@ -227,20 +265,33 @@ export const config = {
   murals: {
     maxParticlesPerMural: 45_000, // × quality particleScale
     luminanceCutoff: 0.09,        // pixels darker than this are skipped
+    // plasterSkip panels also drop bright, weakly-colored pixels (bare
+    // wall plaster) so only the painting itself becomes particles:
+    plasterLum: 0.42,             // "bright" =
+    plasterSat: 0.36,             // …and less saturated than this
     retint: 0.35,                 // 0 = photo colors · 1 = full mineral palette
     scatterDist: 300,             // how far motes fly when dissolved
     intensity: 1.15,
     panels: [
-      // role 'amitabha': assembled by pad A1 in place of the procedural
-      // figure (delete this entry to fall back to the silhouette).
+      // role 'amitabha': assembled by the true-body pad (A6) in place of
+      // the procedural figure (delete to fall back to the silhouette).
       { file: 'buddha-placeholder.svg', role: 'amitabha',
         x: 0, yFrac: 0.02, heightFrac: 0.52 },
-      // role 'panel': materializes with the throne as act 3 opens,
-      // scatters in the coda. Place as many across the panorama as needed.
+      // role 'panel': materialize on the Universal Vision pad (B1),
+      // scatter in the coda.
       { file: 'apsara-left-placeholder.svg', role: 'panel',
         x: -0.335, yFrac: 0.27, heightFrac: 0.17 },
       { file: 'apsara-right-placeholder.svg', role: 'panel',
         x: 0.335, yFrac: 0.27, heightFrac: 0.17 },
+      // role 'story': real Cave 217 details that condense while their
+      // pad's story is told, then fray away again. plasterSkip drops the
+      // pale plaster background so only the painting becomes particles.
+      { file: 'cave-sun-contemplation.jpg', role: 'story', story: 'sun',
+        x: -0.3, yFrac: 0.16, heightFrac: 0.34, plasterSkip: true },
+      { file: 'cave-prison.jpg', role: 'story', story: 'prison',
+        x: 0.3, yFrac: 0.16, heightFrac: 0.34, plasterSkip: true },
+      { file: 'cave-music-sky.jpg', role: 'story', story: 'mixed',
+        x: 0, yFrac: 0.3, heightFrac: 0.24, plasterSkip: true },
     ],
   },
 

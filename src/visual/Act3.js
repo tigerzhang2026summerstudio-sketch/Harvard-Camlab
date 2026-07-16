@@ -1,17 +1,18 @@
 /**
- * Act3 — "The Assembly & Rebirth". Pads are discrete invocations
- * (assignments live in config.act3.padMap):
+ * Act3 — "The Sixteen Contemplations". Every pad tells one story from the
+ * Contemplation Sutra (config.act3.padMap + stories): its caption appears
+ * and its vision plays —
  *
- *   A1–A3    the holy figures materialize heart-outward
- *   A4–B4    nine grades of rebirth: a soul-mote rises and a lotus blooms
- *            open at a height/color/scale set by its grade
- *   B5       blossom rain across the whole panorama
- *   B6       Vaidehī's awakening — she dissolves, the vision swells and
- *            holds radiant for one long breath (smooth, never a flash)
- *   B8       dissolution (StateManager routes it to the coda)
+ *   A1 setting sun · A2 water/ice · A3 beryl ground · A4 lotus throne
+ *   A5 the image · A6 the true body (Buddha mural condenses) · A7/A8 the
+ *   two bodhisattvas · B1 universal vision (panels + flower rain) ·
+ *   B2 mixed vision · B3–B5 the nine rebirths in three grades ·
+ *   B6 Vaidehī's awakening · B7 the prison (flashback) · B8 dissolution
  *
- * The throne rises by itself when the act begins; the coda un-grows
- * everything; the prologue resets it for the next visualization.
+ * Real Cave 217 details (role 'story' murals) condense out of drifting
+ * motes while their story is told, hold, and fray away again. The throne
+ * rises when the act opens; the coda un-grows everything; the prologue
+ * resets it all.
  */
 import * as THREE from 'three';
 import { config } from '../config/config.js';
@@ -27,11 +28,12 @@ export class Act3 {
     this.particles = particles;
     this.post = post;
     this.vaidehi = vaidehi;
+    this.captions = null; // set by main once the captions module exists
 
     this.throne = new GrowthLayer(worldGroup, buildThrone, { intensity: 1.1 });
     this.figures = {};
-    this.assembled = {};   // smoothed growth per figure
-    this.targets = {};     // pad-set targets
+    this.assembled = {};
+    this.targets = {};
     for (const name of ['amitabha', 'avalokitesvara', 'mahasthamaprapta']) {
       this.figures[name] = new GrowthLayer(
         worldGroup, figureBuilder(config.act3.figures[name]), { intensity: 1.15 },
@@ -41,15 +43,20 @@ export class Act3 {
     }
 
     this.throneGrowth = 0;
-    this.souls = [];        // rebirth soul-motes in flight
-    this.rainLeft = 0;      // blossom-rain seconds remaining
+    this.souls = [];
+    this.rainLeft = 0;
     this.rainTimer = 0;
     this.awakeningTime = -1;
+    this.universalOn = false;  // B1 raises the panel murals
+    this.sunTime = -1;         // A1's sinking sun
+    this.waterTime = -1;       // A2's sweeping wave
+    this.flashes = {};         // story → seconds since its mural was invoked
 
-    // Murals (Step 8): 'amitabha' assembles on pad A1 instead of the
-    // procedural silhouette; 'panel' murals rise with the throne.
+    // Murals: A6 assembles 'amitabha'; 'panel' murals answer B1;
+    // 'story' murals condense while their pad's story is told.
     this.amitabhaMural = null;
     this.panelMurals = [];
+    this.storyMurals = {};
     this.panelAssemble = 0;
     for (const p of config.murals.panels) {
       const mural = new MuralDissolve(worldGroup, {
@@ -57,8 +64,11 @@ export class Act3 {
         x: p.x * config.worldWidth,
         y: p.yFrac * config.worldHeight,
         height: p.heightFrac * config.worldHeight,
+        cutoff: p.cutoff,
+        plasterSkip: p.plasterSkip,
       });
       if (p.role === 'amitabha') this.amitabhaMural = mural;
+      else if (p.role === 'story') this.storyMurals[p.story] = mural;
       else this.panelMurals.push(mural);
     }
 
@@ -73,6 +83,10 @@ export class Act3 {
         this.souls = [];
         this.rainLeft = 0;
         this.awakeningTime = -1;
+        this.universalOn = false;
+        this.sunTime = -1;
+        this.waterTime = -1;
+        this.flashes = {};
         this.vaidehi.reset();
       }
     });
@@ -81,17 +95,71 @@ export class Act3 {
   onPad(e) {
     if (!e.on || this.state.phase !== 'act3') return;
     const action = config.act3.padMap[`${e.bank}${e.index + 1}`];
-    if (!action || action === 'reserved' || action === 'dissolution') return;
+    if (!action) return;
 
-    if (action in this.figures) {
-      this.targets[action] = 1;
-    } else if (action.startsWith('grade:')) {
-      this.launchSoul(Number(action.split(':')[1]), e.velocity);
-    } else if (action === 'blossomRain') {
-      this.rainLeft = config.act3.rain.durationSec;
-    } else if (action === 'awakening') {
-      if (this.awakeningTime < 0) this.awakeningTime = 0;
-      this.vaidehi.awaken();
+    // Every pad speaks its story.
+    const story = config.act3.stories[action];
+    if (story && this.captions) this.captions.showStory(story[0], story[1]);
+    if (this.storyMurals[action]) this.flashes[action] = 0;
+    if (action === 'dissolution') return; // StateManager takes it to the coda
+
+    switch (action) {
+      case 'sun': this.sunTime = 0; break;
+      case 'water': this.waterTime = 0; break;
+      case 'groundFreeze': this.freezeSurge(); break;
+      case 'throne': this.throneGrowth = Math.max(this.throneGrowth, 0.12); break;
+      case 'image':
+        this.targets.amitabha = Math.max(this.targets.amitabha, 0.5);
+        break;
+      case 'amitabha':
+      case 'avalokitesvara':
+      case 'mahasthamaprapta':
+        this.targets[action] = 1;
+        break;
+      case 'universal':
+        this.universalOn = true;
+        this.rainLeft = config.act3.rain.durationSec;
+        break;
+      case 'mixed': this.mixedVision(); break;
+      case 'gradesHigh':
+      case 'gradesMid':
+      case 'gradesLow':
+        for (const [k, grade] of config.act3.gradeGroups[action].entries()) {
+          this.launchSoul(grade, 0.85 - k * 0.1);
+        }
+        break;
+      case 'awakening':
+        if (this.awakeningTime < 0) this.awakeningTime = 0;
+        this.vaidehi.awaken();
+        break;
+      default: break;
+    }
+  }
+
+  /** 第三观 — the freeze surges: the ground meter jumps, glints run out. */
+  freezeSurge() {
+    this.state.fullness = clamp01(this.state.fullness + 0.28);
+    const H = config.worldHeight;
+    for (let i = 0; i < 10; i += 1) {
+      this.particles.burst({
+        x: ((i + 0.5) / 10 - 0.5) * config.worldWidth,
+        y: -H / 2 + config.ground.bandFrac * H * rand(0.3, 0.9),
+        color: Math.random() < 0.5 ? config.palette.beryl : config.palette.white,
+        count: 70, speed: 24, size: 2.2, life: 2.6, upBias: 0.5, jitter: 40,
+      });
+    }
+  }
+
+  /** 第十三观 — the vision flickers: every instrument showers note-light. */
+  mixedVision() {
+    const H = config.worldHeight;
+    for (let i = 0; i < 12; i += 1) {
+      this.particles.burst({
+        x: rand(-0.45, 0.45) * config.worldWidth,
+        y: rand(0.05, 0.4) * H,
+        color: [config.palette.gold, config.palette.beryl, config.palette.cinnabar][i % 3],
+        count: 90, speed: 55, size: 2.6, life: 3, upBias: 0.3, jitter: 12,
+      });
     }
   }
 
@@ -102,21 +170,21 @@ export class Act3 {
     this.color.lerpColors(this.colBeryl, this.colGold, Math.min(1, f * 1.6));
     if (f > 0.75) this.color.lerpColors(this.colGold, this.colWhite, (f - 0.75) * 4);
 
-    const soul = {
+    this.souls.push({
       x: rand(-1, 1) * g.xSpread * config.worldWidth,
       y0: -config.worldHeight / 2 + config.ground.bandFrac * config.worldHeight * 0.5,
       y1: lerp(g.yMinFrac, g.yMaxFrac, f) * config.worldHeight,
-      t: 0,
+      t: -rand(0, 0.6), // slight stagger inside a grade group
       dur: g.riseSec,
       scale: lerp(g.lotusScaleMin, g.lotusScaleMax, f),
       color: this.color.clone(),
       trail: 0,
-    };
-    this.souls.push(soul);
+    });
 
-    // launch flash at the ground
     this.particles.burst({
-      x: soul.x, y: soul.y0, color: soul.color,
+      x: this.souls[this.souls.length - 1].x,
+      y: this.souls[this.souls.length - 1].y0,
+      color: this.color,
       count: 90, speed: 40, size: 2.4, life: 1.6, upBias: 1.2, jitter: 8,
     });
   }
@@ -124,11 +192,12 @@ export class Act3 {
   updateSouls(dt) {
     for (const s of this.souls) {
       s.t += dt;
+      if (s.t < 0) continue;
       const f = smooth01(Math.min(1, s.t / s.dur));
       const y = lerp(s.y0, s.y1, f);
       s.trail -= dt;
       if (s.t < s.dur && s.trail <= 0) {
-        s.trail = 0.045;
+        s.trail = 0.04;
         this.particles.burst({
           x: s.x + Math.sin(s.t * 5) * 6, y,
           color: s.color,
@@ -136,7 +205,6 @@ export class Act3 {
         });
       } else if (s.t >= s.dur && !s.bloomed) {
         s.bloomed = true;
-        // the lotus blooms open: colored corolla + white heart
         this.particles.burst({
           x: s.x, y: s.y1, color: s.color,
           count: Math.round(420 * s.scale), speed: 90 * s.scale,
@@ -171,6 +239,68 @@ export class Act3 {
     });
   }
 
+  /** 第一观 — a great soft sun sinks in the west, red to ember-gold. */
+  updateSun(dt) {
+    if (this.sunTime < 0) return;
+    this.sunTime += dt;
+    const s = config.act3.sun;
+    const f = this.sunTime / s.durationSec;
+    if (f >= 1) { this.sunTime = -1; return; }
+    this.sunTimer = (this.sunTimer ?? 0) - dt;
+    if (this.sunTimer > 0) return;
+    this.sunTimer = 0.28;
+    const y = lerp(s.yTopFrac, s.yEndFrac, smooth01(f)) * config.worldHeight;
+    this.color.set(config.palette.cinnabar).lerp(this.colGold, f * 0.8);
+    this.particles.burst({
+      x: s.x * config.worldWidth + rand(-6, 6),
+      y,
+      color: this.color,
+      count: 240, speed: 26, size: 3.4, life: 2.8,
+      upBias: -0.15, jitter: 26,
+    });
+  }
+
+  /** 第二观 — a wave of clear water sweeps the ground, west to east. */
+  updateWater(dt) {
+    if (this.waterTime < 0) return;
+    this.waterTime += dt;
+    const f = this.waterTime / config.act3.water.sweepSec;
+    if (f >= 1) { this.waterTime = -1; return; }
+    this.waterTimer = (this.waterTimer ?? 0) - dt;
+    if (this.waterTimer > 0) return;
+    this.waterTimer = 0.06;
+    const H = config.worldHeight;
+    this.particles.burst({
+      x: (f - 0.5) * config.worldWidth * 0.96,
+      y: -H / 2 + config.ground.bandFrac * H * rand(0.4, 1.1),
+      color: Math.random() < 0.75 ? config.palette.beryl : config.palette.white,
+      count: 80, speed: 30, size: 2.4, life: 2.2, upBias: 0.4, jitter: 24,
+    });
+  }
+
+  /** Story murals: condense in, hold while the caption speaks, fray out. */
+  updateFlashes(dt, time, ppwu) {
+    const fx = config.act3.storyFlash;
+    for (const [story, mural] of Object.entries(this.storyMurals)) {
+      if (!mural.ready) continue;
+      if (story in this.flashes) {
+        this.flashes[story] += dt;
+        const t = this.flashes[story];
+        let assemble;
+        if (t < fx.inSec) assemble = smooth01(t / fx.inSec);
+        else if (t < fx.inSec + fx.holdSec) assemble = 1;
+        else assemble = 1 - smooth01((t - fx.inSec - fx.holdSec) / fx.outSec);
+        mural.dissolve = 1 - assemble;
+        mural.alpha = Math.min(1, assemble * 4);
+        if (t > fx.inSec + fx.holdSec + fx.outSec) delete this.flashes[story];
+      } else {
+        mural.alpha = 0;
+        mural.dissolve = 1;
+      }
+      mural.update(time, ppwu);
+    }
+  }
+
   /** B6: the whole vision brightens and holds — a slow swell, no flash. */
   updateAwakening(dt) {
     if (this.awakeningTime < 0) return;
@@ -191,7 +321,6 @@ export class Act3 {
     if (s.phase === 'coda') fade = clamp01(1 - s.phaseTime / config.acts.codaFadeSec);
     if (s.phase === 'prologue') fade = 0;
 
-    // The throne rises on its own as the act opens.
     const throneTarget = (s.phase === 'act3' || s.phase === 'coda') ? fade : 0;
     this.throneGrowth += (throneTarget - this.throneGrowth)
       * Math.min(1, dt / config.act3.throne.riseSec * 3);
@@ -202,8 +331,6 @@ export class Act3 {
       const target = this.targets[name] * fade;
       this.assembled[name] += (target - this.assembled[name])
         * Math.min(1, dt / config.act3.figures.assembleSec * 3);
-      // When the Buddha mural is available it takes Amitāyus's place;
-      // the procedural silhouette stays as the no-asset fallback.
       const growth = (name === 'amitabha' && muralLive) ? 0 : this.assembled[name];
       layer.update(shared, growth);
     }
@@ -215,8 +342,9 @@ export class Act3 {
       this.amitabhaMural.update(time, ppwu);
     }
 
-    // Panel murals (apsaras etc.) condense as the act opens, fray in the coda.
-    this.panelAssemble += (throneTarget - this.panelAssemble)
+    // Panel murals wait for the Universal Vision (B1), fray in the coda.
+    const panelTarget = this.universalOn ? throneTarget : 0;
+    this.panelAssemble += (panelTarget - this.panelAssemble)
       * Math.min(1, dt / config.act3.throne.riseSec * 2);
     for (const mural of this.panelMurals) {
       mural.dissolve = 1 - this.panelAssemble;
@@ -226,6 +354,9 @@ export class Act3 {
 
     this.updateSouls(dt);
     this.updateRain(dt);
+    this.updateSun(dt);
+    this.updateWater(dt);
+    this.updateFlashes(dt, time, ppwu);
     this.updateAwakening(dt);
   }
 }

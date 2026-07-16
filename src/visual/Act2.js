@@ -33,9 +33,14 @@ export class Act2 {
     this.windDir = 1;             // joystick X flips the drift
     this.seedTimer = 0;
     this.sparkTimer = 0;
+    this.captions = null;                    // set by main
+    this.storyTold = [false, false, false, false];
 
     state.on('phase', ({ phase }) => {
-      if (phase === 'prologue') this.refine = this.defaultRefine();
+      if (phase === 'prologue') {
+        this.refine = this.defaultRefine();
+        this.storyTold = [false, false, false, false];
+      }
     });
   }
 
@@ -73,6 +78,15 @@ export class Act2 {
       const target = s.knobs[i] * fade;
       this.growth[i] += (target - this.growth[i]) * Math.min(1, dt * config.act2.smoothing);
     }
+    // Each growth knob tells its contemplation the first time it rises.
+    for (let i = 0; i < 4; i += 1) {
+      if (!this.storyTold[i] && s.phase === 'act2' && this.growth[i] > 0.12) {
+        this.storyTold[i] = true;
+        const story = config.act2.knobStories[i];
+        if (story && this.captions) this.captions.showStory(story[0], story[1]);
+      }
+    }
+
     let wind = this.growth[3];
     // Dissolution: as the coda deepens, turbulence rises — the un-growing
     // world sways harder and sheds dandelion-drift while it fades.

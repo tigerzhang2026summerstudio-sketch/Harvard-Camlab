@@ -18,11 +18,6 @@ export class Captions {
 
     state.on('phase', ({ phase }) => this.show(config.captions.phases[phase]));
 
-    // Pad B7 (config.act3.padMap: 'captions') toggles from the hardware.
-    state.on('pad', (e) => {
-      if (e.on && config.act3.padMap[`${e.bank}${e.index + 1}`] === 'captions') this.toggle();
-    });
-
     window.addEventListener('keydown', (e) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (midi.fallbackActive && !e.shiftKey) return; // C is a note while playing
@@ -35,6 +30,11 @@ export class Captions {
     if (!this.enabled) this.hide();
     console.info(`[captions] ${this.enabled ? 'on' : 'off'}`);
     return this.enabled;
+  }
+
+  /** A pad/knob story: a small gold title above the caption line. */
+  showStory(title, line) {
+    this.show(`<span class="cap-title">${title}</span>\n${line}`);
   }
 
   show(text) {
@@ -71,6 +71,11 @@ export class Captions {
         letter-spacing: 0.14em; color: #dcc895;
         text-shadow: 0 0 22px rgba(232, 193, 90, 0.35), 0 0 60px rgba(30, 111, 176, 0.25);
         opacity: 0; transition: opacity 2s ease;
+      }
+      #captions .cap-title {
+        display: block; margin-bottom: 0.5em;
+        font-style: normal; font-size: 0.72em;
+        letter-spacing: 0.34em; color: #e8c15a;
       }`;
     document.head.appendChild(css);
   }

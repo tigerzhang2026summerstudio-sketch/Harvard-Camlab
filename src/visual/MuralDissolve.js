@@ -128,7 +128,14 @@ export class MuralDissolve {
         if (a < 0.35) continue;
         const r = data[i] / 255; const g = data[i + 1] / 255; const b = data[i + 2] / 255;
         const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-        if (lum < m.luminanceCutoff) continue;
+        if (lum < (this.opts.cutoff ?? m.luminanceCutoff)) continue;
+        // Mural photos sit on pale plaster: skip bright low-saturation
+        // pixels so only the painted figures become particles.
+        if (this.opts.plasterSkip) {
+          const mx = Math.max(r, g, b); const mn = Math.min(r, g, b);
+          const sat = mx > 0 ? (mx - mn) / mx : 0;
+          if (lum > m.plasterLum && sat < m.plasterSat) continue;
+        }
 
         home.push(
           this.opts.x + (gx / gw - 0.5) * worldW,
