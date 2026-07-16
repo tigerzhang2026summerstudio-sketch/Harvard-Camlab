@@ -60,8 +60,8 @@ keyboard play OFF, plain letters work.
 | `M` | MIDI monitor |
 | `D` | Debug panel (FPS, device status, MIDI-learn) |
 | `` ` `` | Keyboard play on/off |
-| `A` | Auto/attract mode *(step 4+)* |
-| `R` | Reset to prologue *(step 4+)* |
+| `A` | Auto/attract mode: after 30 s idle the piece plays its whole arc by itself |
+| `R` | Reset to the prologue |
 | `0` | Mute *(step 9)* |
 
 ## Three-projector Cave layout

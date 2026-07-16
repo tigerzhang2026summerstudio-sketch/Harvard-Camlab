@@ -81,11 +81,13 @@ export const config = {
 
   // ── ACTS & TRANSITIONS (thresholds/durations, seconds) ─────────────
   acts: {
-    crossfadeSec: 3,          // audio crossfade on act change
-    act1FullnessTarget: 1.0,  // energy needed to freeze the beryl ground
-    act2LushnessTarget: 1.0,  // trees+ponds+music needed to raise the throne
-    codaFadeSec: 20,          // dissolution length
-    loopPauseSec: 8,          // black pause before the prologue returns
+    crossfadeSec: 3,           // audio crossfade on act change
+    act1FullnessTarget: 1.0,   // energy needed to freeze the beryl ground
+    act1EnergyPerStrike: 0.03, // fullness added per key at full velocity
+    act2LushnessTarget: 0.75,  // avg K1..K3 level that raises the throne
+    codaFadeSec: 20,           // dissolution length
+    loopPauseSec: 8,           // black pause before the prologue returns
+    autoIdleSec: 30,           // idle time before attract mode starts playing
   },
 
   // ── AUDIO ──────────────────────────────────────────────────────────

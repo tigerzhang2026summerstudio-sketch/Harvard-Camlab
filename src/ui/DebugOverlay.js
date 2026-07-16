@@ -9,9 +9,13 @@
  * Both start hidden ("show mode"): they are plain DOM over the canvas and
  * cost nothing while hidden.
  */
+import { config } from '../config/config.js';
+import { PHASES } from '../core/StateManager.js';
+
 export class DebugOverlay {
-  constructor(midi) {
+  constructor(midi, state) {
     this.midi = midi;
+    this.state = state;
     this.fps = 0;
     this.frames = 0;
     this.fpsClock = 0;
@@ -24,6 +28,8 @@ export class DebugOverlay {
 
     midi.on('midi', (m) => this.pushMonitorLine(m));
     midi.on('status', (s) => this.setStatus(s));
+    state.on('phase', () => this.refreshActRow());
+    this.refreshActRow();
 
     window.addEventListener('keydown', (e) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -47,7 +53,23 @@ export class DebugOverlay {
       this.fpsClock = 0;
       if (this.panelEl.style.display !== 'none') {
         this.panelEl.querySelector('#dbg-fps').textContent = `${this.fps} fps`;
+        this.refreshMeters();
       }
+    }
+  }
+
+  refreshMeters() {
+    const s = this.state;
+    this.panelEl.querySelector('#dbg-meter-fullness').style.width = `${s.fullness * 100}%`;
+    this.panelEl.querySelector('#dbg-meter-lushness').style.width = `${s.lushness * 100}%`;
+    this.panelEl.querySelector('#dbg-auto').textContent = s.autoEnabled
+      ? (s.idleTime >= config.acts.autoIdleSec ? 'auto: playing' : 'auto: armed')
+      : 'auto: off';
+  }
+
+  refreshActRow() {
+    for (const btn of this.panelEl.querySelectorAll('[data-phase]')) {
+      btn.classList.toggle('dbg-active', btn.dataset.phase === this.state.phase);
     }
   }
 
@@ -99,9 +121,18 @@ export class DebugOverlay {
     el.innerHTML = `
       <div class="dbg-title">DEBUG <span id="dbg-fps"></span> <span class="dbg-hint">D hides</span></div>
       <div class="dbg-status"></div>
+      <div class="dbg-section">ACT <span id="dbg-auto"></span></div>
+      <div id="dbg-phases">${PHASES.map((p) => `<button data-phase="${p}">${p}</button>`).join('')}</div>
+      <div class="dbg-meter-row"><span>ground</span><div class="dbg-meter"><div id="dbg-meter-fullness"></div></div></div>
+      <div class="dbg-meter-row"><span>lushness</span><div class="dbg-meter"><div id="dbg-meter-lushness"></div></div></div>
+      <div class="dbg-section">MAPPING</div>
       <div class="dbg-learn-hint">click <b>learn</b>, then move that control on the MPK</div>
       <div id="dbg-slots"></div>
       <button id="dbg-reset">reset map to MK3 defaults</button>`;
+
+    for (const btn of el.querySelectorAll('[data-phase]')) {
+      btn.addEventListener('click', () => this.state.go(btn.dataset.phase));
+    }
 
     const slotsEl = el.querySelector('#dbg-slots');
     for (const slot of slots) {
@@ -145,6 +176,14 @@ export class DebugOverlay {
         border-radius: 4px; font: inherit; cursor: pointer; padding: 1px 8px;
       }
       .dbg button:hover { background: #1b3a55; }
+      .dbg button.dbg-active { background: #e8c15a; color: #10131a; border-color: #e8c15a; }
+      .dbg-section { color: #e8c15a; letter-spacing: 0.12em; margin: 10px 0 4px; }
+      #dbg-phases { display: flex; gap: 4px; margin-bottom: 6px; }
+      #dbg-phases button { flex: 1; padding: 1px 2px; }
+      .dbg-meter-row { display: flex; align-items: center; gap: 6px; margin: 3px 0; }
+      .dbg-meter-row > span { width: 60px; color: #8fb7d9; }
+      .dbg-meter { flex: 1; height: 5px; background: #0d1926; border-radius: 3px; overflow: hidden; }
+      .dbg-meter > div { height: 100%; width: 0%; background: linear-gradient(90deg, #1e6fb0, #e8c15a); }
       #dbg-reset { margin-top: 8px; width: 100%; }`;
     document.head.appendChild(css);
   }

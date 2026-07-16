@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import { config } from './config/config.js';
 import { MidiManager } from './core/MidiManager.js';
+import { StateManager } from './core/StateManager.js';
 import { DebugOverlay } from './ui/DebugOverlay.js';
 import { ParticleSystem } from './visual/ParticleSystem.js';
 import { Postprocessing } from './visual/Postprocessing.js';
@@ -75,10 +76,17 @@ beaconGeo.setAttribute('position', new THREE.Float32BufferAttribute([0, -config.
 const beacon = new THREE.Points(beaconGeo, beaconMat);
 scene.add(beacon);
 
-// ── Input (Step 2): MIDI + keyboard fallback + monitor ────────────────
+// ── Input → state machine ─────────────────────────────────────────────
+// MidiManager normalizes the hardware; StateManager owns the arc and
+// routes events to whichever act is alive; visuals subscribe to the state.
 const midi = new MidiManager();
-const overlay = new DebugOverlay(midi);
+const state = new StateManager();
+const overlay = new DebugOverlay(midi, state);
 midi.init();
+
+midi.on('key', (e) => state.onKey(e));
+midi.on('knob', (e) => state.onKnob(e));
+midi.on('pad', (e) => state.onPad(e));
 
 // ── Key → burst of light (test wiring; Act 1 proper arrives in Step 5) ──
 // Pitch decides WHERE and WHAT COLOR: low notes = deep beryl blooms low on
@@ -112,7 +120,7 @@ function keyBurst(note, velocity) {
   });
 }
 
-midi.on('key', (e) => { if (e.on) keyBurst(e.note, e.velocity); });
+state.on('key', (e) => { if (e.on) keyBurst(e.note, e.velocity); });
 
 // ── Main loop ─────────────────────────────────────────────────────────
 const clock = new THREE.Clock();
@@ -121,6 +129,7 @@ let elapsed = 0;
 renderer.setAnimationLoop(() => {
   const dt = clock.getDelta();
   elapsed += dt;
+  state.update(dt);
   overlay.tick(dt);
 
   // Slow breathing pulse — smooth fade, never a flicker (seizure safety).
@@ -134,17 +143,27 @@ renderer.setAnimationLoop(() => {
 // drive frames manually where requestAnimationFrame is throttled).
 if (import.meta.env.DEV) {
   window.__paintedCave = {
-    midi, particles, post, keyBurst, renderer,
+    midi, state, particles, post, keyBurst, renderer,
     now: () => elapsed,
     ppwu: pixelsPerWorldUnit,
   };
 }
 
 // ── Shell key toggles ─────────────────────────────────────────────────
+// While keyboard-play is on, bare letters are notes (R is one) — the
+// toggles then require Shift, same rule as the overlay panels.
 window.addEventListener('keydown', (e) => {
-  if (e.key === 'f' || e.key === 'F') {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (midi.fallbackActive && !e.shiftKey) return;
+  const k = e.key.toLowerCase();
+  if (k === 'f') {
     if (document.fullscreenElement) document.exitFullscreen();
     else document.documentElement.requestFullscreen();
+  }
+  if (k === 'r') state.reset();
+  if (k === 'a') {
+    const on = state.toggleAuto();
+    console.info(`[painted-cave] attract mode ${on ? 'armed' : 'off'}`);
   }
 });
 
