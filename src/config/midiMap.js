@@ -21,28 +21,30 @@ export const midiMapDefaults = {
     noteMax: 108,
   },
 
-  // 8 knobs K1..K8 → Act 2. MK3 factory: CC 70–77.
+  // 8 knobs K1..K8 → Act 2. This unit: CC 1–8, in order.
   knobs: {
     channel: null,
-    ccs: [70, 71, 72, 73, 74, 75, 76, 77],
+    ccs: [1, 2, 3, 4, 5, 6, 7, 8],
   },
 
-  // 8 pads × banks A/B → Act 3. MK3 factory: pads send on MIDI ch 10
-  // (0-based 9); bank A = notes 36–43, bank B = 44–51.
-  // Pads are told apart from keys by CHANNEL, since note numbers overlap.
+  // 8 pads × banks A/B → Act 3. This unit's pads simply play notes:
+  // pads 1–8 = notes 36–43 (bank B = 44–51 if used). They are routed by
+  // NOTE NUMBER (checked before the keys), on any channel — so it works
+  // whether or not the pads share the keyboard's channel.
   pads: {
-    channel: 9,
+    channel: null,
     bankA: [36, 37, 38, 39, 40, 41, 42, 43],
     bankB: [44, 45, 46, 47, 48, 49, 50, 51],
   },
 
-  // Joystick (optional): X = wind direction, Y = camera drift.
-  // MK3 factory sends pitch-bend on X; some presets use CC 1/2 — remap here.
+  // Joystick (optional): X = wind direction. The MK3 sends pitch-bend on
+  // X by default; if your stick is set to CC mode, put its CC numbers
+  // here — NOT 1–8, those belong to the knobs now.
   joystick: {
     channel: null,
-    xCc: 1,   // if the stick is set to CC mode
-    yCc: 2,
-    usePitchBendX: true, // MK3 default: X axis is pitch bend
+    xCc: 30,
+    yCc: 31,
+    usePitchBendX: true,
   },
 };
 
