@@ -17,6 +17,7 @@ import { Act1 } from './visual/Act1.js';
 import { Act2 } from './visual/Act2.js';
 import { Act3 } from './visual/Act3.js';
 import { VaidehiFigure } from './visual/VaidehiFigure.js';
+import { AudioManager } from './audio/AudioManager.js';
 import { Tutorial } from './ui/Tutorial.js';
 
 // ── Renderer ──────────────────────────────────────────────────────────
@@ -103,6 +104,12 @@ state.on('pad', (e) => act3.onPad(e));
 
 const tutorial = new Tutorial(state, midi);
 
+// Audio: score crossfades + accents. The browser only allows sound after
+// a real gesture, so the first click/keypress unlocks it (MIDI can't).
+const audio = new AudioManager(state);
+window.addEventListener('pointerdown', () => audio.unlock());
+window.addEventListener('keydown', () => audio.unlock());
+
 // ── Main loop ─────────────────────────────────────────────────────────
 const clock = new THREE.Clock();
 let elapsed = 0;
@@ -126,7 +133,7 @@ renderer.setAnimationLoop(() => {
 // drive frames manually where requestAnimationFrame is throttled).
 if (import.meta.env.DEV) {
   window.__paintedCave = {
-    midi, state, particles, post, ground, act1, act2, act3, vaidehi, tutorial, renderer,
+    midi, state, particles, post, ground, act1, act2, act3, vaidehi, tutorial, audio, renderer,
     keyBurst: (note, velocity) => act1.onKey({ on: true, note, velocity }),
     now: () => elapsed,
     ppwu: pixelsPerWorldUnit,
@@ -148,6 +155,10 @@ window.addEventListener('keydown', (e) => {
   if (k === 'a') {
     const on = state.toggleAuto();
     console.info(`[painted-cave] attract mode ${on ? 'armed' : 'off'}`);
+  }
+  // e.code: Shift+0 types ')' but the physical key is still Digit0.
+  if (k === '0' || e.code === 'Digit0') {
+    console.info(`[painted-cave] audio ${audio.toggleMute() ? 'muted' : 'unmuted'}`);
   }
 });
 

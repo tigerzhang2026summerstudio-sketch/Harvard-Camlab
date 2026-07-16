@@ -30,7 +30,10 @@ const vertexShader = /* glsl */ `
   varying float vAlpha;
 
   void main() {
-    float vis = smoothstep(aStage - 0.18, aStage, uGrowth);
+    // Remap stages above the fade width so stage-0 points are still fully
+    // dark at growth 0 (smoothstep with edge0 < 0 would leak them in).
+    float s = 0.17 + aStage * 0.83;
+    float vis = smoothstep(s - 0.15, s, uGrowth);
     if (vis <= 0.001) {
       gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
       gl_PointSize = 0.0; vColor = vec3(0.0); vAlpha = 0.0;

@@ -88,8 +88,26 @@ no code changes needed.
 ## Assets
 
 - `assets/murals/` — mural imagery (see below)
-- `assets/music/` — `prologue / part1 / part2 / part3 / coda` .mp3/.ogg (step 9)
+- `assets/music/` — the five score tracks (see below)
 - `assets/fonts/` — caption serif
+
+### Music & sound
+
+Drop the produced score into `assets/music/` as `prologue`, `part1`,
+`part2`, `part3`, `coda` — `.mp3`, `.ogg` or `.wav` (first found wins;
+silent `.wav` placeholders ship). Tracks loop and crossfade (equal-power,
+~3 s) on every act change; a missing file logs a warning and the show
+plays on without it.
+
+Layered on top, always live: Act 1 keys ring pentatonic chimes quantized
+to a slow grid (clusters cascade); Act 2's K3 raises a self-playing
+plucked layer; Act 3 pads strike deep gongs, grade-pitched bells, and
+choir-like swells. Master chain: reverb → limiter; volume in
+`config.js → audio`.
+
+**Browsers block sound until a real gesture:** click the stage (or press
+any computer key) once — a small ♪ chip reminds you until then. MIDI
+input alone cannot unlock audio; this is a Chrome policy, not a bug.
 
 ### Adding real Cave 217 murals
 

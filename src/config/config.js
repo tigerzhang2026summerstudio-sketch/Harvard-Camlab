@@ -93,7 +93,18 @@ export const config = {
   // ── AUDIO ──────────────────────────────────────────────────────────
   audio: {
     masterVolumeDb: -6,
+    // Score tracks live in assets/music/ as <name>.mp3/.ogg/.wav (first
+    // found wins). Silent .wav placeholders ship; drop the real score in.
     trackNames: ['prologue', 'part1', 'part2', 'part3', 'coda'],
+    accents: {
+      bpm: 48,             // the slow grid Act-1 chimes quantize onto
+      quantize: '8n',
+      chimeLevelDb: -8,    // Act 1 key chimes
+      bedLevelDb: -14,     // Act 2 generative self-playing layer
+      padLevelDb: -6,      // Act 3 bells / gongs / swells
+      reverbDecaySec: 7,
+      reverbWet: 0.4,
+    },
   },
 
   // ── CAPTIONS & TUTORIAL ────────────────────────────────────────────
