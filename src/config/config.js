@@ -116,13 +116,16 @@ export const config = {
     fadeInSec: 2.2,
     holdSec: 6.5,
     fadeOutSec: 3,
+    // [big act title shown center-screen, poetic line shown lower-third]
     phases: {
-      prologue: '',   // the tutorial speaks for the prologue
-      act1: 'Water becomes ice. Ice becomes beryl.\nA ground of light is laid.',
-      act2: 'Seven rows of jeweled trees. Ponds of lotus.\nInstruments that play themselves.',
-      act3: 'The Buddha of Infinite Life appears,\nand souls are reborn in opening lotuses.',
-      coda: 'What was visualized into being\nreturns to the dark that held it.',
+      prologue: ['', ''],   // the tutorial speaks for the prologue
+      act1: ['ACT I · THE FLOOD OF LIGHT', 'Play the keys. Water becomes ice; ice becomes beryl.\nA ground of light is laid.'],
+      act2: ['ACT II · THE JEWELED WORLD', 'Turn the dials. Trees, ponds, music, wind —\nwhat you raise remains.'],
+      act3: ['ACT III · THE SIXTEEN CONTEMPLATIONS', 'Press the pads — each tells one vision of the sutra.\nPad 8, again and again, carries it to the end.'],
+      coda: ['CODA · DISSOLUTION', 'What was visualized into being\nreturns to the dark that held it.'],
     },
+    // Shown if a pad is struck before its act has arrived.
+    padsLocked: 'The pads awaken in Act III —\ncultivate the world with the dials first.',
   },
 
   transitions: {

@@ -17,7 +17,9 @@
  */
 import { midiMapDefaults, keyboardFallback } from '../config/midiMap.js';
 
-const STORAGE_KEY = 'paintedcave.midimap.v1';
+// v2: bumped when defaults changed to CC1-8 / note-pads — old stored maps
+// from v1 would silently override the new defaults and break routing.
+const STORAGE_KEY = 'paintedcave.midimap.v2';
 
 export class MidiManager {
   constructor() {
@@ -113,7 +115,8 @@ export class MidiManager {
 
     if (type === 'cc') {
       if (chOk(knobs.channel)) {
-        const index = knobs.ccs.indexOf(d1);
+        let index = knobs.ccs.indexOf(d1);
+        if (index === -1 && knobs.altCcs) index = knobs.altCcs.indexOf(d1);
         if (index !== -1) {
           const value = d2 / 127;
           this.knobValues[index] = value;

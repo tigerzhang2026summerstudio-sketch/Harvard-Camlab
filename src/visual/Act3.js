@@ -96,7 +96,19 @@ export class Act3 {
   }
 
   onPad(e) {
-    if (!e.on || this.state.phase !== 'act3') return;
+    if (!e.on) return;
+    if (this.state.phase !== 'act3') {
+      // Struck too early: tell the performer where they are in the rite.
+      const p = this.state.phase;
+      if ((p === 'act1' || p === 'act2') && this.captions) {
+        const now = performance.now();
+        if (now - (this.lockHintAt ?? -1e9) > 8000) {
+          this.lockHintAt = now;
+          this.captions.show(config.captions.padsLocked);
+        }
+      }
+      return;
+    }
     let action = config.act3.padMap[`${e.bank}${e.index + 1}`];
     if (!action) return;
 

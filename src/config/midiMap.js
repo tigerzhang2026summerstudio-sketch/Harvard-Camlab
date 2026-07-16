@@ -21,10 +21,13 @@ export const midiMapDefaults = {
     noteMax: 108,
   },
 
-  // 8 knobs K1..K8 → Act 2. This unit: CC 1–8, in order.
+  // 8 knobs K1..K8 → Act 2. This unit: CC 1–8, in order. The MK3
+  // factory preset sends CC 70–77 instead, so both sets are accepted —
+  // whichever arrives maps to K1..K8 by position.
   knobs: {
     channel: null,
     ccs: [1, 2, 3, 4, 5, 6, 7, 8],
+    altCcs: [70, 71, 72, 73, 74, 75, 76, 77],
   },
 
   // 8 pads × banks A/B → Act 3. This unit's pads simply play notes:
