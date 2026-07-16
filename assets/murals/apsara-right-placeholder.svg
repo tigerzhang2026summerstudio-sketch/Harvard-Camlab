@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="340" viewBox="0 0 520 340">
+  <!-- Mirror of apsara-left: a flying apsara facing left.
+       Replace with a real Cave 217 detail and update config.js → murals. -->
+  <defs>
+    <linearGradient id="scarfA" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#3f9b6e" stop-opacity="0"/>
+      <stop offset="55%" stop-color="#3f9b6e"/>
+      <stop offset="100%" stop-color="#bfe8d4"/>
+    </linearGradient>
+    <linearGradient id="scarfB" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#c34a33" stop-opacity="0"/>
+      <stop offset="60%" stop-color="#c34a33"/>
+      <stop offset="100%" stop-color="#ffd9a0"/>
+    </linearGradient>
+    <linearGradient id="bodyA" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f2cf7e"/>
+      <stop offset="100%" stop-color="#c99648"/>
+    </linearGradient>
+  </defs>
+  <!-- everything from the left-facing apsara, mirrored in one stroke -->
+  <g transform="translate(520,0) scale(-1,1)">
+    <path d="M20,300 Q160,330 260,250 Q330,196 392,186" fill="none" stroke="url(#scarfA)" stroke-width="16" stroke-linecap="round"/>
+    <path d="M40,240 Q170,270 280,205 Q350,164 400,168" fill="none" stroke="url(#scarfB)" stroke-width="12" stroke-linecap="round"/>
+    <path d="M90,320 Q220,320 320,240 Q380,196 420,196" fill="none" stroke="#e8c15a" stroke-width="7" opacity="0.75" stroke-linecap="round"/>
+    <path d="M300,220 Q330,170 386,150 Q420,140 442,118 Q452,132 436,150 Q470,142 492,126 Q496,144 470,160 Q420,186 386,192 Q340,214 316,238 Z" fill="url(#bodyA)"/>
+    <circle cx="400" cy="118" r="22" fill="#f2cf7e"/>
+    <path d="M382,104 Q400,88 420,102 L414,92 Q400,80 388,92 Z" fill="#3a2c14"/>
+    <path d="M316,238 Q280,270 210,286 Q260,240 300,218 Z" fill="#3f9b6e" opacity="0.85"/>
+    <circle cx="470" cy="200" r="7" fill="#ffd9a0"/>
+    <circle cx="452" cy="226" r="5" fill="#c34a33"/>
+    <circle cx="486" cy="238" r="4" fill="#fff6e0"/>
+  </g>
+</svg>

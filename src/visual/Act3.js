@@ -19,6 +19,7 @@ import { clamp01, lerp, rand, smooth01 } from '../core/Clock.js';
 import { GrowthLayer } from './GrowthLayer.js';
 import { buildThrone } from './Throne.js';
 import { figureBuilder } from './Figures.js';
+import { MuralDissolve } from './MuralDissolve.js';
 
 export class Act3 {
   constructor(worldGroup, state, particles, post, vaidehi) {
@@ -44,6 +45,22 @@ export class Act3 {
     this.rainLeft = 0;      // blossom-rain seconds remaining
     this.rainTimer = 0;
     this.awakeningTime = -1;
+
+    // Murals (Step 8): 'amitabha' assembles on pad A1 instead of the
+    // procedural silhouette; 'panel' murals rise with the throne.
+    this.amitabhaMural = null;
+    this.panelMurals = [];
+    this.panelAssemble = 0;
+    for (const p of config.murals.panels) {
+      const mural = new MuralDissolve(worldGroup, {
+        url: `/murals/${p.file}`,
+        x: p.x * config.worldWidth,
+        y: p.yFrac * config.worldHeight,
+        height: p.heightFrac * config.worldHeight,
+      });
+      if (p.role === 'amitabha') this.amitabhaMural = mural;
+      else this.panelMurals.push(mural);
+    }
 
     this.colBeryl = new THREE.Color(config.palette.beryl);
     this.colGold = new THREE.Color(config.palette.gold);
@@ -180,11 +197,31 @@ export class Act3 {
       * Math.min(1, dt / config.act3.throne.riseSec * 3);
     this.throne.update(shared, this.throneGrowth);
 
+    const muralLive = this.amitabhaMural?.ready;
     for (const [name, layer] of Object.entries(this.figures)) {
       const target = this.targets[name] * fade;
       this.assembled[name] += (target - this.assembled[name])
         * Math.min(1, dt / config.act3.figures.assembleSec * 3);
-      layer.update(shared, this.assembled[name]);
+      // When the Buddha mural is available it takes Amitāyus's place;
+      // the procedural silhouette stays as the no-asset fallback.
+      const growth = (name === 'amitabha' && muralLive) ? 0 : this.assembled[name];
+      layer.update(shared, growth);
+    }
+
+    if (muralLive) {
+      const a = this.assembled.amitabha;
+      this.amitabhaMural.dissolve = 1 - a;
+      this.amitabhaMural.alpha = Math.min(1, a * 5);
+      this.amitabhaMural.update(time, ppwu);
+    }
+
+    // Panel murals (apsaras etc.) condense as the act opens, fray in the coda.
+    this.panelAssemble += (throneTarget - this.panelAssemble)
+      * Math.min(1, dt / config.act3.throne.riseSec * 2);
+    for (const mural of this.panelMurals) {
+      mural.dissolve = 1 - this.panelAssemble;
+      mural.alpha = Math.min(1, this.panelAssemble * 5);
+      mural.update(time, ppwu);
     }
 
     this.updateSouls(dt);

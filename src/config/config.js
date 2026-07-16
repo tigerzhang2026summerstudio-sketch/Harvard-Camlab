@@ -191,6 +191,30 @@ export const config = {
     awakening: { swell: 1.35, riseSec: 2.5, holdSec: 3, fallSec: 6 },
   },
 
+  // ── MURALS — real imagery that dissolves in and out of particles ──
+  // Drop Cave 217 crops (JPG/PNG, ideally on dark/transparent ground)
+  // into assets/murals/ and reference them here. Placeholders ship so the
+  // system runs before the real scans arrive.
+  murals: {
+    maxParticlesPerMural: 45_000, // × quality particleScale
+    luminanceCutoff: 0.09,        // pixels darker than this are skipped
+    retint: 0.35,                 // 0 = photo colors · 1 = full mineral palette
+    scatterDist: 300,             // how far motes fly when dissolved
+    intensity: 1.15,
+    panels: [
+      // role 'amitabha': assembled by pad A1 in place of the procedural
+      // figure (delete this entry to fall back to the silhouette).
+      { file: 'buddha-placeholder.svg', role: 'amitabha',
+        x: 0, yFrac: 0.02, heightFrac: 0.52 },
+      // role 'panel': materializes with the throne as act 3 opens,
+      // scatters in the coda. Place as many across the panorama as needed.
+      { file: 'apsara-left-placeholder.svg', role: 'panel',
+        x: -0.335, yFrac: 0.27, heightFrac: 0.17 },
+      { file: 'apsara-right-placeholder.svg', role: 'panel',
+        x: 0.335, yFrac: 0.27, heightFrac: 0.17 },
+    ],
+  },
+
   // ── GROUND — the beryl floor that freezes into being (Act 1) ──────
   ground: {
     count: 26_000,        // × quality particleScale

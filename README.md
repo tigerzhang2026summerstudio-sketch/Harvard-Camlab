@@ -87,8 +87,28 @@ no code changes needed.
 
 ## Assets
 
-- `assets/murals/` — Cave 217 mural JPG/PNGs (placeholders ship; see step 8)
+- `assets/murals/` — mural imagery (see below)
 - `assets/music/` — `prologue / part1 / part2 / part3 / coda` .mp3/.ogg (step 9)
 - `assets/fonts/` — caption serif
+
+### Adding real Cave 217 murals
+
+Placeholder SVGs ship so the mural-dissolve system runs out of the box.
+To use real murals:
+
+1. Crop the detail you want (the Buddha, an apsara, a tableau section).
+   Best results: subject on a dark or transparent background — pixels
+   darker than `murals.luminanceCutoff` are skipped, so black becomes
+   empty space between particles.
+2. Drop the JPG/PNG into `assets/murals/`.
+3. In `src/config/config.js` → `murals.panels`, set `file:` to the new
+   name. `role: 'amitabha'` is the figure summoned by pad A1;
+   `role: 'panel'` panels materialize with the throne (add as many as you
+   like across the panorama via `x` / `yFrac` / `heightFrac`).
+4. `retint` blends photo colors toward the beryl/gold palette (0–1);
+   `scatterDist` sets how far the image frays when it dissolves.
+
+Missing files never break the show — they log a console warning and the
+procedural silhouettes take over.
 
 *(README grows with each build step: MIDI mapping, keyboard fallback, etc.)*
