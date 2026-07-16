@@ -18,7 +18,9 @@ import { Act2 } from './visual/Act2.js';
 import { Act3 } from './visual/Act3.js';
 import { VaidehiFigure } from './visual/VaidehiFigure.js';
 import { AudioManager } from './audio/AudioManager.js';
+import { Transitions } from './visual/Transitions.js';
 import { Tutorial } from './ui/Tutorial.js';
+import { Captions } from './ui/Captions.js';
 
 // ── Renderer ──────────────────────────────────────────────────────────
 const canvas = document.getElementById('app-canvas');
@@ -103,6 +105,8 @@ const act3 = new Act3(worldGroup, state, particles, post, vaidehi);
 state.on('pad', (e) => act3.onPad(e));
 
 const tutorial = new Tutorial(state, midi);
+const captions = new Captions(state, midi);
+const transitions = new Transitions(state, particles, post);
 
 // Audio: score crossfades + accents. The browser only allows sound after
 // a real gesture, so the first click/keypress unlocks it (MIDI can't).
@@ -122,10 +126,17 @@ renderer.setAnimationLoop(() => {
 
   const ppwu = pixelsPerWorldUnit();
   particles.update(elapsed, ppwu);
-  ground.update(elapsed, ppwu, state.fullness, dt);
+
+  // The coda melts the beryl ground away along with everything else.
+  const codaFade = state.phase === 'coda'
+    ? Math.max(0, 1 - state.phaseTime / config.acts.codaFadeSec)
+    : 1;
+  ground.update(elapsed, ppwu, state.fullness * codaFade, dt);
+
   const shared = act2.update(elapsed, dt, ppwu);
   act3.update(elapsed, dt, ppwu, shared);
   vaidehi.update(elapsed, dt, ppwu);
+  transitions.update(dt);
   post.render();
 });
 
@@ -133,7 +144,8 @@ renderer.setAnimationLoop(() => {
 // drive frames manually where requestAnimationFrame is throttled).
 if (import.meta.env.DEV) {
   window.__paintedCave = {
-    midi, state, particles, post, ground, act1, act2, act3, vaidehi, tutorial, audio, renderer,
+    midi, state, particles, post, ground, act1, act2, act3, vaidehi,
+    tutorial, captions, transitions, audio, renderer,
     keyBurst: (note, velocity) => act1.onKey({ on: true, note, velocity }),
     now: () => elapsed,
     ppwu: pixelsPerWorldUnit,

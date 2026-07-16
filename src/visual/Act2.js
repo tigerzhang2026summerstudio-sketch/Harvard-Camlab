@@ -73,7 +73,10 @@ export class Act2 {
       const target = s.knobs[i] * fade;
       this.growth[i] += (target - this.growth[i]) * Math.min(1, dt * config.act2.smoothing);
     }
-    const wind = this.growth[3];
+    let wind = this.growth[3];
+    // Dissolution: as the coda deepens, turbulence rises — the un-growing
+    // world sways harder and sheds dandelion-drift while it fades.
+    if (s.phase === 'coda') wind = Math.max(wind, (1 - fade) * 0.85);
 
     // Refinements land on the shared systems.
     this.particles.spawnScale = this.refine.density;

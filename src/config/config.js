@@ -107,10 +107,28 @@ export const config = {
     },
   },
 
-  // ── CAPTIONS & TUTORIAL ────────────────────────────────────────────
+  // ── CAPTIONS & TRANSITION SCENES ───────────────────────────────────
+  // Each act change plays a small "scene": the caption fades in and holds,
+  // the whole vision swells softly, and a wash of motes rises across the
+  // panorama. Toggle captions with C (or pad B7).
   captions: {
     enabled: true,
-    prologue: 'Reveal to me a land without sorrow.',
+    fadeInSec: 2.2,
+    holdSec: 6.5,
+    fadeOutSec: 3,
+    phases: {
+      prologue: '',   // the tutorial speaks for the prologue
+      act1: 'Water becomes ice. Ice becomes beryl.\nA ground of light is laid.',
+      act2: 'Seven rows of jeweled trees. Ponds of lotus.\nInstruments that play themselves.',
+      act3: 'The Buddha of Infinite Life appears,\nand souls are reborn in opening lotuses.',
+      coda: 'What was visualized into being\nreturns to the dark that held it.',
+    },
+  },
+
+  transitions: {
+    swell: 1.16,      // gentle global radiance bump on each act change…
+    swellSec: 4.5,    // …rising and settling over this long (never a flash)
+    washBursts: 9,    // soft motes released across the panorama
   },
 
   // The opening screen. Shows during the prologue (and again each time the
@@ -181,7 +199,7 @@ export const config = {
       A1: 'amitabha', A2: 'avalokitesvara', A3: 'mahasthamaprapta',
       A4: 'grade:0', A5: 'grade:1', A6: 'grade:2', A7: 'grade:3', A8: 'grade:4',
       B1: 'grade:5', B2: 'grade:6', B3: 'grade:7', B4: 'grade:8',
-      B5: 'blossomRain', B6: 'awakening', B7: 'reserved', B8: 'dissolution',
+      B5: 'blossomRain', B6: 'awakening', B7: 'captions', B8: 'dissolution',
     },
     throne: { riseSec: 5 },     // the great lotus throne rises on act entry
     figures: {

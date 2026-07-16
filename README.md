@@ -72,12 +72,32 @@ Keyboard: digits `1–8` are the pads of the current bank; `9` flips bank A/B.
 | --- | ------ |
 | `F` | Fullscreen |
 | `H` | Re-show the opening tutorial |
+| `C` | Captions on/off (also pad B7) |
 | `M` | MIDI monitor |
-| `D` | Debug panel (FPS, device status, MIDI-learn) |
+| `D` | Debug panel (FPS, act meters, MIDI-learn, act jump buttons) |
 | `` ` `` | Keyboard play on/off |
 | `A` | Auto/attract mode: after 30 s idle the piece plays its whole arc by itself |
 | `R` | Reset to the prologue |
-| `0` | Mute *(step 9)* |
+| `0` | Mute |
+
+(While keyboard play is ON, letters are notes — hold **Shift** with any
+toggle key.)
+
+## Quality & performance
+
+`config.js → quality`: `'high'` (300k particle budget + bloom),
+`'medium'` (half budget), `'low'` (15% budget, bloom off — for weak GPUs).
+All layers and burst counts scale with it. Target is 60 fps on a desktop
+GPU; the `D` panel shows live FPS. Device pixel ratio is capped at 2.
+
+## The arc
+
+prologue → **Act I** (keys: flood of light, ground freezes) → **Act II**
+(knobs: the world grows and holds) → **Act III** (pads: assembly &
+rebirth) → **coda** (dissolution to black) → prologue again. Transitions
+fire automatically at the config thresholds (`acts.*`), each marked by a
+caption, a soft radiance swell, and a wash of rising motes; the performer
+can always linger, jump (`D` panel), or reset (`R`).
 
 ## Three-projector Cave layout
 
