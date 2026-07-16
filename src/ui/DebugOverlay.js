@@ -33,15 +33,34 @@ export class DebugOverlay {
 
     window.addEventListener('keydown', (e) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      // While keyboard-play is on, bare letters are notes — require Shift.
-      if (this.midi.fallbackActive && !e.shiftKey) return;
       const k = e.key.toLowerCase();
+      // D and M always work — they are rehearsal tools, and a stray note
+      // while opening a panel is harmless.
       if (k === 'm') this.toggle(this.monitorEl);
       if (k === 'd') this.toggle(this.panelEl);
+      // The show-altering toggles (C/R/H/A) still need Shift while
+      // keyboard-play is on; say so instead of failing silently.
+      if (this.midi.fallbackActive && !e.shiftKey && ['c', 'r', 'h', 'a'].includes(k)) {
+        this.flashToast(k.toUpperCase());
+      }
     });
   }
 
   toggle(el) { el.style.display = el.style.display === 'none' ? 'block' : 'none'; }
+
+  /** A pressed toggle letter was swallowed by keyboard-play — say so. */
+  flashToast(letter) {
+    if (!this.toastEl) {
+      this.toastEl = document.createElement('div');
+      this.toastEl.className = 'dbg dbg-toast';
+      document.body.appendChild(this.toastEl);
+    }
+    this.toastEl.textContent =
+      `keyboard-play is ON, so "${letter}" plays notes — press Shift+${letter}, or \` to turn keyboard-play off`;
+    this.toastEl.style.display = 'block';
+    clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(() => { this.toastEl.style.display = 'none'; }, 4500);
+  }
 
   /** Called once per frame from the main loop. */
   tick(dt) {
@@ -164,6 +183,10 @@ export class DebugOverlay {
         font: 11px/1.5 ui-monospace, Menlo, monospace;
       }
       .dbg-monitor { left: 14px; bottom: 14px; min-width: 520px; }
+      .dbg-toast {
+        left: 50%; transform: translateX(-50%); bottom: 60px;
+        color: #e8c15a; border-color: rgba(232,193,90,0.4); display: none;
+      }
       .dbg-panel { right: 14px; top: 14px; width: 300px; max-height: 84vh; overflow-y: auto; }
       .dbg-title { color: #e8c15a; letter-spacing: 0.12em; margin-bottom: 6px; }
       .dbg-hint { color: #6f87a0; float: right; letter-spacing: 0; }

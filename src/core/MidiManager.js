@@ -71,7 +71,9 @@ export class MidiManager {
       input.onmidimessage = (e) => this.onMidiMessage(e, input.name);
     }
     // No hardware → let the artist play with the computer keyboard.
-    if (this.devices.length === 0) this.setFallback(true);
+    // Hardware present → keyboard-play OFF so plain letter toggles
+    // (D, M, C…) work again. (` re-enables it manually at any time.)
+    this.setFallback(this.devices.length === 0);
     const learned = this.storedMapLoaded ? ' · your learned map is loaded ✓' : '';
     this.emit('status', this.status(
       this.devices.length
