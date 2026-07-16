@@ -129,6 +129,40 @@ export const config = {
     satelliteScale: 0.35,    // satellite burst count fraction
   },
 
+  // ── ACT 2 — the knob-grown world ───────────────────────────────────
+  act2: {
+    smoothing: 1.1,     // how quickly the world follows the knobs (1/sec)
+    trees: {
+      rows: 7,          // the sutra's seven rows of jeweled trees
+      perSide: 3,       // trees per row on each side third
+      height: 135,      // base trunk+canopy height (world units)
+      rowShrink: 0.085, // each farther row is this much smaller/dimmer
+    },
+    ponds: {
+      count: 5,         // glowing lotus ponds along the ground
+      lotusPerPond: 3,
+    },
+    instruments: {
+      count: 10,            // self-playing instruments as orbs of light
+      xSpanFrac: 0.42,      // arc spread (×worldWidth/2 each side)
+      yFracRange: [0.16, 0.33], // arc height band (×worldHeight)
+      sparkMaxRate: 3.0,    // rising note-motes per second at full K3
+    },
+    wind: {
+      seedInterval: 0.12, // seconds between drift-seed spawns at full K4
+      seedCount: 8,       // seeds per spawn (×density ×quality)
+      seedSpeed: 90,      // horizontal drift speed at full wind
+      rotMax: 0.018,      // whole-world mandala sway (radians) at full wind
+    },
+    // K5–K8 refinement ranges
+    refine: {
+      warmthDefault: 0.5,      // neutral color temperature
+      densityRange: [0.35, 1.2],  // K6: burst counts + layer alpha
+      bloomRange: [0.45, 1.7],    // K7: × bloom.strength
+      swayRange: [0.4, 2.2],      // K8: global drift/sway speed
+    },
+  },
+
   // ── GROUND — the beryl floor that freezes into being (Act 1) ──────
   ground: {
     count: 26_000,        // × quality particleScale

@@ -127,6 +127,7 @@ export class ParticleSystem {
 
     this.time = 0;
     this.scratchColor = new THREE.Color();
+    this.spawnScale = 1; // K6 density knob scales every burst's count
   }
 
   /** Once per frame. ppwu = renderer pixels per world unit (for point size). */
@@ -138,18 +139,19 @@ export class ParticleSystem {
 
   /**
    * Spawn a radial bloom of particles.
-   * { x, y, color, count, speed, size, life, upBias, spread, jitter }
+   * { x, y, color, count, speed, size, life, upBias, spread, jitter,
+   *   driftX, driftY } — drift adds a shared directional velocity (wind).
    * color: THREE.Color (or anything THREE.Color accepts). speed/size/life
    * are means; each particle randomizes around them.
    */
   burst({
     x = 0, y = 0, color = '#ffffff', count = 500,
     speed = 120, size = 4, life = 2.4, upBias = 0.3,
-    spread = 1, jitter = 8,
+    spread = 1, jitter = 8, driftX = 0, driftY = 0,
   }) {
     const c = this.scratchColor.set(color);
     const { aOrigin, aVelocity, aColor, aSize, aBirth, aLife, aSeed } = this.attrs;
-    const n = Math.min(count, this.capacity);
+    const n = Math.min(Math.round(count * this.spawnScale), this.capacity);
     const start = this.cursor;
 
     for (let k = 0; k < n; k += 1) {
@@ -163,8 +165,8 @@ export class ParticleSystem {
       // Radial direction, biased upward — light rises.
       const ang = Math.random() * Math.PI * 2;
       const r = (0.25 + 0.75 * Math.random() ** 1.5) * speed * spread;
-      aVelocity.array[i3]     = Math.cos(ang) * r;
-      aVelocity.array[i3 + 1] = Math.sin(ang) * r + speed * upBias * Math.random();
+      aVelocity.array[i3]     = Math.cos(ang) * r + driftX;
+      aVelocity.array[i3 + 1] = Math.sin(ang) * r + speed * upBias * Math.random() + driftY;
       aVelocity.array[i3 + 2] = 0;
 
       // Slight per-particle tint drift keeps large bursts from looking flat.

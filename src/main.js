@@ -14,6 +14,7 @@ import { ParticleSystem } from './visual/ParticleSystem.js';
 import { Postprocessing } from './visual/Postprocessing.js';
 import { Ground } from './visual/Ground.js';
 import { Act1 } from './visual/Act1.js';
+import { Act2 } from './visual/Act2.js';
 import { Tutorial } from './ui/Tutorial.js';
 
 // ── Renderer ──────────────────────────────────────────────────────────
@@ -45,8 +46,13 @@ function layoutCamera() {
 }
 
 // ── Visual engine ─────────────────────────────────────────────────────
-const particles = new ParticleSystem(scene);
-const ground = new Ground(scene);
+// Everything that belongs to the paradise lives in worldGroup, so the
+// wind knob can sway the whole vision like a slowly turning mandala.
+const worldGroup = new THREE.Group();
+scene.add(worldGroup);
+
+const particles = new ParticleSystem(worldGroup);
+const ground = new Ground(worldGroup);
 const post = new Postprocessing(renderer, scene, camera);
 
 // Screen pixels per world unit — keeps particle sizes proportional when
@@ -78,7 +84,7 @@ const beaconMat = new THREE.PointsMaterial({
 const beaconGeo = new THREE.BufferGeometry();
 beaconGeo.setAttribute('position', new THREE.Float32BufferAttribute([0, -config.worldHeight * 0.15, 0], 3));
 const beacon = new THREE.Points(beaconGeo, beaconMat);
-scene.add(beacon);
+worldGroup.add(beacon);
 
 // ── Input → state machine ─────────────────────────────────────────────
 // MidiManager normalizes the hardware; StateManager owns the arc and
@@ -97,6 +103,13 @@ midi.on('pad', (e) => state.onPad(e));
 // freezes with the state's fullness meter. The tutorial rides the phase.
 const act1 = new Act1(particles);
 state.on('key', (e) => act1.onKey(e));
+
+// Act 2 (knob-grown layers + refinements) reads K1–K4 continuously from
+// the state and K5–K8 as events; the joystick steers the wind.
+const act2 = new Act2(worldGroup, state, particles, post);
+state.on('knob', (e) => act2.onKnob(e));
+midi.on('joystick', (e) => act2.onJoystick(e));
+
 const tutorial = new Tutorial(state, midi);
 
 // ── Main loop ─────────────────────────────────────────────────────────
@@ -115,6 +128,7 @@ renderer.setAnimationLoop(() => {
   const ppwu = pixelsPerWorldUnit();
   particles.update(elapsed, ppwu);
   ground.update(elapsed, ppwu, state.fullness, dt);
+  act2.update(elapsed, dt, ppwu);
   post.render();
 });
 
@@ -122,7 +136,7 @@ renderer.setAnimationLoop(() => {
 // drive frames manually where requestAnimationFrame is throttled).
 if (import.meta.env.DEV) {
   window.__paintedCave = {
-    midi, state, particles, post, ground, act1, tutorial, renderer,
+    midi, state, particles, post, ground, act1, act2, tutorial, renderer,
     keyBurst: (note, velocity) => act1.onKey({ on: true, note, velocity }),
     now: () => elapsed,
     ppwu: pixelsPerWorldUnit,
