@@ -206,12 +206,22 @@ export const config = {
   // Each pad tells one story: its caption appears and its vision plays.
   // Change assignments here, not in code.
   act3: {
+    // Eight physical pads: 1–7 tell the first seven stories; pad 8 is
+    // "continue the sutra" — each press advances through everything else
+    // (see `sequence`). Bank B (if the performer flips banks) keeps
+    // direct access to the later stories.
     padMap: {
       A1: 'sun', A2: 'water', A3: 'groundFreeze', A4: 'throne',
-      A5: 'image', A6: 'amitabha', A7: 'avalokitesvara', A8: 'mahasthamaprapta',
+      A5: 'image', A6: 'amitabha', A7: 'avalokitesvara', A8: 'nextStory',
       B1: 'universal', B2: 'mixed', B3: 'gradesHigh', B4: 'gradesMid',
       B5: 'gradesLow', B6: 'awakening', B7: 'prison', B8: 'dissolution',
     },
+    // What pad 8 steps through, in the sutra's order.
+    sequence: [
+      'mahasthamaprapta', 'universal', 'mixed',
+      'gradesHigh', 'gradesMid', 'gradesLow',
+      'awakening', 'dissolution',
+    ],
 
     // Every pad's story — [title, line] shown as a caption when pressed.
     stories: {

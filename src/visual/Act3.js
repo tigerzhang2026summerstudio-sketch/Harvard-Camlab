@@ -47,10 +47,12 @@ export class Act3 {
     this.rainLeft = 0;
     this.rainTimer = 0;
     this.awakeningTime = -1;
-    this.universalOn = false;  // B1 raises the panel murals
-    this.sunTime = -1;         // A1's sinking sun
-    this.waterTime = -1;       // A2's sweeping wave
+    this.universalOn = false;  // universal vision raises the panel murals
+    this.sunTime = -1;         // the sinking sun
+    this.waterTime = -1;       // the sweeping wave
     this.flashes = {};         // story → seconds since its mural was invoked
+    this.seqIndex = 0;         // pad 8's position in config.act3.sequence
+    this.onStory = null;       // main wires this to the audio accents
 
     // Murals: A6 assembles 'amitabha'; 'panel' murals answer B1;
     // 'story' murals condense while their pad's story is told.
@@ -87,6 +89,7 @@ export class Act3 {
         this.sunTime = -1;
         this.waterTime = -1;
         this.flashes = {};
+        this.seqIndex = 0;
         this.vaidehi.reset();
       }
     });
@@ -94,14 +97,28 @@ export class Act3 {
 
   onPad(e) {
     if (!e.on || this.state.phase !== 'act3') return;
-    const action = config.act3.padMap[`${e.bank}${e.index + 1}`];
+    let action = config.act3.padMap[`${e.bank}${e.index + 1}`];
     if (!action) return;
+
+    // Pad 8: continue the sutra — each press is the next remaining story.
+    if (action === 'nextStory') {
+      action = config.act3.sequence[this.seqIndex];
+      if (!action) return; // the telling is complete
+      this.seqIndex += 1;
+    }
+
+    this.onStory?.(action);
+
+    // The sequence's final story releases the vision itself.
+    if (action === 'dissolution') {
+      this.state.go('coda'); // (direct B8 never reaches here — StateManager
+      return;                //  flips the phase before this handler runs)
+    }
 
     // Every pad speaks its story.
     const story = config.act3.stories[action];
     if (story && this.captions) this.captions.showStory(story[0], story[1]);
     if (this.storyMurals[action]) this.flashes[action] = 0;
-    if (action === 'dissolution') return; // StateManager takes it to the coda
 
     switch (action) {
       case 'sun': this.sunTime = 0; break;

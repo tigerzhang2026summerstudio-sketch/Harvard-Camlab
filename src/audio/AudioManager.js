@@ -30,7 +30,8 @@ export class AudioManager {
 
     state.on('phase', ({ phase }) => this.onPhase(phase));
     state.on('key', (e) => { if (e.on) this.chime(e.note, e.velocity); });
-    state.on('pad', (e) => { if (e.on) this.padAccent(e); });
+    // Pad stories ring through storyAccent(action) — Act3 resolves which
+    // story a pad tells (pad 8 is a sequence) and calls it back.
   }
 
   /** Call from any real user gesture (click / keydown). Idempotent. */
@@ -176,10 +177,9 @@ export class AudioManager {
     );
   }
 
-  /** Act 3: pads ring the deep world. */
-  padAccent(e) {
+  /** Act 3: each story rings its own bell/gong/swell. */
+  storyAccent(action) {
     if (!this.unlocked || this.state.phase !== 'act3') return;
-    const action = config.act3.padMap[`${e.bank}${e.index + 1}`] ?? '';
     const now = Tone.now();
 
     if (action === 'amitabha' || action === 'awakening') {

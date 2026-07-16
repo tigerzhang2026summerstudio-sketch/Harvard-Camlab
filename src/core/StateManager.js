@@ -144,9 +144,10 @@ export class StateManager {
         break;
       }
       case 'act3': {
-        // The sixteen contemplations, told in the sutra's order.
+        // The sixteen contemplations exactly as a performer with eight
+        // pads plays them: 1–7, then pad 8 again and again to continue
+        // the sutra through to the dissolution.
         const script = [
-          { bank: 'B', index: 6, wait: 9 },   // the prison (the frame story)
           { bank: 'A', index: 0, wait: 10 },  // the setting sun
           { bank: 'A', index: 1, wait: 7 },   // water & ice
           { bank: 'A', index: 2, wait: 7 },   // the beryl ground
@@ -154,14 +155,14 @@ export class StateManager {
           { bank: 'A', index: 4, wait: 8 },   // the image
           { bank: 'A', index: 5, wait: 8 },   // the true body
           { bank: 'A', index: 6, wait: 6 },   // Avalokiteśvara
-          { bank: 'A', index: 7, wait: 7 },   // Mahāsthāmaprāpta
-          { bank: 'B', index: 0, wait: 9 },   // universal vision + flower rain
-          { bank: 'B', index: 1, wait: 8 },   // the mixed vision
-          { bank: 'B', index: 2, wait: 5 },   // highest rebirths
-          { bank: 'B', index: 3, wait: 5 },   // middle rebirths
-          { bank: 'B', index: 4, wait: 6 },   // lowest rebirths
-          { bank: 'B', index: 5, wait: 12 },  // Vaidehī's awakening — long hold
-          { bank: 'B', index: 7, wait: 2 },   // dissolution → coda
+          { bank: 'A', index: 7, wait: 7 },   // pad 8 → Mahāsthāmaprāpta
+          { bank: 'A', index: 7, wait: 9 },   //       → universal vision
+          { bank: 'A', index: 7, wait: 8 },   //       → the mixed vision
+          { bank: 'A', index: 7, wait: 5 },   //       → highest rebirths
+          { bank: 'A', index: 7, wait: 5 },   //       → middle rebirths
+          { bank: 'A', index: 7, wait: 6 },   //       → lowest rebirths
+          { bank: 'A', index: 7, wait: 12 },  //       → awakening — long hold
+          { bank: 'A', index: 7, wait: 2 },   //       → dissolution → coda
         ];
         const step = script[Math.min(this.autoStep, script.length - 1)];
         this.onPad({ on: true, bank: step.bank, index: step.index, velocity: 0.8 }, true);

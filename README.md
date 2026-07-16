@@ -54,25 +54,26 @@ keyboard play OFF, plain letters work.
 
 ## The sixteen contemplations — one story per pad
 
-The Contemplation Sutra teaches sixteen visualizations; the MPK has
-sixteen pads. Each press shows the story's caption and plays its vision
-(edit in `config.js` → `act3.padMap` / `stories`):
+The Contemplation Sutra teaches sixteen visualizations. With eight
+physical pads, **pads 1–7 tell the first seven stories, and pad 8 is
+"continue the sutra"** — every press advances through everything that
+remains, in order, all the way to the dissolution
+(edit in `config.js` → `act3.padMap` / `sequence` / `stories`):
 
 | Pad | Story | Vision |
 | --- | ----- | ------ |
-| A1 | 第一观 The Setting Sun | an ember sun sinks in the west (+ Cave 217 mural of Vaidehī before the sun) |
-| A2 | 第二观 Water & Ice | a clear wave sweeps the ground |
-| A3 | 第三观 The Beryl Ground | the freeze surges (fills the ground meter) |
-| A4 | 第七观 The Lotus Throne | the throne story |
-| A5 | 第八观 The Image | the Buddha half-condenses — an image only |
-| A6 | 第九观 The True Body | the Buddha mural fully assembles |
-| A7 / A8 | 第十/十一观 The Bodhisattvas | Avalokiteśvara / Mahāsthāmaprāpta |
-| B1 | 第十二观 The Universal Vision | side murals condense + flowers rain |
-| B2 | 第十三观 The Mixed Vision | the vision flickers (+ music-sky mural) |
-| B3 / B4 / B5 | 第十四–十六观 The Nine Rebirths | three souls each: high / middle / low lotuses |
-| B6 | 开悟 The Awakening | Vaidehī dissolves; the vision holds radiant |
-| B7 | 缘起 The Prison | flashback — the Cave 217 prison mural condenses |
-| B8 | 归寂 Dissolution | the vision releases into the coda |
+| 1 | 第一观 The Setting Sun | an ember sun sinks in the west (+ Cave 217 mural of Vaidehī before the sun) |
+| 2 | 第二观 Water & Ice | a clear wave sweeps the ground |
+| 3 | 第三观 The Beryl Ground | the freeze surges (fills the ground meter) |
+| 4 | 第七观 The Lotus Throne | the throne story |
+| 5 | 第八观 The Image | the Buddha half-condenses — an image only |
+| 6 | 第九观 The True Body | the Buddha mural fully assembles |
+| 7 | 第十观 Avalokiteśvara | the bodhisattva of compassion |
+| 8 | *continue the sutra* → | 第十一观 Mahāsthāmaprāpta → 第十二观 Universal Vision (murals + flower rain) → 第十三观 Mixed Vision → 第十四–十六观 the Nine Rebirths (high/middle/low) → 开悟 the Awakening → 归寂 Dissolution |
+
+If your unit's bank button is in play, bank B still gives direct access:
+B1 universal · B2 mixed · B3–B5 rebirths · B6 awakening · B7 the prison
+flashback · B8 dissolution.
 
 The four growth knobs also tell theirs: K1 = 第四观 trees, K2 = 第五观
 ponds, K3 = 第六观 towers of music, K4 = the wind (captions appear the

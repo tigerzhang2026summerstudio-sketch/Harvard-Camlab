@@ -114,6 +114,9 @@ act3.captions = captions;
 // Audio: score crossfades + accents. The browser only allows sound after
 // a real gesture, so the first click/keypress unlocks it (MIDI can't).
 const audio = new AudioManager(state);
+// Act3 resolves which story each pad tells (pad 8 is a sequence), then
+// rings that story's accent.
+act3.onStory = (action) => audio.storyAccent(action);
 window.addEventListener('pointerdown', () => audio.unlock());
 window.addEventListener('keydown', () => audio.unlock());
 
