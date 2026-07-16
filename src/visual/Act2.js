@@ -59,6 +59,15 @@ export class Act2 {
 
   /** Map K5–K8 as they arrive (K1–K4 are read continuously in update). */
   onKnob(e) {
+    // Strict acts: turned during Act I, a dial only whispers a hint.
+    if (this.state.phase === 'act1' && this.captions) {
+      const now = performance.now();
+      if (now - (this.lockHintAt ?? -1e9) > 8000) {
+        this.lockHintAt = now;
+        this.captions.show(config.captions.dialsLocked);
+      }
+      return;
+    }
     const r = config.act2.refine;
     if (e.index === 4) this.refine.warmth = e.value;
     if (e.index === 5) this.refine.density = lerp(r.densityRange[0], r.densityRange[1], e.value);
@@ -70,9 +79,10 @@ export class Act2 {
     const s = this.state;
 
     // The coda un-grows the world; the prologue holds it at nothing.
+    // Strict acts: the world does not grow before Act II arrives.
     let fade = 1;
     if (s.phase === 'coda') fade = clamp01(1 - s.phaseTime / config.acts.codaFadeSec);
-    if (s.phase === 'prologue') fade = 0;
+    if (s.phase === 'prologue' || s.phase === 'act1') fade = 0;
 
     for (let i = 0; i < 4; i += 1) {
       const target = s.knobs[i] * fade;

@@ -124,8 +124,9 @@ export const config = {
       act3: ['ACT III · THE SIXTEEN CONTEMPLATIONS', 'Press the pads — each tells one vision of the sutra.\nPad 8, again and again, carries it to the end.'],
       coda: ['CODA · DISSOLUTION', 'What was visualized into being\nreturns to the dark that held it.'],
     },
-    // Shown if a pad is struck before its act has arrived.
+    // Shown if a pad or dial is used before its act has arrived.
     padsLocked: 'The pads awaken in Act III —\ncultivate the world with the dials first.',
+    dialsLocked: 'The dials awaken in Act II —\nflood the darkness with the keys first.',
   },
 
   transitions: {

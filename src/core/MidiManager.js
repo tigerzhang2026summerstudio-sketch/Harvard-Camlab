@@ -72,9 +72,10 @@ export class MidiManager {
     }
     // No hardware → let the artist play with the computer keyboard.
     if (this.devices.length === 0) this.setFallback(true);
+    const learned = this.storedMapLoaded ? ' · your learned map is loaded ✓' : '';
     this.emit('status', this.status(
       this.devices.length
-        ? `MIDI connected (${reason}): ${this.devices.join(', ')}`
+        ? `MIDI connected (${reason}): ${this.devices.join(', ')}${learned}`
         : `No MIDI device (${reason}) — keyboard fallback ON (\`) `,
     ));
   }
@@ -189,7 +190,10 @@ export class MidiManager {
   applyStoredOverrides() {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) this.map = { ...this.map, ...JSON.parse(stored) };
+      if (stored) {
+        this.map = { ...this.map, ...JSON.parse(stored) };
+        this.storedMapLoaded = true; // announced once MIDI comes up
+      }
     } catch { /* ignore corrupt/unavailable storage */ }
   }
 
