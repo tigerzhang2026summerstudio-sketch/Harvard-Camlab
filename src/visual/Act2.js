@@ -97,6 +97,8 @@ export class Act2 {
 
     this.emitWindSeeds(dt, wind);
     this.emitNoteSparks(dt, this.growth[2]);
+
+    return shared; // Act 3's layers reuse the same frame values
   }
 
   /** K4: dandelion-seed motes set adrift across the panorama. */

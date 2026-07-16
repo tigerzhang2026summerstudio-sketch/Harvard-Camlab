@@ -163,6 +163,34 @@ export const config = {
     },
   },
 
+  // ── ACT 3 — the assembly & rebirth ─────────────────────────────────
+  act3: {
+    // What each pad summons. Change assignments here, not in code.
+    padMap: {
+      A1: 'amitabha', A2: 'avalokitesvara', A3: 'mahasthamaprapta',
+      A4: 'grade:0', A5: 'grade:1', A6: 'grade:2', A7: 'grade:3', A8: 'grade:4',
+      B1: 'grade:5', B2: 'grade:6', B3: 'grade:7', B4: 'grade:8',
+      B5: 'blossomRain', B6: 'awakening', B7: 'reserved', B8: 'dissolution',
+    },
+    throne: { riseSec: 5 },     // the great lotus throne rises on act entry
+    figures: {
+      assembleSec: 4.5,         // how long a figure takes to materialize
+      amitabha:        { x: 0,      height: 0.5,  seated: true,  tone: 'gold' },
+      avalokitesvara:  { x: -0.14,  height: 0.38, seated: false, tone: 'beryl' },
+      mahasthamaprapta:{ x: 0.14,   height: 0.38, seated: false, tone: 'malachite' },
+    },
+    grades: {                   // nine grades of rebirth (soul → lotus)
+      xSpread: 0.36,            // souls land within ±this ×worldWidth
+      yMinFrac: -0.05,          // humblest lotus height…
+      yMaxFrac: 0.30,           // …highest grade
+      riseSec: 2.2,             // soul flight time
+      lotusScaleMin: 0.7,
+      lotusScaleMax: 1.7,
+    },
+    rain: { durationSec: 7, interval: 0.1, fallDrift: -70 }, // blossom rain
+    awakening: { swell: 1.35, riseSec: 2.5, holdSec: 3, fallSec: 6 },
+  },
+
   // ── GROUND — the beryl floor that freezes into being (Act 1) ──────
   ground: {
     count: 26_000,        // × quality particleScale

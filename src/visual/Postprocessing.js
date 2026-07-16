@@ -69,7 +69,16 @@ export class Postprocessing {
   }
 
   /** Live control hook — K7 "bloom strength" refinement knob (Act 2). */
-  setBloomStrength(v) { this.bloom.strength = v; }
+  setBloomStrength(v) {
+    this.baseStrength = v;
+    this.bloom.strength = v * (this.swell ?? 1);
+  }
+
+  /** Awakening swell (Act 3): a smooth global radiance multiplier. */
+  setSwell(v) {
+    this.swell = v;
+    this.bloom.strength = (this.baseStrength ?? config.bloom.strength) * v;
+  }
 
   render() {
     if (this.enabled) this.composer.render();

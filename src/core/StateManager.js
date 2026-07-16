@@ -91,8 +91,9 @@ export class StateManager {
 
   onPad(e, synthetic = false) {
     this.touch(synthetic);
-    // Pad B8 = "begin dissolution" — the performer ends the vision.
-    if (e.on && this.phase === 'act3' && e.bank === 'B' && e.index === 7) this.go('coda');
+    // The dissolution pad (see config.act3.padMap) ends the vision.
+    const action = config.act3.padMap[`${e.bank}${e.index + 1}`];
+    if (e.on && this.phase === 'act3' && action === 'dissolution') this.go('coda');
     this.emit('pad', e);
   }
 

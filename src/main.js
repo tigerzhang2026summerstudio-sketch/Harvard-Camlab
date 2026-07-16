@@ -15,6 +15,8 @@ import { Postprocessing } from './visual/Postprocessing.js';
 import { Ground } from './visual/Ground.js';
 import { Act1 } from './visual/Act1.js';
 import { Act2 } from './visual/Act2.js';
+import { Act3 } from './visual/Act3.js';
+import { VaidehiFigure } from './visual/VaidehiFigure.js';
 import { Tutorial } from './ui/Tutorial.js';
 
 // ── Renderer ──────────────────────────────────────────────────────────
@@ -69,23 +71,6 @@ function onResize() {
 window.addEventListener('resize', onResize);
 onResize();
 
-// ── Temporary boot beacon ─────────────────────────────────────────────
-// A single faint breathing mote at center proves the loop, additive
-// blending, and world coordinates work before the particle engine exists.
-// It foreshadows Vaidehī's thread of light; replaced in later steps.
-const beaconMat = new THREE.PointsMaterial({
-  color: new THREE.Color(config.palette.white),
-  size: 6,
-  transparent: true,
-  opacity: 0.0,
-  blending: THREE.AdditiveBlending,
-  depthWrite: false,
-});
-const beaconGeo = new THREE.BufferGeometry();
-beaconGeo.setAttribute('position', new THREE.Float32BufferAttribute([0, -config.worldHeight * 0.15, 0], 3));
-const beacon = new THREE.Points(beaconGeo, beaconMat);
-worldGroup.add(beacon);
-
 // ── Input → state machine ─────────────────────────────────────────────
 // MidiManager normalizes the hardware; StateManager owns the arc and
 // routes events to whichever act is alive; visuals subscribe to the state.
@@ -110,6 +95,12 @@ const act2 = new Act2(worldGroup, state, particles, post);
 state.on('knob', (e) => act2.onKnob(e));
 midi.on('joystick', (e) => act2.onJoystick(e));
 
+// Vaidehī kneels in the scene from the very first darkness; Act 3 raises
+// the throne, assembles the holy figures, and answers the pads.
+const vaidehi = new VaidehiFigure(worldGroup, particles);
+const act3 = new Act3(worldGroup, state, particles, post, vaidehi);
+state.on('pad', (e) => act3.onPad(e));
+
 const tutorial = new Tutorial(state, midi);
 
 // ── Main loop ─────────────────────────────────────────────────────────
@@ -122,13 +113,12 @@ renderer.setAnimationLoop(() => {
   state.update(dt);
   overlay.tick(dt);
 
-  // Slow breathing pulse — smooth fade, never a flicker (seizure safety).
-  beaconMat.opacity = 0.25 + 0.2 * Math.sin(elapsed * 0.8);
-
   const ppwu = pixelsPerWorldUnit();
   particles.update(elapsed, ppwu);
   ground.update(elapsed, ppwu, state.fullness, dt);
-  act2.update(elapsed, dt, ppwu);
+  const shared = act2.update(elapsed, dt, ppwu);
+  act3.update(elapsed, dt, ppwu, shared);
+  vaidehi.update(elapsed, dt, ppwu);
   post.render();
 });
 
@@ -136,7 +126,7 @@ renderer.setAnimationLoop(() => {
 // drive frames manually where requestAnimationFrame is throttled).
 if (import.meta.env.DEV) {
   window.__paintedCave = {
-    midi, state, particles, post, ground, act1, act2, tutorial, renderer,
+    midi, state, particles, post, ground, act1, act2, act3, vaidehi, tutorial, renderer,
     keyBurst: (note, velocity) => act1.onKey({ on: true, note, velocity }),
     now: () => elapsed,
     ppwu: pixelsPerWorldUnit,

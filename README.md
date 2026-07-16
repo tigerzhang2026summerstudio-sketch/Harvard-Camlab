@@ -52,6 +52,20 @@ While keyboard play is ON, letters are notes — so use **Shift** for the
 global toggles (Shift+M, Shift+D, …). With a MIDI device connected and
 keyboard play OFF, plain letters work.
 
+## Act 3 pad assignments (edit in `config.js` → `act3.padMap`)
+
+| Pad | Invocation |
+| --- | ---------- |
+| A1 | Amitāyus assembles on the throne |
+| A2 / A3 | Avalokiteśvara / Mahāsthāmaprāpta flank him |
+| A4–A8, B1–B4 | The nine grades of rebirth (humblest → highest lotus) |
+| B5 | Blossom rain |
+| B6 | Vaidehī's awakening — she dissolves into light |
+| B7 | *(reserved)* |
+| B8 | Begin dissolution (coda) |
+
+Keyboard: digits `1–8` are the pads of the current bank; `9` flips bank A/B.
+
 ## Key toggles
 
 | Key | Action |
