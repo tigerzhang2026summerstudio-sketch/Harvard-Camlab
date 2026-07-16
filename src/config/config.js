@@ -96,9 +96,47 @@ export const config = {
     trackNames: ['prologue', 'part1', 'part2', 'part3', 'coda'],
   },
 
-  // ── CAPTIONS ───────────────────────────────────────────────────────
+  // ── CAPTIONS & TUTORIAL ────────────────────────────────────────────
   captions: {
     enabled: true,
     prologue: 'Reveal to me a land without sorrow.',
+  },
+
+  // The opening screen. Shows during the prologue (and again each time the
+  // loop returns); dissolves at the first key strike. H (Shift+H) re-shows.
+  tutorial: {
+    enabled: true,
+    title: 'THE PAINTED CAVE',
+    subtitle: 'Visualizing the Pure Land',
+    quote: '“Reveal to me a land without sorrow.” — Queen Vaidehī',
+    steps: [
+      ['I · THE KEYS', 'Flood the darkness with light. Strike softly or hard — pitch places the bloom, chords open into mandalas. Fill the dark until the beryl ground freezes into being.'],
+      ['II · THE KNOBS', 'Cultivate the jeweled world: trees, lotus ponds, self-playing music, wind. What you raise remains — nothing decays while you hold it.'],
+      ['III · THE PADS', 'Summon the holy assembly, and souls reborn in opening lotuses. The final pad releases the vision back into darkness.'],
+    ],
+    hint: 'No controller?  ` turns on keyboard play — bottom letter row = keys · 1–8 = pads (9 flips bank) · arrow keys = knobs',
+    begin: 'strike any key to begin',
+  },
+
+  // ── ACT 1 — chords & symmetry ──────────────────────────────────────
+  act1: {
+    mirrorMinX: 0.03,        // don't mirror bursts this close to center (×width)
+    mirrorScale: 0.8,        // mirrored copy: fraction of main burst count
+    satelliteMin: 3,         // chord size that opens a radial mandala…
+    satelliteMax: 8,         // …max satellites in the ring
+    satelliteRadius: 110,    // ring base radius (world units)
+    satelliteRadiusPer: 36,  // + this per chord note
+    satelliteScale: 0.35,    // satellite burst count fraction
+  },
+
+  // ── GROUND — the beryl floor that freezes into being (Act 1) ──────
+  ground: {
+    count: 26_000,        // × quality particleScale
+    bandFrac: 0.17,       // ground occupies this fraction of world height
+    sizeMin: 1.4,
+    sizeMax: 3.2,
+    goldFrac: 0.05,       // occasional gold glints among the blue
+    twinkleSpeed: 0.9,    // slow shimmer; calms as the ground freezes
+    intensity: 0.95,      // dimmer than key bursts; mostly below bloom
   },
 };

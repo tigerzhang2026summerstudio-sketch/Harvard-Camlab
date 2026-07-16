@@ -57,6 +57,7 @@ keyboard play OFF, plain letters work.
 | Key | Action |
 | --- | ------ |
 | `F` | Fullscreen |
+| `H` | Re-show the opening tutorial |
 | `M` | MIDI monitor |
 | `D` | Debug panel (FPS, device status, MIDI-learn) |
 | `` ` `` | Keyboard play on/off |

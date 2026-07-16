@@ -60,6 +60,10 @@ export class StateManager {
       // The vision has dissolved; the next visualization starts from nothing.
       this.fullness = 0;
       this.knobs.fill(0);
+    } else if (phase === 'act2' || phase === 'act3') {
+      // Whether reached by playing or by a rehearsal jump, these acts stand
+      // on a finished ground.
+      this.fullness = Math.max(this.fullness, 1);
     }
     this.emit('phase', { phase, prev });
   }

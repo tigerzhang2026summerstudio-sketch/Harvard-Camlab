@@ -12,6 +12,9 @@ import { StateManager } from './core/StateManager.js';
 import { DebugOverlay } from './ui/DebugOverlay.js';
 import { ParticleSystem } from './visual/ParticleSystem.js';
 import { Postprocessing } from './visual/Postprocessing.js';
+import { Ground } from './visual/Ground.js';
+import { Act1 } from './visual/Act1.js';
+import { Tutorial } from './ui/Tutorial.js';
 
 // ── Renderer ──────────────────────────────────────────────────────────
 const canvas = document.getElementById('app-canvas');
@@ -43,6 +46,7 @@ function layoutCamera() {
 
 // ── Visual engine ─────────────────────────────────────────────────────
 const particles = new ParticleSystem(scene);
+const ground = new Ground(scene);
 const post = new Postprocessing(renderer, scene, camera);
 
 // Screen pixels per world unit — keeps particle sizes proportional when
@@ -88,39 +92,12 @@ midi.on('key', (e) => state.onKey(e));
 midi.on('knob', (e) => state.onKnob(e));
 midi.on('pad', (e) => state.onPad(e));
 
-// ── Key → burst of light (test wiring; Act 1 proper arrives in Step 5) ──
-// Pitch decides WHERE and WHAT COLOR: low notes = deep beryl blooms low on
-// the left; rising pitch travels right and climbs, shifting gold → white.
-// Velocity decides HOW MUCH: count, size, speed all scale with the strike.
-const lerp = (a, b, t) => a + (b - a) * t;
-const colBeryl = new THREE.Color(config.palette.beryl);
-const colGold = new THREE.Color(config.palette.gold);
-const colWhite = new THREE.Color(config.palette.white);
-const burstColor = new THREE.Color();
-
-function keyBurst(note, velocity) {
-  const kb = config.keyBurst;
-  const qs = config.qualityScale[config.quality];
-  const pitch = THREE.MathUtils.clamp((note - kb.noteLow) / (kb.noteHigh - kb.noteLow), 0, 1);
-  const power = velocity ** kb.velocityCurve;
-
-  if (pitch < 0.7) burstColor.lerpColors(colBeryl, colGold, pitch / 0.7);
-  else burstColor.lerpColors(colGold, colWhite, (pitch - 0.7) / 0.3);
-
-  particles.burst({
-    x: (pitch - 0.5) * config.worldWidth * kb.xSpan,
-    y: lerp(kb.yLowFrac, kb.yHighFrac, pitch) * config.worldHeight,
-    color: burstColor,
-    count: Math.round(lerp(kb.countMin, kb.countMax, power) * qs.particleScale),
-    speed: lerp(kb.speedMin, kb.speedMax, power),
-    size: lerp(kb.sizeMin, kb.sizeMax, power),
-    life: lerp(kb.lifeMin, kb.lifeMax, power),
-    upBias: kb.upBias,
-    jitter: kb.jitter,
-  });
-}
-
-state.on('key', (e) => { if (e.on) keyBurst(e.note, e.velocity); });
+// ── Acts ──────────────────────────────────────────────────────────────
+// Act 1 (blooms, chord mandalas) listens to routed key events; the ground
+// freezes with the state's fullness meter. The tutorial rides the phase.
+const act1 = new Act1(particles);
+state.on('key', (e) => act1.onKey(e));
+const tutorial = new Tutorial(state, midi);
 
 // ── Main loop ─────────────────────────────────────────────────────────
 const clock = new THREE.Clock();
@@ -135,7 +112,9 @@ renderer.setAnimationLoop(() => {
   // Slow breathing pulse — smooth fade, never a flicker (seizure safety).
   beaconMat.opacity = 0.25 + 0.2 * Math.sin(elapsed * 0.8);
 
-  particles.update(elapsed, pixelsPerWorldUnit());
+  const ppwu = pixelsPerWorldUnit();
+  particles.update(elapsed, ppwu);
+  ground.update(elapsed, ppwu, state.fullness, dt);
   post.render();
 });
 
@@ -143,7 +122,8 @@ renderer.setAnimationLoop(() => {
 // drive frames manually where requestAnimationFrame is throttled).
 if (import.meta.env.DEV) {
   window.__paintedCave = {
-    midi, state, particles, post, keyBurst, renderer,
+    midi, state, particles, post, ground, act1, tutorial, renderer,
+    keyBurst: (note, velocity) => act1.onKey({ on: true, note, velocity }),
     now: () => elapsed,
     ppwu: pixelsPerWorldUnit,
   };
