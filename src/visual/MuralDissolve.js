@@ -126,15 +126,29 @@ export class MuralDissolve {
         const i = (gy * gw + gx) * 4;
         const a = data[i + 3] / 255;
         if (a < 0.35) continue;
+        // Optional oval mask [cx, cy, rx, ry] (fractions of the image,
+        // cy from the top): isolates a figure from a busy tableau.
+        if (this.opts.mask) {
+          const [mcx, mcy, mrx, mry] = this.opts.mask;
+          const du = (gx / gw - mcx) / mrx;
+          const dv = (gy / gh - mcy) / mry;
+          if (du * du + dv * dv > 1) continue;
+        }
         const r = data[i] / 255; const g = data[i + 1] / 255; const b = data[i + 2] / 255;
         const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-        if (lum < (this.opts.cutoff ?? m.luminanceCutoff)) continue;
-        // Mural photos sit on pale plaster: skip bright low-saturation
-        // pixels so only the painted figures become particles.
-        if (this.opts.plasterSkip) {
-          const mx = Math.max(r, g, b); const mn = Math.min(r, g, b);
-          const sat = mx > 0 ? (mx - mn) / mx : 0;
-          if (lum > m.plasterLum && sat < m.plasterSat) continue;
+        if (this.opts.invert) {
+          // Dark-figure murals (aged pigments darker than the plaster):
+          // keep the DARK strokes and render them as light, below.
+          if (lum > (this.opts.cutoff ?? 0.45)) continue;
+        } else {
+          if (lum < (this.opts.cutoff ?? m.luminanceCutoff)) continue;
+          // Mural photos sit on pale plaster: skip bright low-saturation
+          // pixels so only the painted figures become particles.
+          if (this.opts.plasterSkip) {
+            const mx = Math.max(r, g, b); const mn = Math.min(r, g, b);
+            const sat = mx > 0 ? (mx - mn) / mx : 0;
+            if (lum > m.plasterLum && sat < m.plasterSat) continue;
+          }
         }
 
         home.push(
@@ -143,13 +157,30 @@ export class MuralDissolve {
           0,
         );
 
-        // Re-tint toward the mineral palette: shadows toward lapis,
-        // lights toward gold — keeps every mural in the piece's key.
-        tint.lerpColors(lapis, gold, Math.min(1, lum * 1.4));
-        c.setRGB(r, g, b).lerp(tint, m.retint).multiplyScalar(0.75 + lum * 0.65);
+        if (this.opts.invert) {
+          // The darker the stroke, the brighter it burns — the figure
+          // becomes a body of gold light drawn by the painter's line.
+          const glow = 1 - lum;
+          tint.lerpColors(lapis, gold, 0.55 + glow * 0.45);
+          c.setRGB(r, g, b).lerp(tint, this.opts.retint ?? 0.55)
+            .multiplyScalar(0.55 + glow * 0.95);
+          size.push(1.7 + glow * 1.7 + Math.random() * 0.5);
+        } else {
+          // Optional contrast curve for flat/busy murals: darks thin out
+          // (fewer particles) and dim by lum^gamma, so the painting's
+          // forms survive the additive glow instead of washing to white.
+          if (this.opts.gamma && Math.random() > 0.28 + lum * 0.9) continue;
+          const curve = this.opts.gamma
+            ? Math.pow(lum, this.opts.gamma) * (this.opts.gain ?? 1.7)
+            : 0.75 + lum * 0.65;
+          // Re-tint toward the mineral palette: shadows toward lapis,
+          // lights toward gold — keeps every mural in the piece's key.
+          tint.lerpColors(lapis, gold, Math.min(1, lum * 1.4));
+          c.setRGB(r, g, b).lerp(tint, this.opts.retint ?? m.retint)
+            .multiplyScalar(curve);
+          size.push(1.7 + lum * 1.6 + Math.random() * 0.5);
+        }
         color.push(c.r, c.g, c.b);
-
-        size.push(1.7 + lum * 1.6 + Math.random() * 0.5);
         seed.push(Math.random());
         stage.push(Math.random());
 
@@ -179,7 +210,7 @@ export class MuralDissolve {
       uPPWU: { value: 1 },
       uDissolve: { value: this.dissolve },
       uAlpha: { value: this.alpha },
-      uIntensity: { value: config.murals.intensity },
+      uIntensity: { value: this.opts.intensity ?? config.murals.intensity },
     };
 
     this.points = new THREE.Points(geo, new THREE.ShaderMaterial({

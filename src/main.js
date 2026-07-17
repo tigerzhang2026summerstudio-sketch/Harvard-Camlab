@@ -19,8 +19,10 @@ import { Act3 } from './visual/Act3.js';
 import { VaidehiFigure } from './visual/VaidehiFigure.js';
 import { AudioManager } from './audio/AudioManager.js';
 import { Transitions } from './visual/Transitions.js';
+import { Backdrop } from './visual/Backdrop.js';
 import { Tutorial } from './ui/Tutorial.js';
 import { Captions } from './ui/Captions.js';
+import { Meditations } from './ui/Meditations.js';
 
 // ── Renderer ──────────────────────────────────────────────────────────
 const canvas = document.getElementById('app-canvas');
@@ -89,8 +91,11 @@ midi.on('pad', (e) => state.onPad(e));
 // ── Acts ──────────────────────────────────────────────────────────────
 // Act 1 (blooms, chord mandalas) listens to routed key events; the ground
 // freezes with the state's fullness meter. The tutorial rides the phase.
-const act1 = new Act1(particles);
+const act1 = new Act1(worldGroup, state, particles);
 state.on('key', (e) => act1.onKey(e));
+
+// The cave wall breathes dimly behind everything (image or video).
+const backdrop = new Backdrop(scene, state);
 
 // Act 2 (knob-grown layers + refinements) reads K1–K4 continuously from
 // the state and K5–K8 as events; the joystick steers the wind.
@@ -107,9 +112,11 @@ state.on('pad', (e) => act3.onPad(e));
 const tutorial = new Tutorial(state, midi);
 const captions = new Captions(state, midi);
 const transitions = new Transitions(state, particles, post);
-// The knobs and pads each tell their contemplation through the captions.
+// The knobs and pads each tell their contemplation through the captions,
+// and the piece meditates aloud when left alone.
 act2.captions = captions;
 act3.captions = captions;
+const meditations = new Meditations(state, captions);
 
 // Audio: score crossfades + accents. The browser only allows sound after
 // a real gesture, so the first click/keypress unlocks it (MIDI can't).
@@ -139,10 +146,13 @@ renderer.setAnimationLoop(() => {
     : 1;
   ground.update(elapsed, ppwu, state.fullness * codaFade, dt);
 
+  act1.update(elapsed, dt, ppwu);
   const shared = act2.update(elapsed, dt, ppwu);
   act3.update(elapsed, dt, ppwu, shared);
   vaidehi.update(elapsed, dt, ppwu);
   transitions.update(dt);
+  backdrop.update(elapsed, dt);
+  meditations.update(dt);
   post.render();
 });
 
@@ -151,7 +161,7 @@ renderer.setAnimationLoop(() => {
 if (import.meta.env.DEV) {
   window.__paintedCave = {
     midi, state, particles, post, ground, act1, act2, act3, vaidehi,
-    tutorial, captions, transitions, audio, renderer,
+    tutorial, captions, transitions, backdrop, meditations, audio, renderer,
     keyBurst: (note, velocity) => act1.onKey({ on: true, note, velocity }),
     now: () => elapsed,
     ppwu: pixelsPerWorldUnit,

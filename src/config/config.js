@@ -127,6 +127,31 @@ export const config = {
     // Shown if a pad or dial is used before its act has arrived.
     padsLocked: 'The pads awaken in Act III —\ncultivate the world with the dials first.',
     dialsLocked: 'The dials awaken in Act II —\nflood the darkness with the keys first.',
+
+    // When no one interacts for a while, the piece meditates aloud:
+    // sutra passages surface one at a time (idleSec to start, everySec
+    // between passages). Adapted from the Contemplation Sutra.
+    meditation: {
+      idleSec: 18,
+      everySec: 32,
+      passages: {
+        act1: [
+          'Sit facing the west. Perceive the sun as a drum\nhanging in the sky — let the mind dwell there, unwavering.',
+          'Shut out scattered thought.\nLet the image stay clear, eyes open or closed.',
+          'When water turns to ice, and ice to beryl,\nthe first ground of the Pure Land is seen.',
+        ],
+        act2: [
+          'Each jeweled tree is eight thousand yojanas tall,\nits leaves and flowers made of seven gems.',
+          'The water of eight virtues murmurs as it flows:\nsuffering, emptiness, impermanence, no-self.',
+          'Do not grasp at the vision when it comes —\nlet it deepen of its own accord.',
+        ],
+        act3: [
+          'To see this Buddha is to see all Buddhas;\nthe mind that sees the Buddha IS the Buddha-mind.',
+          'His light embraces every being who remembers him,\nand never lets a single one fall.',
+          'Those who complete this contemplation\nwill open their eyes inside a lotus.',
+        ],
+      },
+    },
   },
 
   transitions: {
@@ -151,7 +176,7 @@ export const config = {
     begin: 'strike any key to begin',
   },
 
-  // ── ACT 1 — chords & symmetry ──────────────────────────────────────
+  // ── ACT 1 — chords, symmetry, and the rising-sun ritual ────────────
   act1: {
     mirrorMinX: 0.03,        // don't mirror bursts this close to center (×width)
     mirrorScale: 0.8,        // mirrored copy: fraction of main burst count
@@ -160,6 +185,43 @@ export const config = {
     satelliteRadius: 110,    // ring base radius (world units)
     satelliteRadiusPer: 36,  // + this per chord note
     satelliteScale: 0.35,    // satellite burst count fraction
+
+    // 第一观 begins the show: an ember sun on the western horizon that
+    // every key strike feeds — it brightens and climbs as the act fills.
+    sun: {
+      x: -0.3,               // ×worldWidth (the west)
+      yLowFrac: -0.34,       // horizon at fullness 0…
+      yHighFrac: -0.02,      // …risen at fullness 1
+      radius: 62,            // world units
+      count: 900,            // disc particles (× quality scale)
+      flarePerStrike: 26,    // extra motes fed to the sun per key strike
+    },
+    // Each key also paints a rising brush-stroke of light…
+    streak: {
+      length: 130,           // world units of rise
+      duration: 0.55,        // seconds to paint it
+      curve: 60,             // sideways drift toward center as it rises
+    },
+    // …and softly re-blooms as fading echoes.
+    echo: {
+      delays: [0.75, 1.5],   // seconds after the strike
+      scale: 0.3,            // echo burst count fraction
+      spread: 120,           // echoes land this far from the original (±)
+    },
+  },
+
+  // ── BACKDROP — the cave wall breathing behind the darkness ─────────
+  backdrop: {
+    enabled: true,
+    image: 'cave217-northwall.jpg',   // in assets/murals/
+    // Optional video (assets/video/<file>): loops muted behind the scene
+    // and replaces the image when present. Missing file = warn + skip.
+    video: 'backdrop.mp4',
+    // Peak opacity per phase — the prologue stays a black prison.
+    // (Values are tiny because the sRGB output transform lifts darks a lot.)
+    opacityByPhase: { prologue: 0, act1: 0.006, act2: 0.011, act3: 0.017, coda: 0 },
+    panAmount: 0.035,   // slow horizontal drift (×worldWidth)
+    breatheAmount: 0.05, // slow scale breathing
   },
 
   // ── ACT 2 — the knob-grown world ───────────────────────────────────
@@ -299,8 +361,18 @@ export const config = {
     panels: [
       // role 'amitabha': assembled by the true-body pad (A6) in place of
       // the procedural figure (delete to fall back to the silhouette).
+      // The REAL Cave 217 central Amitāyus, cropped from the north wall:
+      // low retint keeps his red robe and green mandorla true; slightly
+      // reduced intensity stops the bloom from washing his face out.
+      // mask isolates the seated figure + mandorla from the busy tableau;
+      // true photo colors (low retint) so his red robe and green mandorla
+      // read clearly.
+      // The stylized Buddha reads most clearly at distance; the real
+      // north-wall crop (cave217-buddha.jpg) is too weathered for a crisp
+      // particle figure — swap the file back anytime; the sampling tools
+      // (mask/invert/gamma/gain) are all wired for a cleaner scan.
       { file: 'buddha-placeholder.svg', role: 'amitabha',
-        x: 0, yFrac: 0.02, heightFrac: 0.52 },
+        x: 0, yFrac: 0.02, heightFrac: 0.52, intensity: 0.95 },
       // role 'panel': materialize on the Universal Vision pad (B1),
       // scatter in the coda.
       { file: 'apsara-left-placeholder.svg', role: 'panel',

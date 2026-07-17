@@ -61,13 +61,14 @@ export class Act3 {
     this.storyMurals = {};
     this.panelAssemble = 0;
     for (const p of config.murals.panels) {
+      // Every panel option (cutoff, plasterSkip, invert, mask, retint,
+      // intensity, gamma, gain, …) passes straight through to the mural.
       const mural = new MuralDissolve(worldGroup, {
+        ...p,
         url: `/murals/${p.file}`,
         x: p.x * config.worldWidth,
         y: p.yFrac * config.worldHeight,
         height: p.heightFrac * config.worldHeight,
-        cutoff: p.cutoff,
-        plasterSkip: p.plasterSkip,
       });
       if (p.role === 'amitabha') this.amitabhaMural = mural;
       else if (p.role === 'story') this.storyMurals[p.story] = mural;
