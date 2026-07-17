@@ -85,7 +85,9 @@ export class StateManager {
   onKnob(e, synthetic = false) {
     this.touch(synthetic);
     this.knobs[e.index] = e.value;
-    if (this.phase === 'act2' && this.lushness >= 1) this.go('act3');
+    // NOTE: the act2→act3 transition is checked per-frame in update(),
+    // not here — checking only on knob events missed the case where the
+    // dials were finished quickly (or early) and then left alone.
     this.emit('knob', e);
   }
 
@@ -105,6 +107,15 @@ export class StateManager {
   update(dt) {
     this.phaseTime += dt;
     this.idleTime += dt;
+
+    // Act 2 → Act 3 whenever every dial stands past its target — checked
+    // continuously so it can never be missed, with a short dwell so the
+    // act always gets its moment even if the dials were finished early.
+    if (this.phase === 'act2'
+        && this.phaseTime >= config.acts.act2MinSec
+        && this.lushness >= 1) {
+      this.go('act3');
+    }
 
     // Coda runs on a timer: dissolve, hold black, then the loop returns.
     if (this.phase === 'coda'
