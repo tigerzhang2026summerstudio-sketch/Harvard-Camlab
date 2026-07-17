@@ -187,21 +187,31 @@ export const config = {
       seedSpeed: 90,      // horizontal drift speed at full wind
       rotMax: 0.018,      // whole-world mandala sway (radians) at full wind
     },
-    // Each growth knob tells its contemplation the first time it is
-    // raised in Act 2 ([title, line] captions).
+    // Every dial grows its own part of the story and tells it (caption)
+    // the first time it is raised in Act 2 ([title, line] per knob).
     knobStories: [
       ['第四观 · THE JEWELED TREES', 'Seven rows of jeweled trees rise —\nevery leaf a different light.'],
       ['第五观 · THE PONDS', 'Ponds of the eight virtues; each drop\nspeaks the Dharma as it falls.'],
       ['第六观 · THE TOWERS OF MUSIC', 'Five hundred jeweled towers, and in the sky\ninstruments that sound themselves.'],
       ['风 · THE WIND', 'A soft wind turns the light;\nthe whole paradise breathes.'],
+      ['妙音鸟 · THE KALAVINKA BIRDS', 'Jeweled birds wheel through the sky,\ntheir flight itself a song of Dharma.'],
+      ['宝光 · THE RAYS OF LIGHT', 'From the height of the sky, rays of golden light\nfan out and warm the whole land.'],
+      ['幢幡 · THE JEWELED BANNERS', 'Banners and canopies of every color\nhang in the air, swaying in the fragrant wind.'],
+      ['天云 · THE CLOUDS OF LIGHT', 'Clouds of soft light drift above the towers,\ncarrying flowers and perfume.'],
     ],
 
-    // K5–K8 refinement ranges
+    // K5–K8 sky layers
+    birds: { max: 10, trailInterval: 0.038 },  // K5: flock size follows the dial
+    rays: { count: 22 },                       // K6: fan of light from the apex
+    banners: { count: 10 },                    // K7: hanging ribbon-banners
+    clouds: { count: 14 },                     // K8: drifting bands of light
+
+    // Side-effects that ride along with the sky dials
     refine: {
-      warmthDefault: 0.5,      // neutral color temperature
-      densityRange: [0.35, 1.2],  // K6: burst counts + layer alpha
-      bloomRange: [0.45, 1.7],    // K7: × bloom.strength
-      swayRange: [0.4, 2.2],      // K8: global drift/sway speed
+      warmthDefault: 0.5,        // neutral color temperature at rest
+      warmthRange: [0.45, 0.8],  // K6 rays gild the whole palette…
+      bloomRange: [0.92, 1.38],  // …and swell the glow
+      swayRange: [0.55, 1.9],    // K8 clouds quicken the world's drift
     },
   },
 

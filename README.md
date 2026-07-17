@@ -75,9 +75,12 @@ If your unit's bank button is in play, bank B still gives direct access:
 B1 universal · B2 mixed · B3–B5 rebirths · B6 awakening · B7 the prison
 flashback · B8 dissolution.
 
-The four growth knobs also tell theirs: K1 = 第四观 trees, K2 = 第五观
-ponds, K3 = 第六观 towers of music, K4 = the wind (captions appear the
-first time each is raised).
+Every dial grows and tells its own part of the story (caption on first
+raise): K1 = 第四观 jeweled trees · K2 = 第五观 ponds · K3 = 第六观
+towers of music (+ the generative audio bed) · K4 = the wind · K5 =
+妙音鸟 kalavinka birds wheeling with light-trails · K6 = 宝光 rays of
+light (also gilds and swells the glow) · K7 = 幢幡 jeweled banners ·
+K8 = 天云 clouds of light (also quickens the drift).
 
 Keyboard: digits `1–8` are the pads of the current bank; `9` flips bank A/B.
 
