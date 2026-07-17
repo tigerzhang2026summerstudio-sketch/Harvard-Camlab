@@ -65,11 +65,11 @@ remains, in order, all the way to the dissolution
 | 1 | 第一观 The Setting Sun | an ember sun sinks in the west (+ Cave 217 mural of Vaidehī before the sun) |
 | 2 | 第二观 Water & Ice | a clear wave sweeps the ground |
 | 3 | 第三观 The Beryl Ground | the freeze surges (fills the ground meter) |
-| 4 | 第七观 The Lotus Throne | the throne story |
-| 5 | 第八观 The Image | the Buddha half-condenses — an image only |
-| 6 | 第九观 The True Body | the Buddha mural fully assembles |
-| 7 | 第十观 Avalokiteśvara | the bodhisattva of compassion |
-| 8 | *continue the sutra* → | 第十一观 Mahāsthāmaprāpta → 第十二观 Universal Vision (murals + flower rain) → 第十三观 Mixed Vision → 第十四–十六观 the Nine Rebirths (high/middle/low) → 开悟 the Awakening → 归寂 Dissolution |
+| 4 | 第四观 The Jeweled Trees | the tree rows glitter with new light |
+| 5 | 第五观 The Ponds | ripple-glow runs the water band |
+| 6 | 第六观 The Towers of Music | every hanging instrument showers notes |
+| 7 | 第七观 The Lotus Throne | the throne story |
+| 8 | *continue the sutra* → | 第八观 the Image → 第九观 the True Body → 第十/十一观 the Bodhisattvas → 第十二观 Universal Vision (murals + flower rain) → 第十三观 Mixed Vision → 第十四–十六观 the Nine Rebirths → 开悟 the Awakening → 归寂 Dissolution |
 
 If your unit's bank button is in play, bank B still gives direct access:
 B1 universal · B2 mixed · B3–B5 rebirths · B6 awakening · B7 the prison

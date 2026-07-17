@@ -84,7 +84,7 @@ export const config = {
     crossfadeSec: 3,           // audio crossfade on act change
     act1FullnessTarget: 1.0,   // energy needed to freeze the beryl ground
     act1EnergyPerStrike: 0.03, // fullness added per key at full velocity
-    act2LushnessTarget: 0.75,  // avg K1..K3 level that raises the throne
+    act2DialTarget: 0.55,      // EVERY dial must pass this to raise the throne
     codaFadeSec: 20,           // dissolution length
     loopPauseSec: 8,           // black pause before the prologue returns
     autoIdleSec: 30,           // idle time before attract mode starts playing
@@ -286,16 +286,18 @@ export const config = {
     // "continue the sutra" — each press advances through everything else
     // (see `sequence`). Bank B (if the performer flips banks) keeps
     // direct access to the later stories.
+    // Pads 1–7 = 第一观…第七观 with no gaps (4/5/6 celebrate the trees,
+    // ponds and music the dials grew); pad 8 continues from 第八观 on.
     padMap: {
-      A1: 'sun', A2: 'water', A3: 'groundFreeze', A4: 'throne',
-      A5: 'image', A6: 'amitabha', A7: 'avalokitesvara', A8: 'nextStory',
+      A1: 'sun', A2: 'water', A3: 'groundFreeze', A4: 'treesStory',
+      A5: 'pondsStory', A6: 'musicStory', A7: 'throne', A8: 'nextStory',
       B1: 'universal', B2: 'mixed', B3: 'gradesHigh', B4: 'gradesMid',
       B5: 'gradesLow', B6: 'awakening', B7: 'prison', B8: 'dissolution',
     },
-    // What pad 8 steps through, in the sutra's order.
+    // What pad 8 steps through, in the sutra's order (八观 → the end).
     sequence: [
-      'mahasthamaprapta', 'universal', 'mixed',
-      'gradesHigh', 'gradesMid', 'gradesLow',
+      'image', 'amitabha', 'avalokitesvara', 'mahasthamaprapta',
+      'universal', 'mixed', 'gradesHigh', 'gradesMid', 'gradesLow',
       'awakening', 'dissolution',
     ],
 
@@ -305,6 +307,9 @@ export const config = {
       sun: ['第一观 · THE SETTING SUN', 'Face the west. See the sun about to set,\nhanging in the sky like a suspended drum.'],
       water: ['第二观 · WATER & ICE', 'See water, clear and still —\nthen see it freeze to shining, translucent ice.'],
       groundFreeze: ['第三观 · THE BERYL GROUND', 'The ice becomes beryl: a ground of light,\nlevel as the palm of a hand.'],
+      treesStory: ['第四观 · THE JEWELED TREES', 'Seven rows of jeweled trees stand full-grown —\ncontemplate each leaf, a different light.'],
+      pondsStory: ['第五观 · THE PONDS', 'The water of eight virtues shines;\neach drop speaks the Dharma as it falls.'],
+      musicStory: ['第六观 · THE TOWERS OF MUSIC', 'The towers stand; instruments hang in the sky,\nsounding themselves without a hand.'],
       throne: ['第七观 · THE LOTUS THRONE', 'On the jeweled ground a great lotus unfolds —\na seat awaiting the Buddha of Infinite Life.'],
       image: ['第八观 · THE IMAGE', 'First see his image only: golden, seated on the lotus —\nthe mind that makes the Buddha is the Buddha.'],
       amitabha: ['第九观 · THE TRUE BODY', 'Amitāyus himself: his body the gold\nof a hundred thousand million suns.'],

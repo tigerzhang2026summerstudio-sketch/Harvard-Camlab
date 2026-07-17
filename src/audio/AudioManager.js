@@ -199,6 +199,13 @@ export class AudioManager {
       }
     } else if (action === 'groundFreeze') {
       this.gongSynth.triggerAttackRelease('E3', '2n', now, 0.55);
+    } else if (action === 'treesStory' || action === 'pondsStory' || action === 'musicStory') {
+      for (let i = 0; i < 4; i += 1) {
+        this.chimeSynth.triggerAttackRelease(
+          Tone.Frequency(63 + PENTATONIC[(i + (action === 'pondsStory' ? 2 : 0)) % PENTATONIC.length] + 12, 'midi'),
+          '4n', now + i * 0.2, 0.32,
+        );
+      }
     } else if (action === 'throne' || action === 'image') {
       this.choirSynth.triggerAttackRelease(['E4', 'B4'], '2n', now, 0.5);
     } else if (action === 'prison') {

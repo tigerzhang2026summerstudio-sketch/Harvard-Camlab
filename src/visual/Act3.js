@@ -20,6 +20,7 @@ import { clamp01, lerp, rand, smooth01 } from '../core/Clock.js';
 import { GrowthLayer } from './GrowthLayer.js';
 import { buildThrone } from './Throne.js';
 import { figureBuilder } from './Figures.js';
+import { instrumentCenters } from './Instruments.js';
 import { MuralDissolve } from './MuralDissolve.js';
 
 export class Act3 {
@@ -137,6 +138,9 @@ export class Act3 {
       case 'sun': this.sunTime = 0; break;
       case 'water': this.waterTime = 0; break;
       case 'groundFreeze': this.freezeSurge(); break;
+      case 'treesStory': this.treesFlourish(); break;
+      case 'pondsStory': this.pondsFlourish(); break;
+      case 'musicStory': this.musicFlourish(); break;
       case 'throne': this.throneGrowth = Math.max(this.throneGrowth, 0.12); break;
       case 'image':
         this.targets.amitabha = Math.max(this.targets.amitabha, 0.5);
@@ -176,6 +180,48 @@ export class Act3 {
         y: -H / 2 + config.ground.bandFrac * H * rand(0.3, 0.9),
         color: Math.random() < 0.5 ? config.palette.beryl : config.palette.white,
         count: 70, speed: 24, size: 2.2, life: 2.6, upBias: 0.5, jitter: 40,
+      });
+    }
+  }
+
+  /** 第四观 — the tree rows glitter: bursts through both side thirds. */
+  treesFlourish() {
+    const W = config.worldWidth;
+    const H = config.worldHeight;
+    const groundTop = -H / 2 + config.ground.bandFrac * H * 0.7;
+    for (let i = 0; i < 12; i += 1) {
+      const side = i % 2 ? 1 : -1;
+      this.particles.burst({
+        x: side * rand(0.2, 0.46) * W,
+        y: groundTop + rand(30, 150),
+        color: Math.random() < 0.6 ? config.palette.malachite : config.palette.gold,
+        count: 70, speed: 34, size: 2.4, life: 2.6, upBias: 0.5, jitter: 26,
+      });
+    }
+  }
+
+  /** 第五观 — the ponds answer: ripple-glow along the water band. */
+  pondsFlourish() {
+    const W = config.worldWidth;
+    const H = config.worldHeight;
+    const yWater = -H / 2 + config.ground.bandFrac * H * 0.45;
+    for (let i = 0; i < 10; i += 1) {
+      this.particles.burst({
+        x: ((i + 0.5) / 10 - 0.5) * W * 0.86,
+        y: yWater + rand(-6, 10),
+        color: Math.random() < 0.7 ? config.palette.beryl : config.palette.white,
+        count: 80, speed: 26, size: 2.3, life: 2.4, upBias: 0.6, jitter: 34,
+      });
+    }
+  }
+
+  /** 第六观 — every hanging instrument showers note-light at once. */
+  musicFlourish() {
+    for (const c of instrumentCenters) {
+      this.particles.burst({
+        x: c.x, y: c.y,
+        color: Math.random() < 0.6 ? config.palette.gold : config.palette.white,
+        count: 40, speed: 20, size: 2.4, life: 3.4, upBias: 1.6, jitter: 10,
       });
     }
   }

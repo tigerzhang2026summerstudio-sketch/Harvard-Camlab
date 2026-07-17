@@ -42,12 +42,12 @@ export class StateManager {
     this.listeners[type]?.forEach((cb) => cb(payload));
   }
 
-  /** Act 2 lushness = how far the three "growth" knobs have been raised. */
+  /** Act 2 lushness — 1 only when EVERY dial has passed its target. */
   get lushness() {
-    return clamp01(
-      (this.knobs[0] + this.knobs[1] + this.knobs[2]) / 3
-      / config.acts.act2LushnessTarget,
-    );
+    const t = config.acts.act2DialTarget;
+    let sum = 0;
+    for (const k of this.knobs) sum += Math.min(1, k / t);
+    return clamp01(sum / this.knobs.length);
   }
 
   go(phase) {
@@ -136,11 +136,13 @@ export class StateManager {
         break;
       }
       case 'act2': {
-        // Raise the growth knobs toward full, brush the refinement knobs.
-        const index = Math.random() < 0.8 ? pick([0, 1, 2, 3]) : pick([4, 5, 6, 7]);
-        const target = index <= 3 ? 1 : rand(0.3, 0.7);
-        this.onKnob({ index, value: clamp01(lerp(this.knobs[index], target, 0.12) + 0.01) }, true);
-        this.autoWait = rand(0.15, 0.45);
+        // All eight dials must be finished before the throne will rise —
+        // favor whichever is furthest behind.
+        let index = Math.floor(Math.random() * 8);
+        for (let i = 0; i < 8; i += 1) if (this.knobs[i] < this.knobs[index]) index = i;
+        if (Math.random() < 0.35) index = Math.floor(Math.random() * 8);
+        this.onKnob({ index, value: clamp01(lerp(this.knobs[index], 1, 0.12) + 0.01) }, true);
+        this.autoWait = rand(0.15, 0.4);
         break;
       }
       case 'act3': {
@@ -148,19 +150,22 @@ export class StateManager {
         // pads plays them: 1–7, then pad 8 again and again to continue
         // the sutra through to the dissolution.
         const script = [
-          { bank: 'A', index: 0, wait: 10 },  // the setting sun
-          { bank: 'A', index: 1, wait: 7 },   // water & ice
-          { bank: 'A', index: 2, wait: 7 },   // the beryl ground
-          { bank: 'A', index: 3, wait: 7 },   // the lotus throne
-          { bank: 'A', index: 4, wait: 8 },   // the image
-          { bank: 'A', index: 5, wait: 8 },   // the true body
-          { bank: 'A', index: 6, wait: 6 },   // Avalokiteśvara
-          { bank: 'A', index: 7, wait: 7 },   // pad 8 → Mahāsthāmaprāpta
-          { bank: 'A', index: 7, wait: 9 },   //       → universal vision
-          { bank: 'A', index: 7, wait: 8 },   //       → the mixed vision
-          { bank: 'A', index: 7, wait: 5 },   //       → highest rebirths
-          { bank: 'A', index: 7, wait: 5 },   //       → middle rebirths
-          { bank: 'A', index: 7, wait: 6 },   //       → lowest rebirths
+          { bank: 'A', index: 0, wait: 10 },  // 一 the setting sun
+          { bank: 'A', index: 1, wait: 7 },   // 二 water & ice
+          { bank: 'A', index: 2, wait: 7 },   // 三 the beryl ground
+          { bank: 'A', index: 3, wait: 6 },   // 四 the jeweled trees
+          { bank: 'A', index: 4, wait: 6 },   // 五 the ponds
+          { bank: 'A', index: 5, wait: 6 },   // 六 the towers of music
+          { bank: 'A', index: 6, wait: 7 },   // 七 the lotus throne
+          { bank: 'A', index: 7, wait: 8 },   // pad 8 → 八 the image
+          { bank: 'A', index: 7, wait: 8 },   //       → 九 the true body
+          { bank: 'A', index: 7, wait: 6 },   //       → 十 Avalokiteśvara
+          { bank: 'A', index: 7, wait: 7 },   //       → 十一 Mahāsthāmaprāpta
+          { bank: 'A', index: 7, wait: 9 },   //       → 十二 universal vision
+          { bank: 'A', index: 7, wait: 8 },   //       → 十三 the mixed vision
+          { bank: 'A', index: 7, wait: 5 },   //       → 十四 highest rebirths
+          { bank: 'A', index: 7, wait: 5 },   //       → 十五 middle rebirths
+          { bank: 'A', index: 7, wait: 6 },   //       → 十六 lowest rebirths
           { bank: 'A', index: 7, wait: 12 },  //       → awakening — long hold
           { bank: 'A', index: 7, wait: 2 },   //       → dissolution → coda
         ];
