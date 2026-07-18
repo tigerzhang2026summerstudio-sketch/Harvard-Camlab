@@ -197,17 +197,28 @@ export const config = {
       count: 900,            // disc particles (× quality scale)
       flarePerStrike: 26,    // extra motes fed to the sun per key strike
     },
-    // Each key also paints a rising brush-stroke of light…
-    streak: {
-      length: 130,           // world units of rise
-      duration: 0.55,        // seconds to paint it
-      curve: 60,             // sideways drift toward center as it rises
-    },
-    // …and softly re-blooms as fading echoes.
+    // …and softly re-blooms as fading echoes (1..N fire per strike, with
+    // randomized timing and placement).
     echo: {
-      delays: [0.75, 1.5],   // seconds after the strike
+      delays: [0.75, 1.5],   // base seconds after the strike
       scale: 0.3,            // echo burst count fraction
       spread: 120,           // echoes land this far from the original (±)
+    },
+
+    // VARIETY — what keeps Act I unpredictable. Every strike draws a
+    // random FORM from a pool (soft touches → quiet forms, hard strikes
+    // → dramatic ones), may wander in color or place, leaves embers, and
+    // sometimes sends a streak; meteors cross the sky on their own clock.
+    variety: {
+      forms: {
+        soft: ['bloom', 'puff', 'ring', 'swirl', 'bloom', 'puff'],
+        hard: ['bloom', 'fountain', 'willow', 'swirl', 'fan', 'ring', 'bloom'],
+      },
+      accentChance: 0.16,    // stray malachite/cinnabar tint
+      displacedChance: 0.09, // bloom appears somewhere unexpected
+      streakChance: 0.6,     // strikes that also paint a rising streak
+      emberCount: 6,         // long-lived motes left glowing at the spot
+      meteorEverySec: 20,    // avg seconds between shooting lights (act 1)
     },
   },
 

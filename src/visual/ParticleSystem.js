@@ -140,7 +140,9 @@ export class ParticleSystem {
   /**
    * Spawn a radial bloom of particles.
    * { x, y, color, count, speed, size, life, upBias, spread, jitter,
-   *   driftX, driftY } — drift adds a shared directional velocity (wind).
+   *   driftX, driftY,      — drift adds a shared directional velocity
+   *   swirl,               — tangential fraction: the burst rotates/spirals
+   *   minSpeedFrac }       — 0.25 = filled bloom · ~0.9 = expanding ring
    * color: THREE.Color (or anything THREE.Color accepts). speed/size/life
    * are means; each particle randomizes around them.
    */
@@ -148,6 +150,7 @@ export class ParticleSystem {
     x = 0, y = 0, color = '#ffffff', count = 500,
     speed = 120, size = 4, life = 2.4, upBias = 0.3,
     spread = 1, jitter = 8, driftX = 0, driftY = 0,
+    swirl = 0, minSpeedFrac = 0.25,
   }) {
     const c = this.scratchColor.set(color);
     const { aOrigin, aVelocity, aColor, aSize, aBirth, aLife, aSeed } = this.attrs;
@@ -162,11 +165,12 @@ export class ParticleSystem {
       aOrigin.array[i3 + 1] = y + (Math.random() - 0.5) * jitter * 2;
       aOrigin.array[i3 + 2] = 0;
 
-      // Radial direction, biased upward — light rises.
+      // Radial direction (+ optional tangential swirl), biased upward.
       const ang = Math.random() * Math.PI * 2;
-      const r = (0.25 + 0.75 * Math.random() ** 1.5) * speed * spread;
-      aVelocity.array[i3]     = Math.cos(ang) * r + driftX;
-      aVelocity.array[i3 + 1] = Math.sin(ang) * r + speed * upBias * Math.random() + driftY;
+      const r = (minSpeedFrac + (1 - minSpeedFrac) * Math.random() ** 1.5) * speed * spread;
+      const cos = Math.cos(ang); const sin = Math.sin(ang);
+      aVelocity.array[i3]     = (cos - sin * swirl) * r + driftX;
+      aVelocity.array[i3 + 1] = (sin + cos * swirl) * r + speed * upBias * Math.random() + driftY;
       aVelocity.array[i3 + 2] = 0;
 
       // Slight per-particle tint drift keeps large bursts from looking flat.

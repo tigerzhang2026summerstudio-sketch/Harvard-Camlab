@@ -64,8 +64,9 @@ export class Act1 {
       0,
     );
     this.sunReveal = 0;
-    this.streaks = [];  // rising brush-strokes in flight
+    this.tracers = [];  // moving light-emitters: streaks, meteors
     this.echoes = [];   // pending echo blooms
+    this.meteorIn = rand(6, 14); // seconds until the first shooting light
   }
 
   /** Map a note+velocity to a burst spec (position/color/energy). */
@@ -91,6 +92,83 @@ export class Act1 {
     };
   }
 
+  /**
+   * Every strike takes a random FORM — the same key never plays the same
+   * shape twice. Soft touches favor the quiet forms, hard strikes the
+   * dramatic ones (pools in config.act1.variety.forms).
+   */
+  formBurst(spec, velocity) {
+    const v = config.act1.variety;
+    const pool = velocity < 0.55 ? v.forms.soft : v.forms.hard;
+    const form = pool[Math.floor(Math.random() * pool.length)];
+
+    switch (form) {
+      case 'ring':      // a halo that expands as one thin circle
+        this.particles.burst({
+          ...spec,
+          minSpeedFrac: 0.92,
+          count: Math.round(spec.count * 0.8),
+          size: spec.size * 0.85,
+          life: spec.life * 1.15,
+          upBias: 0.1,
+        });
+        break;
+      case 'fountain':  // a cone of light thrown upward
+        this.particles.burst({
+          ...spec,
+          speed: spec.speed * 0.7,
+          upBias: 2.8,
+          jitter: spec.jitter * 0.4,
+          life: spec.life * 1.2,
+        });
+        break;
+      case 'willow':    // rises, hangs, then falls like willow branches
+        this.particles.burst({
+          ...spec,
+          speed: spec.speed * 0.75,
+          upBias: 1.7,
+          driftY: -70,
+          life: spec.life * 1.6,
+          size: spec.size * 0.9,
+        });
+        break;
+      case 'swirl':     // the bloom rotates as it opens
+        this.particles.burst({
+          ...spec,
+          swirl: rand(0.55, 0.95) * (Math.random() < 0.5 ? -1 : 1),
+          minSpeedFrac: 0.5,
+          life: spec.life * 1.25,
+        });
+        break;
+      case 'puff':      // a dandelion head: slow, soft, adrift
+        this.particles.burst({
+          ...spec,
+          count: Math.round(spec.count * 0.55),
+          speed: spec.speed * 0.35,
+          size: spec.size * 1.2,
+          life: spec.life * 1.9,
+          upBias: 0.25,
+          driftX: rand(-35, 35),
+        });
+        break;
+      case 'fan': {     // a comet-fan thrown toward a random direction
+        const th = rand(0.15, Math.PI - 0.15); // always some upward
+        this.particles.burst({
+          ...spec,
+          count: Math.round(spec.count * 0.75),
+          speed: spec.speed * 0.55,
+          driftX: Math.cos(th) * spec.speed * 0.8,
+          driftY: Math.sin(th) * spec.speed * 0.55,
+          life: spec.life * 1.2,
+        });
+        break;
+      }
+      default:          // 'bloom' — the classic radial blossom
+        this.particles.burst(spec);
+    }
+    return form;
+  }
+
   onKey(e) {
     if (!e.on) {
       this.held.delete(e.note);
@@ -98,23 +176,77 @@ export class Act1 {
     }
 
     const a1 = config.act1;
+    const v = a1.variety;
     const spec = this.specFor(e.note, e.velocity);
+
+    // Chance of a wandering accent color, and of a displaced bloom that
+    // blossoms somewhere unexpected — the wall stays unpredictable.
+    if (Math.random() < v.accentChance) {
+      spec.color.lerp(
+        new THREE.Color(config.palette[Math.random() < 0.5 ? 'malachite' : 'cinnabar']),
+        rand(0.35, 0.6),
+      );
+    }
+    if (Math.random() < v.displacedChance) {
+      spec.x = rand(-0.46, 0.46) * config.worldWidth;
+      spec.y = rand(-0.1, 0.38) * config.worldHeight;
+    }
+
     this.held.set(e.note, spec);
     const chord = this.held.size;
 
-    // The struck note always blooms where it lives.
-    this.particles.burst(spec);
+    // The struck note blooms — in one of many forms.
+    this.formBurst(spec, e.velocity);
 
-    // …paints a rising streak of light…
-    this.streaks.push({
-      x: spec.x, y: spec.y, t: 0,
-      dir: Math.sign(-spec.x) || 1,      // curls toward the center
-      color: spec.color, size: spec.size * 0.8,
+    // Low strikes near the floor sometimes send light racing outward
+    // along the beryl surface — a ripple over the frozen water.
+    if (spec.y < -0.18 * config.worldHeight && Math.random() < 0.35) {
+      const yGround = -config.worldHeight / 2
+        + config.ground.bandFrac * config.worldHeight * rand(0.5, 0.9);
+      for (const dir of [-1, 1]) {
+        this.particles.burst({
+          x: spec.x, y: yGround,
+          color: spec.color,
+          count: Math.round(spec.count * 0.3),
+          speed: spec.speed * 0.35,
+          size: spec.size * 0.8,
+          life: spec.life * 1.3,
+          upBias: 0.15,
+          jitter: 10,
+          driftX: dir * spec.speed * 0.7,
+          minSpeedFrac: 0.55,
+        });
+      }
+    }
+
+    // Lingering embers glow at the spot long after the bloom has gone.
+    this.particles.burst({
+      x: spec.x, y: spec.y,
+      color: spec.color,
+      count: v.emberCount,
+      speed: 5, size: 2.2,
+      life: rand(6, 11),
+      upBias: 0.1, jitter: 34,
     });
 
-    // …echoes twice, softly, nearby…
-    for (const delay of a1.echo.delays) {
-      this.echoes.push({ spec, at: delay, t: 0 });
+    // …paints a rising streak of light (direction now varies)…
+    if (Math.random() < v.streakChance) {
+      this.tracers.push({
+        x: spec.x, y: spec.y, t: 0,
+        vx: rand(-70, 70),
+        vy: rand(150, 260),
+        ax: rand(-60, 60),
+        ay: rand(-140, -50),
+        dur: rand(0.45, 0.9),
+        rate: 0.03, emitAcc: 0,
+        color: spec.color, size: spec.size * 0.8,
+      });
+    }
+
+    // …echoes a random number of times, softly, further afield…
+    const echoCount = 1 + Math.floor(Math.random() * a1.echo.delays.length);
+    for (let i = 0; i < echoCount; i += 1) {
+      this.echoes.push({ spec, at: a1.echo.delays[i] * rand(0.8, 1.3), t: 0 });
     }
 
     // …and feeds the western sun a flare.
@@ -137,27 +269,52 @@ export class Act1 {
       });
     }
 
-    // Three or more: a mandala — satellites ring the chord's centroid.
+    // Three or more: a mandala — satellites around the chord's centroid,
+    // sometimes a ring, sometimes an opening spiral.
     if (chord >= a1.satelliteMin) {
       let cx = 0; let cy = 0;
       for (const s of this.held.values()) { cx += s.x; cy += s.y; }
       cx /= chord; cy /= chord;
 
       const n = Math.min(chord, a1.satelliteMax);
-      const radius = a1.satelliteRadius + a1.satelliteRadiusPer * chord;
+      const spiral = Math.random() < 0.35;
+      const radius = (a1.satelliteRadius + a1.satelliteRadiusPer * chord) * rand(0.75, 1.25);
       const phase = (e.note % 12) / 12 * Math.PI * 2; // note picks the rotation
       for (let k = 0; k < n; k += 1) {
-        const ang = phase + (k / n) * Math.PI * 2;
+        const f = k / n;
+        const ang = phase + f * Math.PI * 2 * (spiral ? 1.6 : 1);
+        const r = radius * (spiral ? 0.45 + f * 0.9 : 1);
         this.particles.burst({
           ...spec,
-          x: cx + Math.cos(ang) * radius,
-          y: cy + Math.sin(ang) * radius * 0.6, // squashed: panorama is wide
+          x: cx + Math.cos(ang) * r,
+          y: cy + Math.sin(ang) * r * 0.6, // squashed: panorama is wide
           count: Math.round(spec.count * a1.satelliteScale),
           size: spec.size * 0.85,
           speed: spec.speed * 0.7,
+          swirl: spiral ? 0.5 : 0,
         });
       }
     }
+  }
+
+  /** A shooting light crosses part of the sky, trailing motes. */
+  launchMeteor() {
+    const W = config.worldWidth;
+    const H = config.worldHeight;
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    this.tracers.push({
+      x: -dir * rand(0.15, 0.48) * W,
+      y: rand(0.12, 0.42) * H,
+      t: 0,
+      vx: dir * rand(260, 430),
+      vy: rand(-50, 30),
+      ax: 0,
+      ay: rand(-60, -20),
+      dur: rand(1.1, 2.0),
+      rate: 0.014, emitAcc: 0,
+      color: Math.random() < 0.6 ? config.palette.white : config.palette.gold,
+      size: rand(2.6, 3.4),
+    });
   }
 
   /** Where the sun currently hangs (climbs with the fullness meter). */
@@ -182,24 +339,42 @@ export class Act1 {
       this.sunReveal,
     );
 
-    // Rising brush-strokes: short bursts along a curling upward path.
-    const st = config.act1.streak;
-    for (const k of this.streaks) {
+    // Tracers: streaks and meteors — moving emitters with real velocity
+    // and curvature, each painting its own calligraphic line of motes.
+    for (const k of this.tracers) {
       k.t += dt;
-      const f = Math.min(1, k.t / st.duration);
-      this.particles.burst({
-        x: k.x + k.dir * f * f * st.curve,
-        y: k.y + f * st.length,
-        color: k.color,
-        count: 10,
-        speed: 6,
-        size: k.size * (1 - f * 0.4),
-        life: 1.1,
-        upBias: 0.3,
-        jitter: 2.5,
-      });
+      k.vx += k.ax * dt;
+      k.vy += k.ay * dt;
+      k.x += k.vx * dt;
+      k.y += k.vy * dt;
+      k.emitAcc += dt;
+      const fade = 1 - Math.min(1, k.t / k.dur) * 0.5;
+      while (k.emitAcc >= k.rate) {
+        k.emitAcc -= k.rate;
+        this.particles.burst({
+          x: k.x, y: k.y,
+          color: k.color,
+          count: 9,
+          speed: 6,
+          size: k.size * fade,
+          life: 1.2,
+          upBias: 0.2,
+          jitter: 2.5,
+        });
+      }
     }
-    this.streaks = this.streaks.filter((k) => k.t < st.duration);
+    this.tracers = this.tracers.filter((k) => k.t < k.dur);
+
+    // Shooting lights cross the sky now and then (only while acts play).
+    if (s.phase !== 'prologue' && s.phase !== 'coda') {
+      this.meteorIn -= dt;
+      if (this.meteorIn <= 0) {
+        this.launchMeteor();
+        const base = config.act1.variety.meteorEverySec
+          * (s.phase === 'act1' ? 1 : 2.2); // rarer once the world is grown
+        this.meteorIn = base * rand(0.55, 1.6);
+      }
+    }
 
     // Echo blooms: the strike answers itself, softer and displaced.
     const ec = config.act1.echo;
