@@ -173,7 +173,7 @@ export const config = {
       ['II · THE KNOBS', 'Cultivate the jeweled world: trees, lotus ponds, self-playing music, wind. What you raise remains — nothing decays while you hold it.'],
       ['III · THE PADS', 'Summon the holy assembly, and souls reborn in opening lotuses. The final pad releases the vision back into darkness.'],
     ],
-    hint: 'No controller?  ` turns on keyboard play — bottom letter row = keys · 1–8 = pads (9 flips bank) · arrow keys = knobs · hold Shift for the toggles (Shift+D, Shift+M…)',
+    hint: "No controller?  ` turns on keyboard play — letter rows = keys · 1–8 = pads (9 flips bank) · , . / ; ' [ ] \\ = the 8 dials (hold to raise, Shift lowers) · Shift+letter for toggles",
     begin: 'strike any key to begin',
   },
 

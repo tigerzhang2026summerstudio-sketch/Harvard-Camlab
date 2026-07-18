@@ -44,8 +44,8 @@ toggle it manually with **`` ` `` (backquote)**.
 
 | Zone | Keys |
 | ---- | ---- |
-| 25 keys (Act 1) | bottom row `Z X C V B N M` = piano octave C3, sharps on `S D G H J`; top row `Q W E R T Y U I O P [ ] \` = chromatic run C4→C5 |
-| 8 knobs (Act 2) | `←`/`→` select K1–K8, `↑`/`↓` turn |
+| keys (Act 1) | bottom row `Z X C V B N M` = piano octave C3, sharps on `S D G H J`; top row `Q W E R T Y U I O P` = chromatic run C4→A4 |
+| 8 dials (Act 2) | `, . / ; ' [ ] \\` are K1–K8 — hold to raise, Shift+key to lower (arrows also work: `←`/`→` select, `↑`/`↓` turn) |
 | 16 pads (Act 3) | digits `1–8` fire pads, `9` flips bank A/B |
 
 While keyboard play is ON, letters are notes — so use **Shift** for the
@@ -167,4 +167,4 @@ To use real murals:
 Missing files never break the show — they log a console warning and the
 procedural silhouettes take over.
 
-*(README grows with each build step: MIDI mapping, keyboard fallback, etc.)*
+*(REA

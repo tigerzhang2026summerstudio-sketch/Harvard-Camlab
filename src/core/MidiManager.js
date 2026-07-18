@@ -219,7 +219,27 @@ export class MidiManager {
     window.addEventListener('keydown', (e) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key === kb.toggleKey) { this.setFallback(!this.fallbackActive); return; }
-      if (!this.fallbackActive || e.shiftKey) return; // Shift+letter = app toggles
+      if (!this.fallbackActive) return;
+
+      // Dials: , . / ; ' [ ] \ are K1..K8 — HOLD to raise (key repeat
+      // does the turning), Shift+key to lower. Matched by code so the
+      // shifted characters (< > ?…) still reach the same dial.
+      const knobIdx = kb.knobCodes[e.code] ?? kb.knobChars[e.key];
+      if (knobIdx !== undefined) {
+        const step = kb.knobStep * (e.shiftKey ? -1 : 1);
+        this.knobValues[knobIdx] = Math.min(1, Math.max(0, this.knobValues[knobIdx] + step));
+        this.knobSelected = knobIdx;
+        this.emit('knob', { index: knobIdx, value: this.knobValues[knobIdx] });
+        this.emit('midi', {
+          source: 'kbd', type: 'cc', channel: 0,
+          d1: this.map.knobs.ccs[knobIdx],
+          d2: Math.round(this.knobValues[knobIdx] * 127),
+          semantic: `K${knobIdx + 1}`,
+        });
+        return;
+      }
+
+      if (e.shiftKey) return; // Shift+letter = app toggles
       const key = e.key.toLowerCase();
 
       // knobs: arrows select and turn

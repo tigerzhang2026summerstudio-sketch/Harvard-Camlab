@@ -57,9 +57,10 @@ export const midiMapDefaults = {
  * play notes, so the global toggles need Shift (Shift+M, Shift+D, …).
  *
  *   notes  — bottom row is a piano octave (sharps on the home row),
- *            top row runs chromatically C4→C5.
+ *            top row runs chromatically C4→B4.
  *   pads   — digits 1–8 fire pads in the current bank; 9 flips bank A/B.
- *   knobs  — ←/→ select K1..K8, ↑/↓ turn it (Shift = fine steps).
+ *   dials  — , . / ; ' [ ] \  are K1..K8: hold to raise (key repeat),
+ *            Shift+key to lower. Arrows still work: ←/→ select, ↑/↓ turn.
  */
 export const keyboardFallback = {
   toggleKey: '`',
@@ -68,12 +69,23 @@ export const keyboardFallback = {
     // lower octave C3..B3 (classic DAW layout)
     z: 48, s: 49, x: 50, d: 51, c: 52, v: 53, g: 54,
     b: 55, h: 56, n: 57, j: 58, m: 59,
-    // upper run C4..C5, straight across the top row
+    // upper run C4..A4, straight across the top row
+    // ([ ] \ belong to the dials, so the run stops at 'p')
     q: 60, w: 61, e: 62, r: 63, t: 64, y: 65, u: 66,
-    i: 67, o: 68, p: 69, '[': 70, ']': 71, '\\': 72,
+    i: 67, o: 68, p: 69,
   },
   padDigits: ['1', '2', '3', '4', '5', '6', '7', '8'],
   bankToggleKey: '9',
+  // The eight dial keys, by KeyboardEvent.code so Shift+key still lowers…
+  knobCodes: {
+    Comma: 0, Period: 1, Slash: 2, Semicolon: 3,
+    Quote: 4, BracketLeft: 5, BracketRight: 6, Backslash: 7,
+  },
+  // …and by character as a fallback (incl. their shifted variants).
+  knobChars: {
+    ',': 0, '.': 1, '/': 2, ';': 3, "'": 4, '[': 5, ']': 6, '\\': 7,
+    '<': 0, '>': 1, '?': 2, ':': 3, '"': 4, '{': 5, '}': 6, '|': 7,
+  },
   knobStep: 0.05,
   knobFineStep: 0.01,
 };
