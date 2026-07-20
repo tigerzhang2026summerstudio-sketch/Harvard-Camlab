@@ -20,6 +20,7 @@ import { VaidehiFigure } from './visual/VaidehiFigure.js';
 import { AudioManager } from './audio/AudioManager.js';
 import { Transitions } from './visual/Transitions.js';
 import { Backdrop } from './visual/Backdrop.js';
+import { StoryScenes } from './visual/StoryScenes.js';
 import { Tutorial } from './ui/Tutorial.js';
 import { Captions } from './ui/Captions.js';
 import { Meditations } from './ui/Meditations.js';
@@ -117,6 +118,8 @@ const transitions = new Transitions(state, particles, post);
 act2.captions = captions;
 act3.captions = captions;
 const meditations = new Meditations(state, captions);
+// The narrated bookends: Vaidehī's prison story and the epilogue lotus.
+const storyScenes = new StoryScenes(state, particles, captions);
 
 // Audio: score crossfades + accents. The browser only allows sound after
 // a real gesture, so the first click/keypress unlocks it (MIDI can't).
@@ -142,11 +145,16 @@ renderer.setAnimationLoop(() => {
   const ppwu = pixelsPerWorldUnit();
   particles.update(elapsed, ppwu);
 
-  // The coda melts the beryl ground away along with everything else.
-  const codaFade = state.phase === 'coda'
-    ? Math.max(0, 1 - state.phaseTime / config.acts.codaFadeSec)
-    : 1;
-  ground.update(elapsed, ppwu, state.fullness * codaFade, dt);
+  // The coda melts the beryl ground away with everything else; the dark
+  // scenes (prologue, prison, epilogue) never show it at all.
+  let groundFade = 1;
+  if (state.phase === 'coda') {
+    groundFade = Math.max(0, 1 - state.phaseTime / config.acts.codaFadeSec);
+  } else if (state.phase === 'prologue' || state.phase === 'prison'
+      || state.phase === 'epilogue') {
+    groundFade = 0;
+  }
+  ground.update(elapsed, ppwu, state.fullness * groundFade, dt);
 
   act1.update(elapsed, dt, ppwu);
   const shared = act2.update(elapsed, dt, ppwu);
@@ -155,6 +163,7 @@ renderer.setAnimationLoop(() => {
   transitions.update(dt);
   backdrop.update(elapsed, dt);
   meditations.update(dt);
+  storyScenes.update(elapsed);
   post.render();
 });
 
@@ -163,7 +172,8 @@ renderer.setAnimationLoop(() => {
 if (import.meta.env.DEV) {
   window.__paintedCave = {
     midi, state, particles, post, ground, act1, act2, act3, vaidehi,
-    tutorial, captions, transitions, backdrop, meditations, audio, renderer,
+    tutorial, captions, transitions, backdrop, meditations, storyScenes,
+    audio, renderer,
     keyBurst: (note, velocity) => act1.onKey({ on: true, note, velocity }),
     now: () => elapsed,
     ppwu: pixelsPerWorldUnit,

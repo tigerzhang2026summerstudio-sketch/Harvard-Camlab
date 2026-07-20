@@ -71,7 +71,8 @@ export class Act2 {
     // Strict acts: the world does not grow before Act II arrives.
     let fade = 1;
     if (s.phase === 'coda') fade = clamp01(1 - s.phaseTime / config.acts.codaFadeSec);
-    if (s.phase === 'prologue' || s.phase === 'act1') fade = 0;
+    if (s.phase === 'prologue' || s.phase === 'prison'
+        || s.phase === 'act1' || s.phase === 'epilogue') fade = 0;
 
     for (let i = 0; i < 8; i += 1) {
       const target = s.knobs[i] * fade;

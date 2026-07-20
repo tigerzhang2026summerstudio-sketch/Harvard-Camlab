@@ -137,7 +137,10 @@ export class AudioManager {
   /** Equal-power crossfade to the phase's track. */
   onPhase(phase) {
     if (!this.unlocked) return;
-    const name = { prologue: 'prologue', act1: 'part1', act2: 'part2', act3: 'part3', coda: 'coda' }[phase];
+    const name = {
+      prologue: 'prologue', prison: 'prologue', act1: 'part1',
+      act2: 'part2', act3: 'part3', coda: 'coda', epilogue: 'coda',
+    }[phase];
     if (name === this.current) return;
     this.current = name;
 

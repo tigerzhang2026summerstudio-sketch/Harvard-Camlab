@@ -184,6 +184,21 @@ export class Act1 {
     const v = a1.variety;
     const spec = this.specFor(e.note, e.velocity);
 
+    // In the prison, light cannot yet escape: strikes bloom small,
+    // gray-blue and earthbound — no sun, no echoes, no streaks.
+    if (this.state.phase === 'prison') {
+      this.particles.burst({
+        ...spec,
+        color: spec.color.lerp(new THREE.Color(config.palette.lapis), 0.75),
+        count: Math.round(spec.count * 0.22),
+        speed: spec.speed * 0.35,
+        size: spec.size * 0.8,
+        life: spec.life * 0.8,
+        upBias: 0,
+      });
+      return;
+    }
+
     // Chance of a wandering accent color, and of a displaced bloom that
     // blossoms somewhere unexpected — the wall stays unpredictable.
     if (Math.random() < v.accentChance) {
@@ -339,7 +354,7 @@ export class Act1 {
     // again in the coda; the prologue starts it dark.
     let fade = 1;
     if (s.phase === 'coda') fade = clamp01(1 - s.phaseTime / config.acts.codaFadeSec);
-    if (s.phase === 'prologue') fade = 0;
+    if (s.phase === 'prologue' || s.phase === 'prison' || s.phase === 'epilogue') fade = 0;
     const target = s.fullness * fade;
     this.sunReveal += (target - this.sunReveal) * Math.min(1, dt * 0.8);
     this.sun.points.position.y = this.sunY();
@@ -375,7 +390,7 @@ export class Act1 {
     this.tracers = this.tracers.filter((k) => k.t < k.dur);
 
     // Shooting lights cross the sky now and then (only while acts play).
-    if (s.phase !== 'prologue' && s.phase !== 'coda') {
+    if (s.phase === 'act1' || s.phase === 'act2' || s.phase === 'act3') {
       this.meteorIn -= dt;
       if (this.meteorIn <= 0) {
         this.launchMeteor();

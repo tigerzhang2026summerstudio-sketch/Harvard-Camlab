@@ -115,10 +115,19 @@ export class Act3 {
     if (!action) return;
 
     // Pad 8: continue the sutra — each press is the next remaining story.
+    let fromSequence = false;
     if (action === 'nextStory') {
       action = config.act3.sequence[this.seqIndex];
       if (!action) return; // the telling is complete
       this.seqIndex += 1;
+      fromSequence = true;
+    }
+
+    // The dissolution refuses to come before Act III's soft minimum.
+    if (action === 'dissolution' && this.state.phaseTime < config.acts.act3MinSec) {
+      if (fromSequence) this.seqIndex -= 1; // the press is not spent
+      this.captions?.show(config.captions.dissolutionEarly);
+      return;
     }
 
     this.onStory?.(action);
@@ -395,7 +404,7 @@ export class Act3 {
     const s = this.state;
     let fade = 1;
     if (s.phase === 'coda') fade = clamp01(1 - s.phaseTime / config.acts.codaFadeSec);
-    if (s.phase === 'prologue') fade = 0;
+    if (s.phase === 'prologue' || s.phase === 'prison' || s.phase === 'epilogue') fade = 0;
 
     const throneTarget = (s.phase === 'act3' || s.phase === 'coda') ? fade : 0;
     this.throneGrowth += (throneTarget - this.throneGrowth)

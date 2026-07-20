@@ -1,8 +1,10 @@
 /**
- * StateManager — the dramaturgy. Owns the five-phase arc:
+ * StateManager — the dramaturgy. Owns the seven-phase arc:
  *
- *   prologue → act1 (first key) → act2 (ground fullness) → act3 (lushness)
- *            → coda (pad B8) → …pause… → prologue again (the loop)
+ *   prologue → prison (first key: Vaidehī's story, key-paced)
+ *            → act1 (story told) → act2 (ground full + soft minimum)
+ *            → act3 (lushness + soft minimum) → coda (dissolution pad)
+ *            → epilogue (one lotus in the dark) → …pause… → prologue
  *
  * It receives normalized input from MidiManager, gates/routes it to the
  * active act, tracks progression meters, and emits:
@@ -17,7 +19,7 @@
 import { config } from '../config/config.js';
 import { clamp01, lerp, pick, rand } from './Clock.js';
 
-export const PHASES = ['prologue', 'act1', 'act2', 'act3', 'coda'];
+export const PHASES = ['prologue', 'prison', 'act1', 'act2', 'act3', 'coda', 'epilogue'];
 
 export class StateManager {
   constructor() {
@@ -31,6 +33,8 @@ export class StateManager {
     this.idleTime = Infinity;             // no interaction yet → attract may start
     this.autoWait = 0;                    // countdown to next autopilot action
     this.autoStep = 0;                    // position in the Act-3 pad script
+    this.prisonStep = 0;                  // which line of Vaidehī's story
+    this.prisonLineAt = 0;                // phaseTime the line appeared
   }
 
   on(type, cb) {
@@ -66,6 +70,19 @@ export class StateManager {
       this.fullness = Math.max(this.fullness, 1);
     }
     this.emit('phase', { phase, prev });
+    if (phase === 'prison') {
+      this.prisonStep = 0;
+      this.prisonLineAt = 0;
+      this.emit('prisonLine', { index: 0 });
+    }
+  }
+
+  /** Next line of the prison story; the last line opens Act I. */
+  prisonAdvance() {
+    this.prisonLineAt = this.phaseTime;
+    this.prisonStep += 1;
+    if (this.prisonStep >= config.prison.lines.length) this.go('act1');
+    else this.emit('prisonLine', { index: this.prisonStep });
   }
 
   reset() { this.go('prologue'); }
@@ -74,10 +91,15 @@ export class StateManager {
   // ── Input routing (real MIDI and autopilot both come through here) ───
   onKey(e, synthetic = false) {
     this.touch(synthetic);
-    if (e.on && this.phase === 'prologue') this.go('act1');
+    if (e.on && this.phase === 'prologue') this.go('prison');
+    else if (e.on && this.phase === 'prison') {
+      // Keys pace the story — debounced so a chord doesn't skip lines.
+      if (this.phaseTime - this.prisonLineAt > 1.2) this.prisonAdvance();
+    }
     if (e.on && this.phase === 'act1') {
       this.fullness = clamp01(this.fullness + e.velocity * config.acts.act1EnergyPerStrike);
-      if (this.fullness >= config.acts.act1FullnessTarget) this.go('act2');
+      // (act1 → act2 is checked per-frame in update(): the meter AND the
+      //  act's soft minimum runtime both have to be satisfied.)
     }
     this.emit('key', e);
   }
@@ -93,9 +115,13 @@ export class StateManager {
 
   onPad(e, synthetic = false) {
     this.touch(synthetic);
-    // The dissolution pad (see config.act3.padMap) ends the vision.
+    // The dissolution pad (see config.act3.padMap) ends the vision — but
+    // not before Act III has had its soft-minimum runtime.
     const action = config.act3.padMap[`${e.bank}${e.index + 1}`];
-    if (e.on && this.phase === 'act3' && action === 'dissolution') this.go('coda');
+    if (e.on && this.phase === 'act3' && action === 'dissolution'
+        && this.phaseTime >= config.acts.act3MinSec) {
+      this.go('coda');
+    }
     this.emit('pad', e);
   }
 
@@ -108,18 +134,35 @@ export class StateManager {
     this.phaseTime += dt;
     this.idleTime += dt;
 
+    // The prison story advances itself if no key hurries it along.
+    if (this.phase === 'prison'
+        && this.phaseTime - this.prisonLineAt >= config.prison.lineSec) {
+      this.prisonAdvance();
+    }
+
+    // Act 1 → Act 2: the ground is full AND the act has had its minimum.
+    if (this.phase === 'act1'
+        && this.phaseTime >= config.acts.act1MinSec
+        && this.fullness >= config.acts.act1FullnessTarget) {
+      this.go('act2');
+    }
+
     // Act 2 → Act 3 whenever every dial stands past its target — checked
-    // continuously so it can never be missed, with a short dwell so the
-    // act always gets its moment even if the dials were finished early.
+    // continuously so it can never be missed, with a dwell so the act
+    // always gets its moment even if the dials were finished early.
     if (this.phase === 'act2'
         && this.phaseTime >= config.acts.act2MinSec
         && this.lushness >= 1) {
       this.go('act3');
     }
 
-    // Coda runs on a timer: dissolve, hold black, then the loop returns.
+    // Coda dissolves on a timer, then the epilogue: one lotus remains.
     if (this.phase === 'coda'
-        && this.phaseTime >= config.acts.codaFadeSec + config.acts.loopPauseSec) {
+        && this.phaseTime >= config.acts.codaFadeSec + 3) {
+      this.go('epilogue');
+    }
+    if (this.phase === 'epilogue'
+        && this.phaseTime >= config.acts.epilogueSec + config.acts.loopPauseSec) {
       this.go('prologue');
     }
 
@@ -137,6 +180,12 @@ export class StateManager {
       case 'prologue': {
         this.onKey({ on: true, note: 52, velocity: 0.5 }, true);
         this.autoWait = rand(1.5, 3);
+        break;
+      }
+      case 'prison': {
+        // Rare, soft strikes — the auto-advance timer paces the story.
+        this.onKey({ on: true, note: 45 + pick([0, 3, 7]), velocity: 0.3 }, true);
+        this.autoWait = rand(8, 11);
         break;
       }
       case 'act1': {

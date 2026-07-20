@@ -85,10 +85,37 @@ export const config = {
     act1FullnessTarget: 1.0,   // energy needed to freeze the beryl ground
     act1EnergyPerStrike: 0.03, // fullness added per key at full velocity
     act2DialTarget: 0.55,      // EVERY dial must pass this to raise the throne
-    act2MinSec: 8,             // Act II always gets at least this long
+    // SOFT MINIMUMS — the show can't be rushed: each act keeps the stage
+    // at least this long even when its exit condition is already met.
+    act1MinSec: 100,           // Act I runtime floor (meter can fill early)
+    act2MinSec: 90,            // Act II runtime floor (dials can finish early)
+    act3MinSec: 75,            // dissolution pad is ignored before this
     codaFadeSec: 20,           // dissolution length
+    epilogueSec: 22,           // one lotus in the dark, then the loop
     loopPauseSec: 8,           // black pause before the prologue returns
     autoIdleSec: 30,           // idle time before attract mode starts playing
+  },
+
+  // ── PRISON — the opening scene (Vaidehī's story, key-paced) ────────
+  // Entered on the first key strike. Each line shows as a caption; any
+  // key advances it (auto-advances after lineSec); the last line opens
+  // Act I. Strikes bloom small and gray-blue — light cannot yet escape.
+  prison: {
+    lineSec: 9,
+    mural: 'cave-prison.jpg',  // condenses dimly on the wall through the scene
+    lines: [
+      ['王舍城 · RĀJAGṚHA', 'In the great city of Rājagṛha,\nthe prince seized his father the king.'],
+      ['七重牢 · THE SEVEN WALLS', 'He locked him behind seven walls;\nno one was allowed to go to him.'],
+      ['韦提希 · QUEEN VAIDEHĪ', 'Queen Vaidehī bathed, and carried honey and flour\nto the king in secret, day after day.'],
+      ['幽闭 · HER OWN CELL', 'When the prince learned of it, he raised his sword —\nand his mother too was shut away in darkness.'],
+      ['悲泣 · THE PLEA', 'Grieving, she bowed toward the Vulture Peak:\n“World-Honored One — show me a land without sorrow.”'],
+      ['佛来 · THE BUDDHA COMES', 'And the Buddha appeared to her in her cell,\nand began to teach her to SEE.'],
+    ],
+  },
+
+  // ── EPILOGUE — after the dissolution, before the loop ──────────────
+  epilogue: {
+    line: ['心光 · WHAT REMAINS', 'The vision has returned to the dark —\nbut the mind that saw it keeps its light.'],
   },
 
   // ── AUDIO ──────────────────────────────────────────────────────────
@@ -120,6 +147,8 @@ export const config = {
     // [big act title shown center-screen, poetic line shown lower-third]
     phases: {
       prologue: ['', ''],   // the tutorial speaks for the prologue
+      prison: ['', ''],     // the prison scene tells its own lines
+      epilogue: ['', ''],   // …as does the epilogue
       act1: ['ACT I · THE FLOOD OF LIGHT', 'Play the keys. Water becomes ice; ice becomes beryl.\nA ground of light is laid.'],
       act2: ['ACT II · THE JEWELED WORLD', 'Turn the dials. Trees, ponds, music, wind —\nwhat you raise remains.'],
       act3: ['ACT III · THE SIXTEEN CONTEMPLATIONS', 'Press the pads — each tells one vision of the sutra.\nPad 8, again and again, carries it to the end.'],
@@ -128,6 +157,7 @@ export const config = {
     // Shown if a pad or dial is used before its act has arrived.
     padsLocked: 'The pads awaken in Act III —\ncultivate the world with the dials first.',
     dialsLocked: 'The dials awaken in Act II —\nflood the darkness with the keys first.',
+    dissolutionEarly: 'The vision is not ready to be released —\nlet the contemplations deepen a little longer.',
 
     // When no one interacts for a while, the piece meditates aloud:
     // sutra passages surface one at a time (idleSec to start, everySec
@@ -282,7 +312,10 @@ export const config = {
     video: 'backdrop.mp4',
     // Peak opacity per phase — the prologue stays a black prison.
     // (Values are tiny because the sRGB output transform lifts darks a lot.)
-    opacityByPhase: { prologue: 0, act1: 0.006, act2: 0.011, act3: 0.017, coda: 0 },
+    opacityByPhase: {
+      prologue: 0, prison: 0.004, act1: 0.006, act2: 0.011, act3: 0.017,
+      coda: 0, epilogue: 0.02, // the cave wall itself glows once, then fades
+    },
     panAmount: 0.035,   // slow horizontal drift (×worldWidth)
     breatheAmount: 0.05, // slow scale breathing
   },
