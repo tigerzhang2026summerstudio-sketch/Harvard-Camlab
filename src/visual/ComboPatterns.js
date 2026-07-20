@@ -195,6 +195,57 @@ export function pagodaPoints(R, budget) {
   return pts;
 }
 
+/**
+ * The kalavinka — the half-bird, half-human musician of the Pure Land:
+ * a small figure with spread wing-fans and long twin tail ribbons.
+ */
+export function kalavinkaPoints(R, budget) {
+  const pts = [];
+  const gold = col(config.palette.gold);
+  const cin = col(config.palette.cinnabar);
+  const white = col(config.palette.white);
+  const beryl = col(config.palette.beryl);
+
+  const nWing = Math.floor(budget * 0.44);
+  for (let k = 0; k < nWing; k += 1) {   // two wing-fans, feather ribs
+    const side = Math.random() < 0.5 ? -1 : 1;
+    const rib = Math.floor(Math.random() * 7);
+    const a = 0.25 + (rib / 6) * 0.9;    // rib angle above horizontal
+    const t = Math.random();
+    const d = t * R * (0.75 + rib * 0.05);
+    pts.push({
+      x: side * (R * 0.16 + Math.cos(a) * d),
+      y: R * 0.1 + Math.sin(a) * d * 0.8,
+      col: new THREE.Color().lerpColors(gold, white, t).multiplyScalar(0.85 + t * 0.5),
+    });
+  }
+  const nBody = Math.floor(budget * 0.18);
+  for (let k = 0; k < nBody; k += 1) {   // teardrop body + head + crest
+    const u = Math.random();
+    if (u < 0.62) {
+      const t = Math.random();
+      const w = Math.sin(Math.PI * t) ** 0.9 * R * 0.13;
+      pts.push({ x: rand(-1, 1) * w, y: R * 0.28 - t * R * 0.55, col: cin.clone().multiplyScalar(1.15) });
+    } else if (u < 0.9) {
+      const a = Math.random() * Math.PI * 2;
+      const r = Math.sqrt(Math.random()) * R * 0.09;
+      pts.push({ x: Math.cos(a) * r, y: R * 0.38 + Math.sin(a) * r, col: white.clone().multiplyScalar(1.2) });
+    } else {
+      pts.push({ x: rand(-3, 3), y: R * 0.47 + Math.random() * R * 0.1, col: gold.clone().multiplyScalar(1.3) });
+    }
+  }
+  while (pts.length < budget) {          // twin tail ribbons, trailing in song
+    const side = Math.random() < 0.5 ? -1 : 1;
+    const t = Math.random();
+    pts.push({
+      x: side * (R * 0.05 + t * R * 0.4) + Math.sin(t * Math.PI * 2.4) * R * 0.12,
+      y: -R * 0.24 - t * R * 0.75,
+      col: new THREE.Color().lerpColors(cin, beryl, t).multiplyScalar(0.9 - t * 0.35),
+    });
+  }
+  return pts;
+}
+
 /** A six-armed ice crystal (Act I's freezing milestone). */
 export function flakePoints(R, budget) {
   const pts = [];
@@ -401,13 +452,13 @@ export function textPoints(zh, en, worldWidth, budget) {
 const muralCache = new Map(); // file → { pts: null | array (unit-height coords) }
 
 /** Kick off loading+sampling a mural crop (idempotent, async). */
-export function preloadMural(file, budget) {
+export function preloadMural(file, budget, opts = {}) {
   if (muralCache.has(file)) return;
   const entry = { pts: null, aspect: 1 };
   muralCache.set(file, entry);
   const img = new Image();
   img.onload = () => {
-    const out = sampleMural(img, budget);
+    const out = sampleMural(img, budget, opts);
     entry.pts = out.pts;
     entry.aspect = out.aspect;
   };
@@ -421,7 +472,7 @@ export function muralPointsFor(file) {
   return entry?.pts ? entry : null;
 }
 
-function sampleMural(img, budget) {
+function sampleMural(img, budget, opts = {}) {
   const m = config.murals;
   const s = Math.min(1, 360 / img.width);
   const w = Math.max(1, Math.round(img.width * s));
@@ -445,7 +496,8 @@ function sampleMural(img, budget) {
       if (lum < m.luminanceCutoff) continue;
       const mx = Math.max(r, g, b);
       const sat = mx === 0 ? 0 : (mx - Math.min(r, g, b)) / mx;
-      if (lum > m.plasterLum && sat < m.plasterSat) continue; // bare plaster
+      // Photo crops drop bare wall plaster; SVG art keeps its whites.
+      if (opts.plasterSkip !== false && lum > m.plasterLum && sat < m.plasterSat) continue;
       const c = new THREE.Color(r, g, b).lerp(gold, m.retint * 0.8).multiplyScalar(1.25);
       cands.push({ px, py, c });
     }

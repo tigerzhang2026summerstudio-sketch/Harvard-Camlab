@@ -78,6 +78,7 @@ export class Act1 {
     this.milestone = 0;       // 0 none · 1 water seen · 2 frozen · 3 beryl
     this.pendingScenes = [];  // scheduled milestone effects { at, fn }
     this.captions = null;     // wired in main.js
+    this.constAcc = 0;        // constellation-thread emission accumulator
   }
 
   /** Map a note+velocity to a burst spec (position/color/energy). */
@@ -257,6 +258,31 @@ export class Act1 {
       life: rand(6, 11),
       upBias: 0.1, jitter: 34,
     });
+
+    // Hard strikes may throw a comet — a curved trailing light that
+    // arcs across part of the wall and BURSTS where it dies.
+    if (e.velocity >= v.cometMinVel && Math.random() < v.cometChance) {
+      const dir = spec.x > 0 ? -1 : 1; // arc toward the far side
+      this.tracers.push({
+        x: spec.x, y: spec.y, t: 0,
+        vx: dir * rand(320, 520),
+        vy: rand(120, 260),
+        ax: 0,
+        ay: rand(-260, -170),  // gravity curves it over
+        dur: rand(1.2, 2.0),
+        rate: 0.016, emitAcc: 0,
+        color: spec.color, size: spec.size,
+        endBurst: {            // the death-burst at the arc's end
+          color: spec.color,
+          count: Math.round(spec.count * 0.9),
+          speed: spec.speed * 0.85,
+          size: spec.size,
+          life: spec.life,
+          upBias: 0.3,
+          jitter: 12,
+        },
+      });
+    }
 
     // …paints a rising streak of light (direction now varies)…
     if (Math.random() < v.streakChance) {
@@ -479,7 +505,42 @@ export class Act1 {
         });
       }
     }
+    // Comets burst where they die; plain streaks just fade.
+    for (const k of this.tracers) {
+      if (k.t >= k.dur && k.endBurst && !k.burstFired) {
+        k.burstFired = true;
+        this.particles.burst({ ...k.endBurst, x: k.x, y: k.y });
+      }
+    }
     this.tracers = this.tracers.filter((k) => k.t < k.dur);
+
+    // CONSTELLATION: while a chord is held, threads of light run
+    // between the held notes' bloom points.
+    if (this.held.size >= 2
+        && (s.phase === 'act1' || s.phase === 'act2' || s.phase === 'act3')) {
+      const cn = config.act1.constellation;
+      this.constAcc += dt;
+      while (this.constAcc >= cn.emitEverySec) {
+        this.constAcc -= cn.emitEverySec;
+        const specs = [...this.held.values()].sort((a, b) => a.x - b.x);
+        for (let i = 0; i < specs.length - 1; i += 1) {
+          const a = specs[i];
+          const b = specs[i + 1];
+          for (let k = 0; k < cn.pointsPerLine; k += 1) {
+            const f = (k + Math.random()) / cn.pointsPerLine;
+            this.particles.burst({
+              x: lerp(a.x, b.x, f),
+              y: lerp(a.y, b.y, f),
+              color: Math.random() < 0.7 ? config.palette.white : config.palette.gold,
+              count: 2, speed: 4, size: 2.0, life: 0.55,
+              upBias: 0, jitter: 2.5,
+            });
+          }
+        }
+      }
+    } else {
+      this.constAcc = 0;
+    }
 
     // Shooting lights cross the sky now and then (only while acts play).
     if (s.phase === 'act1' || s.phase === 'act2' || s.phase === 'act3') {

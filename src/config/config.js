@@ -268,6 +268,17 @@ export const config = {
       streakChance: 0.6,     // strikes that also paint a rising streak
       emberCount: 6,         // long-lived motes left glowing at the spot
       meteorEverySec: 20,    // avg seconds between shooting lights (act 1)
+      // Hard strikes may throw a COMET: a curved, trailing light that
+      // arcs across part of the wall and bursts where it dies.
+      cometChance: 0.22,     // chance on strikes with velocity ≥ cometMinVel
+      cometMinVel: 0.78,
+    },
+
+    // CONSTELLATION — while two or more keys are HELD, threads of light
+    // run between their bloom points, making held playing visible.
+    constellation: {
+      emitEverySec: 0.14,    // thread refresh rate while holding
+      pointsPerLine: 13,     // motes along each thread per refresh
     },
 
     // COMBOS — special ways of playing that gather the fire into

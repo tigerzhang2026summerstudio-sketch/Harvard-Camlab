@@ -18,11 +18,12 @@
 import { config } from '../config/config.js';
 import {
   lotusPoints, moonPoints, sunPoints, canopyPoints, pagodaPoints,
-  mandalaPoints, pillarPoints, ribbonPoints, textPoints,
+  kalavinkaPoints, mandalaPoints, pillarPoints, ribbonPoints, textPoints,
   preloadMural, muralPointsFor,
 } from './ComboPatterns.js';
 
-const IMAGERY = ['lotus', 'moon', 'sun', 'canopy', 'pagoda'];
+const IMAGERY = ['lotus', 'moon', 'sun', 'canopy', 'pagoda', 'kalavinka', 'apsara'];
+const APSARA_FILES = ['apsara-left-placeholder.svg', 'apsara-right-placeholder.svg'];
 
 export class ComboEngine {
   constructor(state, particles) {
@@ -43,6 +44,10 @@ export class ComboEngine {
     if (cc.enabled) {
       // Weathered photo crops need more motes than the parametric shapes.
       for (const f of cc.muralFiles) preloadMural(f, this.budget(cc.patternPoints * 2.4));
+      // The apsara 图案 samples the flying-figure SVG art (keep whites).
+      for (const f of APSARA_FILES) {
+        preloadMural(f, this.budget(cc.patternPoints), { plasterSkip: false });
+      }
     }
   }
 
@@ -166,10 +171,32 @@ export class ComboEngine {
     if (shape === this.lastShape) { // avoid showing the same 图案 twice running
       shape = IMAGERY[(IMAGERY.indexOf(shape) + 1) % IMAGERY.length];
     }
+
+    // The apsara comes from the flying-figure art; if it isn't loaded
+    // yet, fall back to a drawn shape.
+    if (shape === 'apsara') {
+      const file = APSARA_FILES[Math.floor(Math.random() * APSARA_FILES.length)];
+      const apsara = muralPointsFor(file);
+      if (apsara) {
+        this.lastShape = shape;
+        const hWorld = R * 2.1;
+        this.particles.settle({
+          pts: apsara.pts.map((p) => ({ x: p.x * hWorld, y: p.y * hWorld, col: p.col })),
+          x: cx, y: cy,
+          size: 2.5,
+          life: cc.patternLifeSec,
+          scatter: cc.gatherDist,
+          stagger: 0.9,
+        });
+        return { x: cx, y: cy - R };
+      }
+      shape = 'kalavinka';
+    }
+
     this.lastShape = shape;
     const gen = {
       lotus: lotusPoints, moon: moonPoints, sun: sunPoints,
-      canopy: canopyPoints, pagoda: pagodaPoints,
+      canopy: canopyPoints, pagoda: pagodaPoints, kalavinka: kalavinkaPoints,
     }[shape];
     this.particles.settle({
       pts: gen(R, budget),
