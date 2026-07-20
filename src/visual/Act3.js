@@ -31,13 +31,13 @@ export class Act3 {
     this.vaidehi = vaidehi;
     this.captions = null; // set by main once the captions module exists
 
-    this.throne = new GrowthLayer(worldGroup, buildThrone, { intensity: 1.1 });
+    this.throne = new GrowthLayer(worldGroup, buildThrone, { intensity: 0.9 });
     this.figures = {};
     this.assembled = {};
     this.targets = {};
     for (const name of ['amitabha', 'avalokitesvara', 'mahasthamaprapta']) {
       this.figures[name] = new GrowthLayer(
-        worldGroup, figureBuilder(config.act3.figures[name]), { intensity: 1.15 },
+        worldGroup, figureBuilder(config.act3.figures[name]), { intensity: 0.75 },
       );
       this.assembled[name] = 0;
       this.targets[name] = 0;
@@ -54,7 +54,8 @@ export class Act3 {
     this.sunTime = -1;         // the sinking sun
     this.waterTime = -1;       // the sweeping wave
     this.flashes = {};         // story → seconds since its mural was invoked
-    this.seqIndex = 0;         // pad 8's position in config.act3.sequence
+    this.riteIndex = 0;        // position in config.act3.rite (any pad advances)
+    this.busyUntil = 0;        // phaseTime before which presses are ignored
     this.onStory = null;       // main wires this to the audio accents
 
     // Murals: A6 assembles 'amitabha'; 'panel' murals answer B1;
@@ -93,7 +94,8 @@ export class Act3 {
         this.sunTime = -1;
         this.waterTime = -1;
         this.flashes = {};
-        this.seqIndex = 0;
+        this.riteIndex = 0;
+        this.busyUntil = 0;
         this.vaidehi.reset();
       }
     });
@@ -113,34 +115,34 @@ export class Act3 {
       }
       return;
     }
-    let action = config.act3.padMap[`${e.bank}${e.index + 1}`];
-    if (!action) return;
+    // THE RITE keeps its own pace: ANY pad is "carry the rite onward" —
+    // the next contemplation in order, and only once the current vision
+    // has finished its time on stage. No skipping, no going back.
+    const pt = this.state.phaseTime;
+    if (pt < (this.busyUntil ?? 0)) return; // the vision must finish first
 
-    // Pad 8: continue the sutra — each press is the next remaining story.
-    let fromSequence = false;
-    if (action === 'nextStory') {
-      action = config.act3.sequence[this.seqIndex];
-      if (!action) return; // the telling is complete
-      this.seqIndex += 1;
-      fromSequence = true;
-    }
+    const action = config.act3.rite[this.riteIndex];
+    if (!action) return; // the telling is complete
 
     // The dissolution refuses to come before Act III's soft minimum.
-    if (action === 'dissolution' && this.state.phaseTime < config.acts.act3MinSec) {
-      if (fromSequence) this.seqIndex -= 1; // the press is not spent
+    if (action === 'dissolution' && pt < config.acts.act3MinSec) {
       this.captions?.show(config.captions.dissolutionEarly);
       return;
     }
 
+    this.riteIndex += 1;
+    this.busyUntil = pt
+      + (config.act3.busySec[action] ?? config.act3.busyDefaultSec);
+
     this.onStory?.(action);
 
-    // The sequence's final story releases the vision itself.
+    // The rite's final story releases the vision itself.
     if (action === 'dissolution') {
-      this.state.go('coda'); // (direct B8 never reaches here — StateManager
-      return;                //  flips the phase before this handler runs)
+      this.state.go('coda');
+      return;
     }
 
-    // Every pad speaks its story — on a stage cleared of the last one.
+    // Every vision speaks its story — on a stage cleared of the last one.
     this.retireTransients(action);
     const story = config.act3.stories[action];
     if (story && this.captions) this.captions.showStory(story[0], story[1]);
@@ -381,7 +383,7 @@ export class Act3 {
       x: s.x * config.worldWidth + rand(-6, 6),
       y,
       color: this.color,
-      count: 240, speed: 26, size: 3.4, life: 2.8,
+      count: 130, speed: 26, size: 2.7, life: 2.8,
       upBias: -0.15, jitter: 26,
     });
   }
@@ -430,7 +432,7 @@ export class Act3 {
           photo = Math.min(smooth01(th / 1.8), smooth01((fx.holdSec - th) / 1.4));
         }
         mural.photo = photo;
-        mural.alpha = Math.min(1, assemble * 4) * (1 - photo * 0.65);
+        mural.alpha = Math.min(0.8, assemble * 4) * (1 - photo * 0.7);
         if (t > fx.inSec + fx.holdSec + fx.outSec) delete this.flashes[story];
       } else {
         mural.alpha = 0;

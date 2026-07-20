@@ -113,13 +113,9 @@ export class StateManager {
 
   onPad(e, synthetic = false) {
     this.touch(synthetic);
-    // The dissolution pad (see config.act3.padMap) ends the vision — but
-    // not before Act III has had its soft-minimum runtime.
-    const action = config.act3.padMap[`${e.bank}${e.index + 1}`];
-    if (e.on && this.phase === 'act3' && action === 'dissolution'
-        && this.phaseTime >= config.acts.act3MinSec) {
-      this.go('coda');
-    }
+    // Act 3 runs as a fixed rite (any pad advances it, in order) — the
+    // dissolution is reached only THROUGH the rite, so no pad shortcuts
+    // the phase here; Act3 calls go('coda') itself at the rite's end.
     this.emit('pad', e);
   }
 
@@ -209,34 +205,13 @@ export class StateManager {
         break;
       }
       case 'act3': {
-        // The sixteen contemplations exactly as a performer with eight
-        // pads plays them: 1–7, then pad 8 again and again to continue
-        // the sutra through to the dissolution.
-        const script = [
-          { bank: 'A', index: 0, wait: 10 },  // 一 the setting sun
-          { bank: 'A', index: 1, wait: 7 },   // 二 water & ice
-          { bank: 'A', index: 2, wait: 7 },   // 三 the beryl ground
-          { bank: 'A', index: 3, wait: 6 },   // 四 the jeweled trees
-          { bank: 'A', index: 4, wait: 6 },   // 五 the ponds
-          { bank: 'A', index: 5, wait: 6 },   // 六 the towers of music
-          { bank: 'A', index: 6, wait: 7 },   // 七 the lotus throne
-          { bank: 'A', index: 7, wait: 8 },   // pad 8 → 八 the image
-          { bank: 'A', index: 7, wait: 8 },   //       → 九 the true body
-          { bank: 'A', index: 7, wait: 6 },   //       → 十 Avalokiteśvara
-          { bank: 'A', index: 7, wait: 7 },   //       → 十一 Mahāsthāmaprāpta
-          { bank: 'A', index: 7, wait: 9 },   //       → 十二 universal vision
-          { bank: 'A', index: 7, wait: 8 },   //       → 十三 the mixed vision
-          { bank: 'A', index: 7, wait: 5 },   //       → 十四 highest rebirths
-          { bank: 'A', index: 7, wait: 5 },   //       → 十五 middle rebirths
-          { bank: 'A', index: 7, wait: 6 },   //       → 十六 lowest rebirths
-          { bank: 'A', index: 7, wait: 12 },  //       → awakening — long hold
-          { bank: 'A', index: 7, wait: 2 },   //       → dissolution → coda
-        ];
-        const step = script[Math.min(this.autoStep, script.length - 1)];
-        this.onPad({ on: true, bank: step.bank, index: step.index, velocity: 0.8 }, true);
-        this.onPad({ on: false, bank: step.bank, index: step.index, velocity: 0 }, true);
-        this.autoStep += 1;
-        this.autoWait = step.wait;
+        // The rite advances itself: any pad carries it one vision
+        // onward, and Act3's busy-gating enforces the pacing — early
+        // presses simply wait their turn.
+        const index = Math.floor(Math.random() * 8);
+        this.onPad({ on: true, bank: 'A', index, velocity: 0.8 }, true);
+        this.onPad({ on: false, bank: 'A', index, velocity: 0 }, true);
+        this.autoWait = rand(10, 13);
         break;
       }
       default: // coda — hands off, the timer brings the loop around

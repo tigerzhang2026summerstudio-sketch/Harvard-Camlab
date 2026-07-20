@@ -185,7 +185,7 @@ export const config = {
       epilogue: ['', ''],   // …as does the epilogue
       act1: ['ACT I · THE FLOOD OF LIGHT', 'Play the keys. Water becomes ice; ice becomes beryl.\nA ground of light is laid.'],
       act2: ['ACT II · THE JEWELED WORLD', 'Turn the dials. Trees, ponds, music, wind —\nwhat you raise remains.'],
-      act3: ['ACT III · THE SIXTEEN CONTEMPLATIONS', 'Press the pads — each tells one vision of the sutra.\nPad 8, again and again, carries it to the end.'],
+      act3: ['ACT III · THE SIXTEEN CONTEMPLATIONS', 'Press any pad — each press carries the rite one vision onward.\nThe visions keep their own pace; let each one finish.'],
       // The Diamond Sutra's closing gatha — the dissolution is not an
       // ending announced, but a truth contemplated.
       coda: ['一切有为法 · 如梦幻泡影', 'All conditioned things are as dreams,\nillusions, bubbles, shadows…'],
@@ -245,7 +245,7 @@ export const config = {
     steps: [
       ['I · THE KEYS', 'Flood the darkness with light. Strike softly or hard — pitch places the bloom, chords open into mandalas. Fill the dark until the beryl ground freezes into being.'],
       ['II · THE KNOBS', 'Cultivate the jeweled world: trees, lotus ponds, self-playing music, wind. What you raise remains — nothing decays while you hold it.'],
-      ['III · THE PADS', 'Summon the holy assembly, and souls reborn in opening lotuses. The final pad releases the vision back into darkness.'],
+      ['III · THE PADS', 'Any pad carries the rite of sixteen contemplations one vision onward — each must finish before the next. The last releases it all back into darkness.'],
     ],
     hint: "No controller?  ` turns on keyboard play — letter rows = keys · 1–8 = pads (9 flips bank) · , . / ; ' [ ] \\ = the 8 dials (hold to raise, Shift lowers) · Shift +/− = sound on/off · Shift+letter for toggles",
     begin: 'strike any key to begin',
@@ -537,12 +537,20 @@ export const config = {
       B1: 'universal', B2: 'mixed', B3: 'gradesHigh', B4: 'gradesMid',
       B5: 'gradesLow', B6: 'awakening', B7: 'prison', B8: 'dissolution',
     },
-    // What pad 8 steps through, in the sutra's order (八观 → the end).
-    sequence: [
-      'image', 'amitabha', 'avalokitesvara', 'mahasthamaprapta',
-      'universal', 'mixed', 'gradesHigh', 'gradesMid', 'gradesLow',
-      'awakening', 'dissolution',
+    // THE RITE — Act 3 keeps its own pace: ANY pad press advances to the
+    // next contemplation IN ORDER, and only once the current vision has
+    // finished (busySec). No skipping, no going back, no pile-ups.
+    rite: [
+      'sun', 'water', 'groundFreeze', 'treesStory', 'pondsStory',
+      'musicStory', 'throne', 'image', 'amitabha', 'avalokitesvara',
+      'mahasthamaprapta', 'universal', 'mixed', 'gradesHigh', 'gradesMid',
+      'gradesLow', 'awakening', 'dissolution',
     ],
+    busyDefaultSec: 9,   // a vision owns the stage at least this long
+    busySec: {           // per-story overrides (match their durations)
+      sun: 11, water: 8, universal: 11, mixed: 9, awakening: 13,
+      amitabha: 11, avalokitesvara: 8, mahasthamaprapta: 8,
+    },
 
     // Every pad's story — [title, line] shown as a caption when pressed.
     stories: {
@@ -569,9 +577,9 @@ export const config = {
 
     // Grade groups for the three rebirth pads (soul-mote heights/colors).
     gradeGroups: { gradesHigh: [8, 7, 6], gradesMid: [5, 4, 3], gradesLow: [2, 1, 0] },
-    // Timed story visions (sun sinking, water sweeping)
-    sun: { durationSec: 8, x: -0.27, yTopFrac: 0.30, yEndFrac: 0.02 },
-    water: { sweepSec: 2.6 },
+    // Timed story visions (sun sinking, water sweeping) — long, unhurried
+    sun: { durationSec: 10, x: -0.27, yTopFrac: 0.30, yEndFrac: 0.02 },
+    water: { sweepSec: 4.2 },
     storyFlash: { inSec: 2.2, holdSec: 7, outSec: 3.5 },
     throne: { riseSec: 5 },     // the great lotus throne rises on act entry
     figures: {
@@ -588,7 +596,7 @@ export const config = {
       lotusScaleMin: 0.7,
       lotusScaleMax: 1.7,
     },
-    rain: { durationSec: 7, interval: 0.1, fallDrift: -70 }, // blossom rain
+    rain: { durationSec: 9, interval: 0.1, fallDrift: -70 }, // blossom rain
     awakening: { swell: 1.35, riseSec: 2.5, holdSec: 3, fallSec: 6 },
   },
 
@@ -605,7 +613,7 @@ export const config = {
     plasterSat: 0.36,             // …and less saturated than this
     retint: 0.35,                 // 0 = photo colors · 1 = full mineral palette
     scatterDist: 300,             // how far motes fly when dissolved
-    intensity: 1.15,
+    intensity: 0.95,              // additive glow — Act 3 must not blow out
     panels: [
       // role 'amitabha': assembled by the true-body pad (A6) in place of
       // the procedural figure (delete to fall back to the silhouette).
@@ -620,7 +628,7 @@ export const config = {
       // particle figure — swap the file back anytime; the sampling tools
       // (mask/invert/gamma/gain) are all wired for a cleaner scan.
       { file: 'buddha-placeholder.svg', role: 'amitabha',
-        x: 0, yFrac: 0.02, heightFrac: 0.52, intensity: 0.95 },
+        x: 0, yFrac: 0.02, heightFrac: 0.52, intensity: 0.68 },
       // role 'panel': materialize on the Universal Vision pad (B1),
       // scatter in the coda.
       { file: 'apsara-left-placeholder.svg', role: 'panel',
@@ -634,13 +642,13 @@ export const config = {
       // particles (soft-edged), so the image finally reads clearly.
       { file: 'cave-sun-contemplation.jpg', role: 'story', story: 'sun',
         x: -0.3, yFrac: 0.16, heightFrac: 0.34, plasterSkip: true,
-        photoThrough: true, photoMax: 0.85 },
+        photoThrough: true, photoMax: 0.5 },
       { file: 'cave-prison.jpg', role: 'story', story: 'prison',
         x: 0.3, yFrac: 0.16, heightFrac: 0.34, plasterSkip: true,
-        photoThrough: true, photoMax: 0.85 },
+        photoThrough: true, photoMax: 0.5 },
       { file: 'cave-music-sky.jpg', role: 'story', story: 'mixed',
         x: 0, yFrac: 0.3, heightFrac: 0.24, plasterSkip: true,
-        photoThrough: true, photoMax: 0.85 },
+        photoThrough: true, photoMax: 0.5 },
     ],
   },
 
