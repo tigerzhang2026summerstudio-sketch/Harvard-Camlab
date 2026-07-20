@@ -275,6 +275,21 @@ export class AudioManager {
     }
   }
 
+  /** Shift + '+' — open the sound (unlocks it the first time). */
+  soundOn() {
+    if (!this.unlocked) { this.unlock(); return; } // unlock starts unmuted
+    if (!this.ready) return;
+    Tone.getDestination().mute = false;
+    this.refreshChip();
+  }
+
+  /** Shift + '-' — close the sound. */
+  soundOff() {
+    if (!this.unlocked || !this.ready) return; // not unlocked = already silent
+    Tone.getDestination().mute = true;
+    this.refreshChip();
+  }
+
   toggleMute() {
     const dest = Tone.getDestination();
     dest.mute = !dest.mute;

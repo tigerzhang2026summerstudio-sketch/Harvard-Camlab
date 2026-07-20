@@ -205,6 +205,11 @@ window.addEventListener('keydown', (e) => {
   if (k === '0' || e.code === 'Digit0') {
     console.info(`[painted-cave] audio ${audio.toggleMute() ? 'muted' : 'unmuted'}`);
   }
+  // Shift + '+' opens the sound · Shift + '-' closes it. (Shift is
+  // already held, so these pass the keyboard-play guard above; match by
+  // typed character AND physical key so layouts can't break it.)
+  if (e.shiftKey && (e.key === '+' || e.code === 'Equal')) audio.soundOn();
+  if (e.shiftKey && (e.key === '_' || e.key === '-' || e.code === 'Minus')) audio.soundOff();
 });
 
 // ── Cursor auto-hide (show mode) ──────────────────────────────────────
