@@ -22,6 +22,8 @@ import { buildThrone } from './Throne.js';
 import { figureBuilder } from './Figures.js';
 import { instrumentCenters } from './Instruments.js';
 import { MuralDissolve } from './MuralDissolve.js';
+import { MuralSpotlight } from './MuralSpotlight.js';
+import { flakePoints } from './ComboPatterns.js';
 
 export class Act3 {
   constructor(worldGroup, state, particles, post, vaidehi) {
@@ -56,6 +58,9 @@ export class Act3 {
     this.flashes = {};         // story → seconds since its mural was invoked
     this.riteIndex = 0;        // position in config.act3.rite (any pad advances)
     this.busyUntil = 0;        // phaseTime before which presses are ignored
+    this.pending = [];         // staged vision waves { at (phaseTime), fn }
+    // Each 观 lights its own painted panel on the real north wall.
+    this.spotlight = new MuralSpotlight(worldGroup);
     this.onStory = null;       // main wires this to the audio accents
 
     // Murals: A6 assembles 'amitabha'; 'panel' murals answer B1;
@@ -96,6 +101,7 @@ export class Act3 {
         this.flashes = {};
         this.riteIndex = 0;
         this.busyUntil = 0;
+        this.pending = [];
         this.vaidehi.reset();
       }
     });
@@ -131,8 +137,12 @@ export class Act3 {
     }
 
     this.riteIndex += 1;
-    this.busyUntil = pt
-      + (config.act3.busySec[action] ?? config.act3.busyDefaultSec);
+    const busy = config.act3.busySec[action] ?? config.act3.busyDefaultSec;
+    this.busyUntil = pt + busy;
+    this.pending = []; // a new vision cancels the last one's queued waves
+
+    // …and the wall itself remembers: light this 观's painted panel.
+    this.spotlight.show(action, busy * 0.85);
 
     this.onStory?.(action);
 
@@ -148,13 +158,42 @@ export class Act3 {
     if (story && this.captions) this.captions.showStory(story[0], story[1]);
     if (this.storyMurals[action]) this.flashes[action] = 0;
 
+    // Staged waves: the once-weak 观s now play in movements.
+    const queue = (at, fn) => this.pending.push({ at: pt + at, fn });
+
     switch (action) {
       case 'sun': this.sunTime = 0; break;
-      case 'water': this.waterTime = 0; break;
-      case 'groundFreeze': this.freezeSurge(); break;
-      case 'treesStory': this.treesFlourish(); break;
-      case 'pondsStory': this.pondsFlourish(); break;
-      case 'musicStory': this.musicFlourish(); break;
+      case 'water': // the wave sweeps, stills, and returns
+        this.waterTime = 0;
+        queue(4.8, () => { this.waterTime = 0; });
+        break;
+      case 'groundFreeze': // the surge, then frost stars crystallize
+        this.freezeSurge();
+        for (let i = 0; i < 5; i += 1) {
+          queue(1.2 + i * 0.6, () => this.particles.settle({
+            pts: flakePoints(rand(60, 100), 700),
+            x: rand(-0.4, 0.4) * config.worldWidth,
+            y: rand(-0.32, -0.18) * config.worldHeight,
+            size: 2.3, life: 5, scatter: 110, stagger: 0.5,
+          }));
+        }
+        queue(4.2, () => this.freezeSurge());
+        break;
+      case 'treesStory': // three waves of glitter through the rows
+        this.treesFlourish();
+        queue(2.4, () => this.treesFlourish());
+        queue(4.8, () => this.treesFlourish());
+        break;
+      case 'pondsStory':
+        this.pondsFlourish();
+        queue(2.4, () => this.pondsFlourish());
+        queue(4.8, () => this.pondsFlourish());
+        break;
+      case 'musicStory':
+        this.musicFlourish();
+        queue(2.4, () => this.musicFlourish());
+        queue(4.8, () => this.musicFlourish());
+        break;
       case 'throne': this.throneGrowth = Math.max(this.throneGrowth, 0.12); break;
       case 'image':
         this.targets.amitabha = Math.max(this.targets.amitabha, 0.5);
@@ -171,13 +210,21 @@ export class Act3 {
         this.universalOn = true;
         this.rainLeft = config.act3.rain.durationSec;
         break;
-      case 'mixed': this.mixedVision(); break;
+      case 'mixed': // the vision flickers — twice
+        this.mixedVision();
+        queue(3.4, () => this.mixedVision());
+        break;
       case 'gradesHigh':
       case 'gradesMid':
-      case 'gradesLow':
+      case 'gradesLow': // souls arrive in two flights
         for (const [k, grade] of config.act3.gradeGroups[action].entries()) {
           this.launchSoul(grade, 0.85 - k * 0.1);
         }
+        queue(2.8, () => {
+          for (const [k, grade] of config.act3.gradeGroups[action].entries()) {
+            this.launchSoul(grade, 0.7 - k * 0.08);
+          }
+        });
         break;
       case 'awakening':
         if (this.awakeningTime < 0) this.awakeningTime = 0;
@@ -513,6 +560,17 @@ export class Act3 {
       mural.alpha = Math.min(1, this.panelAssemble * 5);
       mural.update(time, ppwu);
     }
+
+    // Staged vision waves fire on the act's own clock.
+    if (this.pending.length && this.state.phase === 'act3') {
+      const pt = this.state.phaseTime;
+      const due = this.pending.filter((p) => pt >= p.at);
+      if (due.length) {
+        this.pending = this.pending.filter((p) => pt < p.at);
+        for (const p of due) p.fn();
+      }
+    }
+    this.spotlight.update(dt, this.state.phase);
 
     this.updateSouls(dt);
     this.updateRain(dt);

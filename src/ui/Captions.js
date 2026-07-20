@@ -99,10 +99,6 @@ export class Captions {
           0 1px 3px rgba(0, 0, 0, 0.95), 0 0 10px rgba(0, 0, 0, 0.9),
           0 0 24px rgba(0, 0, 0, 0.85), 0 0 3px rgba(0, 0, 0, 1),
           0 0 40px rgba(232, 193, 90, 0.25);
-        /* …and a soft scrim band behind the whole line */
-        background: radial-gradient(ellipse 52% 160% at 50% 50%,
-          rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0) 72%);
-        padding: 1em 0;
         opacity: 0; transition: opacity 2s ease;
       }
       #captions .cap-title {
@@ -119,9 +115,6 @@ export class Captions {
         text-shadow:
           0 1px 4px rgba(0, 0, 0, 0.95), 0 0 14px rgba(0, 0, 0, 0.9),
           0 0 30px rgba(0, 0, 0, 0.8), 0 0 40px rgba(232, 193, 90, 0.4);
-        background: radial-gradient(ellipse 46% 200% at 50% 50%,
-          rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0) 70%);
-        padding: 0.5em 0;
         opacity: 0; transition: opacity 1.6s ease;
       }`;
     document.head.appendChild(css);

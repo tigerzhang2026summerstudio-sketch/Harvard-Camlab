@@ -552,6 +552,33 @@ export const config = {
       amitabha: 11, avalokitesvara: 8, mahasthamaprapta: 8,
     },
 
+    // THE WALL KNOWS EACH 观 — the real north wall paints the sixteen
+    // contemplations, so each story lights its own painted panel:
+    // [u, v, radius] in fractions of the image (v from the TOP).
+    // The contemplation strip runs down the RIGHT edge; the true body is
+    // the central Amitāyus himself; the attendants flank him; the three
+    // rebirth grades are the bottom terrace scenes. Tune freely.
+    spotlightOpacity: 0.34,
+    muralRegions: {
+      sun:              [0.935, 0.10, 0.07],
+      water:            [0.935, 0.175, 0.07],
+      groundFreeze:     [0.935, 0.25, 0.07],
+      treesStory:       [0.935, 0.325, 0.07],
+      pondsStory:       [0.935, 0.40, 0.07],
+      musicStory:       [0.935, 0.475, 0.07],
+      throne:           [0.935, 0.55, 0.07],
+      image:            [0.935, 0.625, 0.07],
+      amitabha:         [0.565, 0.36, 0.10],   // the central true body
+      avalokitesvara:   [0.42, 0.37, 0.075],   // his left hand
+      mahasthamaprapta: [0.71, 0.37, 0.075],   // his right hand
+      universal:        [0.565, 0.52, 0.17],   // the whole assembly
+      mixed:            [0.935, 0.70, 0.06],
+      gradesHigh:       [0.35, 0.68, 0.08],    // the bottom terraces
+      gradesMid:        [0.565, 0.72, 0.08],
+      gradesLow:        [0.78, 0.68, 0.08],
+      awakening:        [0.115, 0.30, 0.07],   // the story strip, west
+    },
+
     // Every pad's story — [title, line] shown as a caption when pressed.
     stories: {
       prison: ['缘起 · THE PRISON', 'Queen Vaidehī, imprisoned by her own son, begged the Buddha:\nreveal to me a land without sorrow.'],
@@ -631,10 +658,12 @@ export const config = {
         x: 0, yFrac: 0.02, heightFrac: 0.52, intensity: 0.68 },
       // role 'panel': materialize on the Universal Vision pad (B1),
       // scatter in the coda.
+      // (intensity kept LOW: the SVG art is pure bright strokes and
+      //  blows out at full additive glow — see 第十二观.)
       { file: 'apsara-left-placeholder.svg', role: 'panel',
-        x: -0.335, yFrac: 0.27, heightFrac: 0.17 },
+        x: -0.335, yFrac: 0.27, heightFrac: 0.17, intensity: 0.5 },
       { file: 'apsara-right-placeholder.svg', role: 'panel',
-        x: 0.335, yFrac: 0.27, heightFrac: 0.17 },
+        x: 0.335, yFrac: 0.27, heightFrac: 0.17, intensity: 0.5 },
       // role 'story': real Cave 217 details that condense while their
       // pad's story is told, then fray away again. plasterSkip drops the
       // pale plaster background so only the painting becomes particles;
