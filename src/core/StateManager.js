@@ -141,9 +141,14 @@ export class StateManager {
     }
 
     // Act 1 → Act 2: the ground is full AND the act has had its minimum.
+    // FAILSAFE: a long act with a half-flooded ground advances anyway —
+    // the installation must never stall on a soft-playing visitor.
     if (this.phase === 'act1'
-        && this.phaseTime >= config.acts.act1MinSec
-        && this.fullness >= config.acts.act1FullnessTarget) {
+        && ((this.phaseTime >= config.acts.act1MinSec
+          && this.fullness >= config.acts.act1FullnessTarget)
+        || (this.phaseTime >= config.acts.act1FailsafeSec
+          && this.fullness >= 0.4))) {
+      this.fullness = Math.max(this.fullness, 1);
       this.go('act2');
     }
 

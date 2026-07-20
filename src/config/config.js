@@ -83,7 +83,10 @@ export const config = {
   acts: {
     crossfadeSec: 3,           // audio crossfade on act change
     act1FullnessTarget: 1.0,   // energy needed to freeze the beryl ground
-    act1EnergyPerStrike: 0.03, // fullness added per key at full velocity
+    act1EnergyPerStrike: 0.05, // fullness added per key at full velocity
+    // FAILSAFE — an installation must never stall: if Act I has run this
+    // long with the ground at least half-flooded, it advances anyway.
+    act1FailsafeSec: 140,
     act2DialTarget: 0.55,      // EVERY dial must pass this to raise the throne
     // SOFT MINIMUMS — the show can't be rushed: each act keeps the stage
     // at least this long even when its exit condition is already met.
@@ -180,6 +183,8 @@ export const config = {
     // Shown when an act's meter is satisfied but its runtime floor isn't:
     // the performer must know the piece is soaking, not stuck.
     floodHolds: '满潮 · THE FLOOD HOLDS\nThe light must soak deep — keep playing, the ground is setting.',
+    // {pct} is replaced with the live meter percentage.
+    floodRising: '光未满 · THE FLOOD RISES\nThe ground holds {pct}% of the light it needs —\nstrike on; harder keys pour more.',
     worldHolds: '世界将熟 · THE WORLD RIPENS\nAll eight are raised — hold them there; the throne is forming.',
 
     // When no one interacts for a while, the piece meditates aloud:

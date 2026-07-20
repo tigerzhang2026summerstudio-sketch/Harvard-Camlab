@@ -473,13 +473,18 @@ export class Act1 {
     if (s.phase === 'prologue') this.milestone = 0;
     this.milestoneCheck(time);
 
-    // Meter full but the act's runtime floor not yet reached: reassure
-    // the performer that the piece is soaking, not stuck.
-    if (s.phase === 'act1' && s.fullness >= 1
-        && s.phaseTime < config.acts.act1MinSec
-        && time - this.holdHintAt > 24) {
-      this.holdHintAt = time;
-      this.captions?.show(config.captions.floodHolds);
+    // Progress feedback, both directions: meter full but the floor not
+    // reached → "the flood holds"; floor passed but the meter short →
+    // live percentage so the performer knows to keep striking.
+    if (s.phase === 'act1' && time - this.holdHintAt > 24) {
+      if (s.fullness >= 1 && s.phaseTime < config.acts.act1MinSec) {
+        this.holdHintAt = time;
+        this.captions?.show(config.captions.floodHolds);
+      } else if (s.fullness < 1 && s.phaseTime >= config.acts.act1MinSec * 0.6) {
+        this.holdHintAt = time;
+        this.captions?.show(config.captions.floodRising
+          .replace('{pct}', String(Math.round(s.fullness * 100))));
+      }
     }
     if (this.pendingScenes.length) {
       const due = this.pendingScenes.filter((p) => time >= p.at);
