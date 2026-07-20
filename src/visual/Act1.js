@@ -79,6 +79,7 @@ export class Act1 {
     this.pendingScenes = [];  // scheduled milestone effects { at, fn }
     this.captions = null;     // wired in main.js
     this.constAcc = 0;        // constellation-thread emission accumulator
+    this.strikeTimes = [];    // recent strikes → anti-blowout damping
   }
 
   /** Map a note+velocity to a burst spec (position/color/energy). */
@@ -218,6 +219,16 @@ export class Act1 {
       spec.x = rand(-0.46, 0.46) * config.worldWidth;
       spec.y = rand(-0.1, 0.38) * config.worldHeight;
     }
+
+    // ANTI-BLOWOUT: additive light stacks, so many near-simultaneous
+    // strikes would bloom to pure white. Each strike inside the window
+    // shrinks every burst by 1/√n — total brightness stays musical.
+    const nowT = performance.now() / 1000;
+    this.strikeTimes = this.strikeTimes.filter((t) => nowT - t < 0.9);
+    this.strikeTimes.push(nowT);
+    const damp = 1 / Math.sqrt(this.strikeTimes.length);
+    spec.count = Math.max(30, Math.round(spec.count * damp));
+    spec.size *= 0.82 + 0.18 * damp;
 
     this.held.set(e.note, spec);
     const chord = this.held.size;

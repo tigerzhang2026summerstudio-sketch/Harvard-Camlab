@@ -351,6 +351,42 @@ export const config = {
     },
   },
 
+  // ── DARK SPACE — the black emptiness itself is alive ───────────────
+  // Three barely-there layers populate the negative space (all colors
+  // kept under the bloom threshold so the darkness never competes with
+  // the fireworks), plus faint ripples that answer the performer.
+  darkspace: {
+    enabled: true,
+    // brightness scale per phase (coda inherits its own fade on top)
+    phaseScale: {
+      prologue: 0.35, prison: 0.6, act1: 1, act2: 1, act3: 1,
+      coda: 0.5, epilogue: 0.6,
+    },
+    dust: {              // drifting dust-motes / distant stars, everywhere
+      everySec: 0.4,
+      perSpawn: 14,
+      brightness: 0.22,
+    },
+    ink: {               // slow ink-wash clouds roiling through the dark
+      clouds: 6,
+      everySec: 0.24,
+      brightness: 0.3,
+      driftSpeed: 0.05,  // how fast the cloud centers wander
+    },
+    ghosts: {            // mural fragments surfacing in far corners
+      everySec: 45,      // average; ±40% jitter
+      brightness: 0.16,
+      lifeSec: 7,
+      heightFrac: 0.22,
+    },
+    ripple: {            // strikes send slow faint rings through the dark
+      minGapSec: 0.5,
+      brightness: 0.3,
+      speed: 260,
+      count: 90,
+    },
+  },
+
   // ── BACKDROP — the cave wall breathing behind the darkness ─────────
   backdrop: {
     enabled: true,

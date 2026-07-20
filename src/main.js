@@ -21,6 +21,7 @@ import { AudioManager } from './audio/AudioManager.js';
 import { Transitions } from './visual/Transitions.js';
 import { Backdrop } from './visual/Backdrop.js';
 import { StoryScenes } from './visual/StoryScenes.js';
+import { DarkSpace } from './visual/DarkSpace.js';
 import { Tutorial } from './ui/Tutorial.js';
 import { Captions } from './ui/Captions.js';
 import { Meditations } from './ui/Meditations.js';
@@ -121,6 +122,9 @@ act3.captions = captions;
 const meditations = new Meditations(state, captions);
 // The narrated bookends: Vaidehī's prison story and the epilogue lotus.
 const storyScenes = new StoryScenes(state, particles, captions);
+// The black space itself is alive: dust, ink clouds, ghost murals,
+// and faint ripples answering the keys.
+const darkSpace = new DarkSpace(state, particles);
 
 // Audio: score crossfades + accents. Sound is an OPTION — it stays off
 // until the corner "♪" button is clicked (that click doubles as the
@@ -164,6 +168,7 @@ renderer.setAnimationLoop(() => {
   backdrop.update(elapsed, dt);
   meditations.update(dt);
   storyScenes.update(elapsed);
+  darkSpace.update(elapsed, dt);
   post.render();
 });
 
@@ -173,7 +178,7 @@ if (import.meta.env.DEV) {
   window.__paintedCave = {
     midi, state, particles, post, ground, act1, act2, act3, vaidehi,
     tutorial, captions, transitions, backdrop, meditations, storyScenes,
-    audio, renderer,
+    darkSpace, audio, renderer,
     keyBurst: (note, velocity) => act1.onKey({ on: true, note, velocity }),
     now: () => elapsed,
     ppwu: pixelsPerWorldUnit,
