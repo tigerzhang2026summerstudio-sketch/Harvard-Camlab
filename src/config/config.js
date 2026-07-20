@@ -11,9 +11,11 @@
 export const config = {
   // ── DISPLAY / WORLD ────────────────────────────────────────────────
   // The "world" is one continuous horizontal panorama across all walls.
-  // All layout math is done in world units relative to these two values,
-  // so switching from a single monitor to the three-projector Cave is
-  // ONLY a config change (e.g. worldWidth: 5760, worldHeight: 1080).
+  // All layout math is done in world units relative to these two values.
+  // worldWidth here is the 16:9 BASE — main.js widens it automatically
+  // to match the real display, so the Cave's three-projector 48:9 wall
+  // (5760×1080) needs no config change: fullscreen the browser across
+  // all three screens and reload.
   worldWidth: 1920,
   worldHeight: 1080,
 
@@ -437,15 +439,17 @@ export const config = {
       opacity: 0.03,    // the peak (well above the phase base levels)
     },
 
-    // THE ENDING — after the dissolution, the real Cave 217 photograph
-    // comes fully out for the first time, holds over the epilogue line,
-    // and sinks to black before the loop returns.
+    // THE ENDING — after the dissolution, the VIVID Pure-Land tableau
+    // (Wikimedia Dunhuang217.jpg) comes fully out for the first time,
+    // height-fit and centered, holds over the epilogue line, and sinks
+    // to black before the loop returns.
+    endImage: 'purelands-vivid.jpg',
     endReveal: {
       inAt: 3,          // seconds into the epilogue
       inSec: 5,
       holdSec: 7,
       outSec: 5,
-      opacity: 0.13,    // clearly visible — the reveal is the point
+      opacity: 0.22,    // clearly visible — the reveal is the point
     },
   },
 
@@ -642,20 +646,18 @@ export const config = {
     scatterDist: 300,             // how far motes fly when dissolved
     intensity: 0.95,              // additive glow — Act 3 must not blow out
     panels: [
-      // role 'amitabha': assembled by the true-body pad (A6) in place of
-      // the procedural figure (delete to fall back to the silhouette).
-      // The REAL Cave 217 central Amitāyus, cropped from the north wall:
-      // low retint keeps his red robe and green mandorla true; slightly
-      // reduced intensity stops the bloom from washing his face out.
-      // mask isolates the seated figure + mandorla from the busy tableau;
-      // true photo colors (low retint) so his red robe and green mandorla
-      // read clearly.
-      // The stylized Buddha reads most clearly at distance; the real
-      // north-wall crop (cave217-buddha.jpg) is too weathered for a crisp
-      // particle figure — swap the file back anytime; the sampling tools
-      // (mask/invert/gamma/gain) are all wired for a cleaner scan.
-      { file: 'buddha-placeholder.svg', role: 'amitabha',
-        x: 0, yFrac: 0.02, heightFrac: 0.52, intensity: 0.68 },
+      // 第九观 THE TRUE BODY — the real central Amitāyus of the vivid
+      // tableau (Wikimedia Dunhuang217.jpg, cropped): particles condense,
+      // then the photograph itself comes through, red robe and green
+      // mandorla true. The procedural figure stands beneath it.
+      { file: 'buddha-true-body.jpg', role: 'story', story: 'amitabha',
+        x: 0, yFrac: 0.06, heightFrac: 0.52, plasterSkip: false,
+        retint: 0.12, intensity: 0.7, photoThrough: true, photoMax: 0.55 },
+      // 第六观 THE TOWERS OF MUSIC — the jeweled-pavilion detail of the
+      // same wall (Mogao Cave 217 architecture 01).
+      { file: 'pavilion-music.jpg', role: 'story', story: 'musicStory',
+        x: 0, yFrac: 0.2, heightFrac: 0.34, plasterSkip: false,
+        retint: 0.1, intensity: 0.7, photoThrough: true, photoMax: 0.5 },
       // role 'panel': materialize on the Universal Vision pad (B1),
       // scatter in the coda.
       // (intensity kept LOW: the SVG art is pure bright strokes and

@@ -26,6 +26,23 @@ import { Tutorial } from './ui/Tutorial.js';
 import { Captions } from './ui/Captions.js';
 import { Meditations } from './ui/Meditations.js';
 
+// ── Display adaptation ────────────────────────────────────────────────
+// One 16:9 monitor or the Cave's three-projector 48:9 wall: the
+// panorama's layout width follows the real display aspect at boot
+// (never narrower than the 16:9 base). Move the window to the wall,
+// fullscreen it across all three screens, and reload.
+{
+  const aspect = window.innerWidth / window.innerHeight;
+  if (Number.isFinite(aspect) && aspect > 0) {
+    // clamp a touch past 48:9 — a zero-height boot must never poison
+    // every layout position with Infinity/NaN
+    config.worldWidth = Math.max(
+      config.worldWidth,
+      Math.round(config.worldHeight * Math.min(aspect, 6)),
+    );
+  }
+}
+
 // ── Renderer ──────────────────────────────────────────────────────────
 const canvas = document.getElementById('app-canvas');
 const renderer = new THREE.WebGLRenderer({

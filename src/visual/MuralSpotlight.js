@@ -42,17 +42,17 @@ export class MuralSpotlight {
       `/murals/${config.backdrop.image}`,
       (tex) => {
         tex.colorSpace = THREE.SRGBColorSpace;
-        const W = config.worldWidth;
         const H = config.worldHeight;
+        const aspect = tex.image.width / tex.image.height;
         this.uniforms = {
           uMap: { value: tex },
           uSpot: { value: new THREE.Vector4(0.5, 0.5, 0.1, 0) },
-          uAspect: { value: W / H },
+          uAspect: { value: aspect },
         };
-        // Sized to the EXACT visible wall (unlike the oversized panning
-        // backdrop) so every region of the image is reachable on screen.
+        // Height-fit at the image's TRUE aspect, centered — regions stay
+        // aligned with the painting on any wall ratio (16:9 or 48:9).
         this.mesh = new THREE.Mesh(
-          new THREE.PlaneGeometry(W, H),
+          new THREE.PlaneGeometry(H * 1.03 * aspect, H * 1.03),
           new THREE.ShaderMaterial({
             vertexShader,
             fragmentShader,

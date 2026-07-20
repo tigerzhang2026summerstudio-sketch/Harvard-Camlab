@@ -17,7 +17,6 @@ export class Backdrop {
     this.mesh = null;
     if (!config.backdrop.enabled) return;
 
-    const W = config.worldWidth;
     const H = config.worldHeight;
     this.material = new THREE.MeshBasicMaterial({
       transparent: true,
@@ -26,9 +25,11 @@ export class Backdrop {
       depthWrite: false,
       depthTest: false,
     });
-    // Oversized so the slow pan never shows an edge.
+    // Height-oversized so the slow pan never shows an edge; the WIDTH is
+    // set from the image's real aspect once it loads (no stretching —
+    // matters on the 48:9 wall).
     this.mesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(W * 1.35, H * 1.35),
+      new THREE.PlaneGeometry(H * 1.35 * 1.4, H * 1.35),
       this.material,
     );
     this.mesh.position.z = -60;
@@ -37,6 +38,49 @@ export class Backdrop {
     scene.add(this.mesh);
 
     this.tryVideo();
+    this.buildEndMesh(scene);
+  }
+
+  /** Resize the wall plane to the loaded texture's true aspect. */
+  sizeMesh(aspect) {
+    const H = config.worldHeight * 1.35;
+    this.mesh.geometry.dispose();
+    this.mesh.geometry = new THREE.PlaneGeometry(H * aspect, H);
+  }
+
+  /**
+   * THE ENDING's centerpiece: the vivid Pure-Land tableau on its own
+   * plane — height-fit, centered, native aspect — revealed over the
+   * epilogue while the faint wall breathes behind it.
+   */
+  buildEndMesh(scene) {
+    const file = config.backdrop.endImage;
+    if (!file) return;
+    new THREE.TextureLoader().load(
+      `/murals/${file}`,
+      (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        const h = config.worldHeight * 0.96;
+        const a = tex.image.width / tex.image.height;
+        this.endMaterial = new THREE.MeshBasicMaterial({
+          map: tex,
+          transparent: true,
+          opacity: 0,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          depthTest: false,
+        });
+        this.endMesh = new THREE.Mesh(
+          new THREE.PlaneGeometry(h * a, h),
+          this.endMaterial,
+        );
+        this.endMesh.position.z = -57;
+        this.endMesh.renderOrder = -1;
+        scene.add(this.endMesh);
+      },
+      undefined,
+      () => console.warn(`[backdrop] missing endImage ${file} — ending uses the wall`),
+    );
   }
 
   /** Prefer a video backdrop when the file exists; else the wall photo. */
@@ -51,6 +95,7 @@ export class Backdrop {
       video.play().catch(() => { /* plays after the audio-unlock gesture */ });
       this.material.map = new THREE.VideoTexture(video);
       this.material.needsUpdate = true;
+      this.sizeMesh((video.videoWidth / video.videoHeight) || 16 / 9);
       this.mesh.visible = true;
       console.info(`[backdrop] video ${file}`);
     };
@@ -68,6 +113,7 @@ export class Backdrop {
         tex.colorSpace = THREE.SRGBColorSpace;
         this.material.map = tex;
         this.material.needsUpdate = true;
+        this.sizeMesh(tex.image.width / tex.image.height);
         this.mesh.visible = true;
         console.info(`[backdrop] wall photo ${config.backdrop.image}`);
       },
@@ -99,8 +145,24 @@ export class Backdrop {
       }
     }
 
-    // THE ENDING: the real photograph comes fully out over the epilogue.
-    if (phase === 'epilogue') {
+    // THE ENDING: the vivid tableau comes fully out over the epilogue
+    // (its own centered plane; the faint wall stays breathing behind).
+    if (this.endMaterial) {
+      let env = 0;
+      if (phase === 'epilogue') {
+        const er = b.endReveal;
+        const t = this.state.phaseTime - er.inAt;
+        if (t > 0) {
+          if (t < er.inSec) env = t / er.inSec;
+          else if (t < er.inSec + er.holdSec) env = 1;
+          else env = Math.max(0, 1 - (t - er.inSec - er.holdSec) / er.outSec);
+        }
+        env = env * env * (3 - 2 * env); // smooth both ends
+      }
+      this.endMaterial.opacity += (env * b.endReveal.opacity - this.endMaterial.opacity)
+        * Math.min(1, dt * 1.2);
+    } else if (phase === 'epilogue') {
+      // no end image shipped — fall back to revealing the wall itself
       const er = b.endReveal;
       const t = this.state.phaseTime - er.inAt;
       let env = 0;
@@ -109,8 +171,7 @@ export class Backdrop {
         else if (t < er.inSec + er.holdSec) env = 1;
         else env = Math.max(0, 1 - (t - er.inSec - er.holdSec) / er.outSec);
       }
-      const e = env * env * (3 - 2 * env); // smooth both ends
-      target = Math.max(target, er.opacity * e);
+      target = Math.max(target, er.opacity * env * env * (3 - 2 * env));
     }
 
     this.opacity += (target - this.opacity) * Math.min(1, dt * 0.9);
