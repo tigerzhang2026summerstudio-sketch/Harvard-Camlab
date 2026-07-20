@@ -141,7 +141,11 @@ export const config = {
     accents: {
       bpm: 48,             // the slow grid Act-1 chimes quantize onto
       quantize: '8n',
-      chimeLevelDb: -8,    // Act 1 key chimes
+      chimeLevelDb: -12,   // Act 1 key chimes (kept under the score)
+      chimeRoot: 3,        // pentatonic root semitone — MATCH THE SCORE's
+                           // key here (0=C, 2=D, 3=D#, 5=F, 7=G, …)
+      chimeMinGapSec: 0.14, // flurries thin to a cascade, never mud
+      chimeLowpassHz: 2100, // rounds the bell tops into the mix
       bedLevelDb: -14,     // Act 2 generative self-playing layer
       padLevelDb: -6,      // Act 3 bells / gongs / swells
       reverbDecaySec: 7,
@@ -369,25 +373,34 @@ export const config = {
     smoothing: 1.1,     // how quickly the world follows the knobs (1/sec)
     trees: {
       rows: 7,          // the sutra's seven rows of jeweled trees
-      perSide: 3,       // trees per row on each side third
-      height: 135,      // base trunk+canopy height (world units)
+      perSide: 4,       // trees per row on each side third
+      height: 185,      // base trunk+canopy height (world units)
       rowShrink: 0.085, // each farther row is this much smaller/dimmer
     },
     ponds: {
-      count: 5,         // glowing lotus ponds along the ground
-      lotusPerPond: 3,
+      count: 7,         // glowing lotus ponds along the ground
+      lotusPerPond: 5,
     },
     instruments: {
-      count: 10,            // self-playing instruments as orbs of light
+      count: 14,            // self-playing instruments as orbs of light
       xSpanFrac: 0.42,      // arc spread (×worldWidth/2 each side)
       yFracRange: [0.16, 0.33], // arc height band (×worldHeight)
-      sparkMaxRate: 3.0,    // rising note-motes per second at full K3
+      sparkMaxRate: 4.5,    // rising note-motes per second at full K3
     },
     wind: {
       seedInterval: 0.12, // seconds between drift-seed spawns at full K4
-      seedCount: 8,       // seeds per spawn (×density ×quality)
+      seedCount: 12,      // seeds per spawn (×density ×quality)
       seedSpeed: 90,      // horizontal drift speed at full wind
       rotMax: 0.018,      // whole-world mandala sway (radians) at full wind
+    },
+
+    // SURGES — turning a dial should feel DRAMATIC: every time a dial
+    // crosses a threshold, its part of the world answers with a wave of
+    // celebratory bursts through its own region.
+    surge: {
+      thresholds: [0.3, 0.6, 0.9],
+      bursts: 9,          // bursts per surge (× tier)
+      count: 110,         // particles per burst
     },
     // Every dial grows its own part of the story and tells it (caption)
     // the first time it is raised in Act 2 ([title, line] per knob).
@@ -403,10 +416,19 @@ export const config = {
     ],
 
     // K5–K8 sky layers
-    birds: { max: 10, trailInterval: 0.038 },  // K5: flock size follows the dial
-    rays: { count: 22 },                       // K6: fan of light from the apex
-    banners: { count: 10 },                    // K7: hanging ribbon-banners
-    clouds: { count: 14 },                     // K8: drifting bands of light
+    birds: {
+      max: 16,             // K5: flock size follows the dial
+      trailInterval: 0.055, // calligraphy trail behind each bird
+      glyphEverySec: 0.05, // how often each bird redraws its body
+      wingLen: 17,         // wing length (world units)
+      flapHz: [2.6, 4.2],  // per-bird flap speed range
+      steerAccel: 300,     // joystick pull on the flock center
+      wanderAccel: 42,     // autonomous group-drift when the stick is idle
+      maxSpeed: 230,       // flock-center speed limit
+    },
+    rays: { count: 32 },                       // K6: fan of light from the apex
+    banners: { count: 14 },                    // K7: hanging ribbon-banners
+    clouds: { count: 20 },                     // K8: drifting bands of light
 
     // Side-effects that ride along with the sky dials
     refine: {

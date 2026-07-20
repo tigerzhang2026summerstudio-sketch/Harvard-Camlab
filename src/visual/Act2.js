@@ -42,19 +42,76 @@ export class Act2 {
     this.gustAcc = 0;                     // coda windstorm emission
     this.captions = null;                 // set by main
     this.storyTold = new Array(8).fill(false);
+    this.surgeMark = new Array(8).fill(0); // highest threshold crossed per dial
 
     state.on('phase', ({ phase }) => {
-      if (phase === 'prologue') this.storyTold = new Array(8).fill(false);
+      if (phase === 'prologue') {
+        this.storyTold = new Array(8).fill(false);
+        this.surgeMark.fill(0);
+      }
     });
   }
 
+  /** The MK3's top-left stick steers the bird flock (wind rides along). */
   onJoystick(e) {
+    this.birds.onSteer(e.axis, e.value);
     if (e.axis === 'x' && Math.abs(e.value) > 0.15) this.windDir = Math.sign(e.value);
   }
 
-  /** Dial values are read continuously; here we only guard the acts. */
+  /**
+   * SURGE — a dial crossing a threshold makes its part of the world
+   * answer with a wave of bursts through its own region.
+   */
+  surge(index, tier) {
+    const sg = config.act2.surge;
+    const W = config.worldWidth;
+    const H = config.worldHeight;
+    const P = config.palette;
+    // Per-dial region + palette: [xRange ×W, yRange ×H, colors]
+    const regions = [
+      [[0.18, 0.46, true], [-0.36, -0.05], [P.malachite, P.gold]],        // K1 trees (both sides)
+      [[-0.45, 0.45], [-0.42, -0.3], [P.beryl, P.malachite, P.white]],    // K2 ponds
+      [[-0.42, 0.42], [0.14, 0.34], [P.gold, P.white]],                   // K3 music
+      [[-0.48, 0.48], [-0.15, 0.2], [P.white, P.beryl]],                  // K4 wind
+      [[-0.4, 0.4], [0.1, 0.4], [P.gold, P.white, P.beryl]],              // K5 birds
+      [[-0.2, 0.2], [0.3, 0.5], [P.gold, P.white]],                       // K6 rays
+      [[-0.42, 0.42], [0.2, 0.4], [P.cinnabar, P.gold]],                  // K7 banners
+      [[-0.48, 0.48], [0.3, 0.48], [P.white, P.beryl]],                   // K8 clouds
+    ];
+    const [xr, yr, cols] = regions[index];
+    const n = sg.bursts + tier * 3;
+    for (let i = 0; i < n; i += 1) {
+      const mirrored = xr[2] && Math.random() < 0.5 ? -1 : 1; // trees: both sides
+      const isWind = index === 3;
+      this.particles.burst({
+        x: mirrored * rand(xr[0], xr[1]) * W,
+        y: rand(yr[0], yr[1]) * H,
+        color: pick(cols),
+        count: Math.round(sg.count * (0.8 + tier * 0.2)),
+        speed: isWind ? 30 : rand(45, 90),
+        size: 2.6,
+        life: rand(2.2, 3.4),
+        upBias: isWind ? 0.1 : 0.6,
+        jitter: 30,
+        driftX: isWind ? this.windDir * 260 : 0,
+        minSpeedFrac: 0.35,
+      });
+    }
+  }
+
+  /** Dial values are read continuously; here we fire surges + guards. */
   onKnob(e) {
-    void e;
+    // Threshold surges (upward crossings only, while the world is alive).
+    const ph = this.state.phase;
+    if (ph === 'act2' || ph === 'act3') {
+      const ts = config.act2.surge.thresholds;
+      let tier = 0;
+      for (let i = 0; i < ts.length; i += 1) if (e.value >= ts[i]) tier = i + 1;
+      if (tier > this.surgeMark[e.index]) {
+        this.surgeMark[e.index] = tier;
+        this.surge(e.index, tier);
+      }
+    }
     // Strict acts: turned during Act I, a dial only whispers a hint.
     if (this.state.phase === 'act1' && this.captions) {
       const now = performance.now();

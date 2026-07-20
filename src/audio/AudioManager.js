@@ -61,20 +61,25 @@ export class AudioManager {
     this.limiter = new Tone.Limiter(-3).toDestination();
     this.reverb = new Tone.Reverb({ decay: a.reverbDecaySec, wet: a.reverbWet })
       .connect(this.limiter);
-    this.chimeBus = new Tone.Gain(Tone.dbToGain(a.chimeLevelDb)).connect(this.reverb);
+    // The chimes pass through a gentle lowpass so they sit INSIDE the
+    // score instead of ringing on top of it.
+    this.chimeFilter = new Tone.Filter(a.chimeLowpassHz, 'lowpass').connect(this.reverb);
+    this.chimeBus = new Tone.Gain(Tone.dbToGain(a.chimeLevelDb)).connect(this.chimeFilter);
     this.bedBus = new Tone.Gain(Tone.dbToGain(a.bedLevelDb)).connect(this.reverb);
     this.padBus = new Tone.Gain(Tone.dbToGain(a.padLevelDb)).connect(this.reverb);
   }
 
   buildInstruments() {
-    // Chime-stone / small temple bell: FM with high harmonicity rings true.
+    // Chime-stone / small temple bell — softened for unity: lower
+    // modulation (less clang), slower attack, longer sustain of tail.
     this.chimeSynth = new Tone.PolySynth(Tone.FMSynth, {
       harmonicity: 5.07,
-      modulationIndex: 14,
-      envelope: { attack: 0.002, decay: 1.6, sustain: 0, release: 2.2 },
-      modulationEnvelope: { attack: 0.002, decay: 0.4, sustain: 0, release: 0.6 },
-      volume: -4,
+      modulationIndex: 7,
+      envelope: { attack: 0.006, decay: 2.2, sustain: 0, release: 2.8 },
+      modulationEnvelope: { attack: 0.006, decay: 0.3, sustain: 0, release: 0.5 },
+      volume: -6,
     }).connect(this.chimeBus);
+    this.lastChimeAt = 0; // spacing limiter — flurries thin to a cascade
 
     // The self-playing layer: soft plucked voice.
     this.pluckSynth = new Tone.PolySynth(Tone.FMSynth, {
@@ -167,16 +172,30 @@ export class AudioManager {
   }
 
   // ── Interactive accents ──────────────────────────────────────────────
-  /** Act 1: snap the struck key to a pentatonic chime on the slow grid. */
+  /**
+   * Act 1: snap the struck key to a pentatonic chime on the slow grid.
+   * UNIFIED with the score: every strike lands in ONE two-octave window
+   * of one pentatonic scale (root = config.audio.accents.chimeRoot — set
+   * it to the score's key), velocities are compressed, and chimes keep a
+   * minimum spacing so fast playing thins to a cascade instead of mud.
+   */
   chime(note, velocity) {
-    if (!this.unlocked || this.state.phase === 'prologue') return;
-    const oct = Math.floor(note / 12);
+    if (!this.unlocked || this.state.phase === 'prologue'
+        || this.state.phase === 'prison') return;
+    const a = config.audio.accents;
+    const now = Tone.now();
+    if (now - this.lastChimeAt < a.chimeMinGapSec) return;
+    this.lastChimeAt = now;
+
     const deg = note % 12;
-    const snapped = PENTATONIC.reduce((a, b) => (Math.abs(b - deg) < Math.abs(a - deg) ? b : a));
-    const midi = Math.min(96, (oct + 1) * 12 + snapped + 3); // brighten a octave, key of D#-penta
-    const time = Tone.getTransport().nextSubdivision(config.audio.accents.quantize);
+    const snapped = PENTATONIC.reduce((x, b) => (Math.abs(b - deg) < Math.abs(x - deg) ? b : x));
+    // Fold the whole keyboard into two octaves: low keys → octave 5,
+    // high keys → octave 6. One register, one voice, one scale.
+    const oct = note < 60 ? 5 : 6;
+    const midi = oct * 12 + snapped + a.chimeRoot;
+    const time = Tone.getTransport().nextSubdivision(a.quantize);
     this.chimeSynth.triggerAttackRelease(
-      Tone.Frequency(midi, 'midi'), '1n', time, 0.2 + velocity * 0.8,
+      Tone.Frequency(midi, 'midi'), '1n', time, 0.25 + velocity * 0.45,
     );
   }
 
@@ -192,10 +211,11 @@ export class AudioManager {
         Tone.Frequency(70 + tier * 5, 'midi'), '2n', now, 0.4,
       );
     } else {                             // chord / run: a pentatonic sprinkle
+      const root = 72 + config.audio.accents.chimeRoot; // same scale as the chimes
       const n = Math.min(3 + tier, 7);
       for (let i = 0; i < n; i += 1) {
         this.chimeSynth.triggerAttackRelease(
-          Tone.Frequency(75 + PENTATONIC[i % PENTATONIC.length] + 12 * Math.floor(i / PENTATONIC.length), 'midi'),
+          Tone.Frequency(root + PENTATONIC[i % PENTATONIC.length] + 12 * Math.floor(i / PENTATONIC.length), 'midi'),
           '8n', now + i * 0.13, 0.3,
         );
       }

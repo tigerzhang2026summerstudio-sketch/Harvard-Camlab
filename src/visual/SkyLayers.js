@@ -126,47 +126,137 @@ export function buildClouds(add) {
   }
 }
 
-/** K5 — the kalavinka birds: moving points of light with comet trails. */
+/**
+ * K5 — the kalavinka birds as ACTUAL birds: each one is drawn as a small
+ * V-glyph (body mote + two flapping wing-lines, oriented to its flight)
+ * refreshed every few frames, with a fainter calligraphy trail behind.
+ *
+ * The whole flock moves as ONE: a shared center that the MK3's joystick
+ * steers (Act2 routes it here); when the stick is idle, the center
+ * wanders the sky on its own, and every bird orbits it loosely.
+ */
 export class BirdFlock {
   constructor(particles) {
     this.particles = particles;
-    const W = config.worldWidth;
     const H = config.worldHeight;
+    this.center = { x: 0, y: H * 0.24, vx: 0, vy: 0 };
+    this.steerX = 0;
+    this.steerY = 0;
+    this.steerAt = -1e9; // time of the last real joystick input
+    this.time = 0;
+
     this.birds = [];
-    for (let i = 0; i < config.act2.birds.max; i += 1) {
+    const bc = config.act2.birds;
+    for (let i = 0; i < bc.max; i += 1) {
       this.birds.push({
-        cx: rand(-0.4, 0.4) * W,
-        cy: H * (0.08 + (i / config.act2.birds.max) * 0.3),
-        rx: rand(120, 320),
-        ry: rand(40, 110),
-        speed: rand(0.25, 0.55) * (i % 2 ? -1 : 1),
-        wobble: rand(1.1, 1.7),   // lissajous ratio → figure-eight flight
+        rx: rand(50, 210),          // loose orbit around the flock center
+        ry: rand(26, 90),
+        speed: rand(0.3, 0.6) * (i % 2 ? -1 : 1),
+        wobble: rand(1.1, 1.7),     // lissajous ratio → figure-eight flight
         phase: rand(0, Math.PI * 2),
-        trail: rand(0, 0.05),
+        flapHz: rand(bc.flapHz[0], bc.flapHz[1]),
+        flapPhase: rand(0, Math.PI * 2),
+        glyphAcc: rand(0, bc.glyphEverySec),
+        trailAcc: rand(0, bc.trailInterval),
+        px: 0, py: 0,               // previous position → heading
         tint: pick([config.palette.gold, config.palette.white, config.palette.beryl]),
       });
     }
   }
 
+  /** Joystick input (either axis). Steering stays live for a moment. */
+  onSteer(axis, value) {
+    if (axis === 'x') this.steerX = value;
+    else this.steerY = value;
+    if (Math.abs(this.steerX) > 0.12 || Math.abs(this.steerY) > 0.12) {
+      this.steerAt = this.time;
+    }
+  }
+
   update(dt, time, growth) {
+    this.time = time;
+    const bc = config.act2.birds;
+    const W = config.worldWidth;
+    const H = config.worldHeight;
+    const c = this.center;
+
+    // ── The flock center: steered, or wandering as a whole ────────────
+    const steering = time - this.steerAt < 1.5;
+    let ax; let ay;
+    if (steering) {
+      ax = this.steerX * bc.steerAccel;
+      ay = this.steerY * bc.steerAccel * 0.8;
+    } else {
+      // slow layered sines — an unhurried group meander
+      ax = (Math.sin(time * 0.17) * 0.6 + Math.sin(time * 0.043 + 2) * 0.4) * bc.wanderAccel;
+      ay = Math.cos(time * 0.13 + 1) * bc.wanderAccel * 0.6;
+    }
+    c.vx += ax * dt;
+    c.vy += ay * dt;
+    // damping + a speed limit keep the flight graceful
+    const damp = Math.exp(-dt * 0.55);
+    c.vx *= damp;
+    c.vy *= damp;
+    const sp = Math.hypot(c.vx, c.vy);
+    if (sp > bc.maxSpeed) { c.vx *= bc.maxSpeed / sp; c.vy *= bc.maxSpeed / sp; }
+    c.x += c.vx * dt;
+    c.y += c.vy * dt;
+    // soft springs at the sky's edges
+    const xLim = 0.42 * W;
+    if (c.x > xLim) c.vx -= (c.x - xLim) * 3 * dt;
+    if (c.x < -xLim) c.vx -= (c.x + xLim) * 3 * dt;
+    if (c.y > 0.42 * H) c.vy -= (c.y - 0.42 * H) * 3 * dt;
+    if (c.y < 0.04 * H) c.vy -= (c.y - 0.04 * H) * 3 * dt;
+
+    // ── The birds themselves ──────────────────────────────────────────
     const active = Math.round(growth * this.birds.length);
     for (let i = 0; i < active; i += 1) {
       const b = this.birds[i];
-      b.trail -= dt;
-      if (b.trail > 0) continue;
-      b.trail = config.act2.birds.trailInterval;
       const a = time * b.speed + b.phase;
-      this.particles.burst({
-        x: b.cx + Math.cos(a) * b.rx,
-        y: b.cy + Math.sin(a * b.wobble) * b.ry,
-        color: b.tint,
-        count: 6,
-        speed: 5,
-        size: 2.1,
-        life: 1.7,   // short life → the trail reads as calligraphy, not fog
-        upBias: 0,
-        jitter: 2,
-      });
+      const bx = c.x + Math.cos(a) * b.rx;
+      const by = c.y + Math.sin(a * b.wobble) * b.ry;
+      const hx = (bx - b.px) + c.vx * 0.02; // heading ≈ own motion + flock drift
+      const hy = (by - b.py) + c.vy * 0.02;
+      b.px = bx;
+      b.py = by;
+      const heading = Math.atan2(hy, hx || 1e-4);
+
+      // Draw the bird: a body mote and two wing-lines swept back from
+      // the heading, their angle beating with the flap.
+      b.glyphAcc += dt;
+      if (b.glyphAcc >= bc.glyphEverySec) {
+        b.glyphAcc -= bc.glyphEverySec;
+        const flap = Math.sin(time * b.flapHz * Math.PI * 2 + b.flapPhase);
+        const wingAng = 0.6 + 0.5 * flap; // radians off the tail direction
+        const back = heading + Math.PI;
+        this.particles.burst({
+          x: bx, y: by, color: b.tint,
+          count: 3, speed: 2, size: 2.6, life: 0.16, upBias: 0, jitter: 1.2,
+        });
+        for (const side of [-1, 1]) {
+          const wa = back + side * wingAng;
+          for (let k = 1; k <= 4; k += 1) {
+            const d = (k / 4) * bc.wingLen;
+            this.particles.burst({
+              x: bx + Math.cos(wa) * d,
+              y: by + Math.sin(wa) * d * 0.9,
+              color: b.tint,
+              count: 1, speed: 1.5, size: 2.2 - k * 0.15,
+              life: 0.16, upBias: 0, jitter: 0.8,
+            });
+          }
+        }
+      }
+
+      // …and the calligraphy trail it leaves on the sky.
+      b.trailAcc += dt;
+      if (b.trailAcc >= bc.trailInterval) {
+        b.trailAcc -= bc.trailInterval;
+        this.particles.burst({
+          x: bx, y: by, color: b.tint,
+          count: 2, speed: 4, size: 1.8, life: 1.5, upBias: 0, jitter: 2,
+        });
+      }
     }
   }
 }
