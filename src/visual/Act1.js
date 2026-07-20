@@ -229,15 +229,21 @@ export class Act1 {
       spec.y = rand(-0.1, 0.38) * config.worldHeight;
     }
 
-    // ANTI-BLOWOUT: additive light stacks, so many near-simultaneous
-    // strikes would bloom to pure white. Each strike inside the window
-    // shrinks every burst by 1/√n — total brightness stays musical.
+    // ANTI-BLOWOUT: additive light only blows out when bursts stack IN
+    // THE SAME PLACE — so damping is spatial, not just temporal. Only
+    // recent strikes whose blooms overlap this one (same area of the
+    // wall) shrink it by 1/√n; fast playing spread across the keys
+    // keeps its full power.
     const nowT = performance.now() / 1000;
-    this.strikeTimes = this.strikeTimes.filter((t) => nowT - t < 0.9);
-    this.strikeTimes.push(nowT);
-    const damp = 1 / Math.sqrt(this.strikeTimes.length);
-    spec.count = Math.max(30, Math.round(spec.count * damp));
-    spec.size *= 0.82 + 0.18 * damp;
+    this.strikeTimes = this.strikeTimes.filter((s) => nowT - s.t < 0.7);
+    const overlapping = this.strikeTimes
+      .filter((s) => Math.hypot(s.x - spec.x, s.y - spec.y) < 165).length;
+    this.strikeTimes.push({ t: nowT, x: spec.x, y: spec.y });
+    if (overlapping > 0) {
+      const damp = 1 / Math.sqrt(overlapping + 1);
+      spec.count = Math.max(60, Math.round(spec.count * damp));
+      spec.size *= 0.85 + 0.15 * damp;
+    }
 
     this.held.set(e.note, spec);
     const chord = this.held.size;
