@@ -94,7 +94,8 @@ export const config = {
     act1MinSec: 60,            // Act I runtime floor (meter can fill early)
     act2MinSec: 70,            // Act II runtime floor (dials can finish early)
     act3MinSec: 75,            // dissolution pad is ignored before this
-    codaFadeSec: 20,           // dissolution length
+    codaFadeSec: 34,           // dissolution length — the dramatic climax
+                               // (three movements: fraying → storm → ascension)
     epilogueSec: 22,           // one lotus in the dark, then the loop
     loopPauseSec: 8,           // black pause before the prologue returns
     autoIdleSec: 30,           // idle time before attract mode starts playing
@@ -175,8 +176,12 @@ export const config = {
       act1: ['ACT I · THE FLOOD OF LIGHT', 'Play the keys. Water becomes ice; ice becomes beryl.\nA ground of light is laid.'],
       act2: ['ACT II · THE JEWELED WORLD', 'Turn the dials. Trees, ponds, music, wind —\nwhat you raise remains.'],
       act3: ['ACT III · THE SIXTEEN CONTEMPLATIONS', 'Press the pads — each tells one vision of the sutra.\nPad 8, again and again, carries it to the end.'],
-      coda: ['CODA · DISSOLUTION', 'What was visualized into being\nreturns to the dark that held it.'],
+      // The Diamond Sutra's closing gatha — the dissolution is not an
+      // ending announced, but a truth contemplated.
+      coda: ['一切有为法 · 如梦幻泡影', 'All conditioned things are as dreams,\nillusions, bubbles, shadows…'],
     },
+    // …the gatha completes mid-storm (scheduled by StoryScenes).
+    codaSecond: ['如露亦如电 · 应作如是观', '…as dew, as a flash of lightning.\nContemplate them thus — and let the vision go.'],
     // Shown if a pad or dial is used before its act has arrived.
     padsLocked: 'The pads awaken in Act III —\ncultivate the world with the dials first.',
     dialsLocked: 'The dials awaken in Act II —\nflood the darkness with the keys first.',
@@ -549,7 +554,7 @@ export const config = {
       gradesMid: ['第十五观 · THE MIDDLE REBIRTHS', 'The middle-born arrive in lotuses\nthat open after a night and a day.'],
       gradesLow: ['第十六观 · THE LOWEST REBIRTHS', 'Even the greatest sinner, saying the Name ten times,\nis met at death by a lotus of gold.'],
       awakening: ['开悟 · THE AWAKENING', 'Seeing the land, Vaidehī rejoiced;\nher mind opened like a lotus at first light.'],
-      dissolution: ['归寂 · DISSOLUTION', 'What was visualized into being\nreturns to the dark that held it.'],
+      dissolution: ['一切有为法 · 如梦幻泡影', 'All conditioned things are as dreams,\nillusions, bubbles, shadows…'],
     },
 
     // Grade groups for the three rebirth pads (soul-mote heights/colors).

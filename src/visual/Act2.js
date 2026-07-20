@@ -157,24 +157,49 @@ export class Act2 {
     // Dissolution: as the coda deepens, turbulence rises — the un-growing
     // world sways harder and sheds dandelion-drift while it fades.
     if (s.phase === 'coda') {
-      wind = Math.max(wind, (1 - fade) * 0.95);
-      // WINDSTORM: as the world un-grows, gusts tear light sideways off
-      // the dissolving vision and carry it into the dark.
+      // THE DISSOLUTION, in three movements over codaFadeSec:
+      //   fraying   (0–25%)  the world loosens, gusts begin
+      //   storm     (25–70%) full windstorm tears the light sideways
+      //   ascension (70–100%) the storm dies; the last sparks rise
+      const ct = clamp01(s.phaseTime / config.acts.codaFadeSec);
+      const storm = ct < 0.25 ? (ct / 0.25) * 0.5
+        : ct < 0.7 ? 0.5 + ((ct - 0.25) / 0.45) * 0.5
+          : Math.max(0, 1 - (ct - 0.7) / 0.22);
+      wind = Math.max(wind, storm * 1.05);
+
+      const gustEvery = 0.75 - storm * 0.5; // gentle → relentless → gone
       this.gustAcc += dt;
-      while (this.gustAcc >= 0.35) {
-        this.gustAcc -= 0.35;
+      while (this.gustAcc >= gustEvery) {
+        this.gustAcc -= gustEvery;
+        if (storm < 0.05) break;
         const dir = this.windDir * (Math.random() < 0.8 ? 1 : -1);
         this.particles.burst({
           x: rand(-0.45, 0.45) * config.worldWidth,
           y: rand(-0.35, 0.3) * config.worldHeight,
           color: pick([config.palette.gold, config.palette.beryl,
             config.palette.white, config.palette.malachite]),
-          count: Math.round(46 * (1 - fade) + 8),
+          count: Math.round(10 + 52 * storm),
           speed: 26, size: 2.3, life: rand(1.8, 2.8),
           upBias: 0.1, jitter: 60,
-          driftX: dir * rand(260, 420) * (1 - fade * 0.5),
+          driftX: dir * rand(220, 440) * (0.5 + storm * 0.5),
           minSpeedFrac: 0.4,
         });
+      }
+
+      // Ascension: what the wind could not take rises of its own accord.
+      if (ct > 0.62) {
+        this.ascAcc = (this.ascAcc ?? 0) + dt;
+        while (this.ascAcc >= 0.28) {
+          this.ascAcc -= 0.28;
+          this.particles.burst({
+            x: rand(-0.46, 0.46) * config.worldWidth,
+            y: rand(-0.42, 0.1) * config.worldHeight,
+            color: Math.random() < 0.6 ? config.palette.white : config.palette.gold,
+            count: 30, speed: 10, size: 2.0,
+            life: rand(4, 6.5),
+            upBias: 2.6, jitter: 50, driftY: 55,
+          });
+        }
       }
     }
 

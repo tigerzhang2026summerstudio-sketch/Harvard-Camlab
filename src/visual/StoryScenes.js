@@ -46,6 +46,16 @@ export class StoryScenes {
       }
       if (phase === 'act2') this.scheduleAct2Interlude();
       if (phase === 'act3') this.scheduleAct3Interlude();
+      if (phase === 'coda') {
+        // The gatha completes mid-storm: …如露亦如电，应作如是观。
+        this.pending.push({
+          at: this.time + config.acts.codaFadeSec * 0.52,
+          fn: () => {
+            const [title, line] = config.captions.codaSecond;
+            this.captions.showStory(title, line);
+          },
+        });
+      }
     });
   }
 
