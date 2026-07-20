@@ -140,7 +140,8 @@ export class Act3 {
       return;                //  flips the phase before this handler runs)
     }
 
-    // Every pad speaks its story.
+    // Every pad speaks its story — on a stage cleared of the last one.
+    this.retireTransients(action);
     const story = config.act3.stories[action];
     if (story && this.captions) this.captions.showStory(story[0], story[1]);
     if (this.storyMurals[action]) this.flashes[action] = 0;
@@ -403,7 +404,11 @@ export class Act3 {
     });
   }
 
-  /** Story murals: condense in, hold while the caption speaks, fray out. */
+  /**
+   * Story murals: particles condense in, then the REAL photograph fades
+   * in through them (the particles recede while it holds, so the image
+   * reads clean instead of glowing to white), then photo out → fray out.
+   */
   updateFlashes(dt, time, ppwu) {
     const fx = config.act3.storyFlash;
     for (const [story, mural] of Object.entries(this.storyMurals)) {
@@ -416,13 +421,43 @@ export class Act3 {
         else if (t < fx.inSec + fx.holdSec) assemble = 1;
         else assemble = 1 - smooth01((t - fx.inSec - fx.holdSec) / fx.outSec);
         mural.dissolve = 1 - assemble;
-        mural.alpha = Math.min(1, assemble * 4);
+
+        // The photo lives INSIDE the hold: in over ~1.8s, out before the
+        // particles begin to fray, particles dimming while it reigns.
+        const th = t - fx.inSec; // time within the hold
+        let photo = 0;
+        if (th > 0 && th < fx.holdSec) {
+          photo = Math.min(smooth01(th / 1.8), smooth01((fx.holdSec - th) / 1.4));
+        }
+        mural.photo = photo;
+        mural.alpha = Math.min(1, assemble * 4) * (1 - photo * 0.65);
         if (t > fx.inSec + fx.holdSec + fx.outSec) delete this.flashes[story];
       } else {
         mural.alpha = 0;
         mural.dissolve = 1;
+        mural.photo = 0;
       }
       mural.update(time, ppwu);
+    }
+  }
+
+  /**
+   * ONE STORY AT A TIME: a new vision gracefully retires the transient
+   * effects of the last — murals jump to their fray-out, the rain thins
+   * to a last few petals, the halo completes its sweep. The assembly
+   * itself (throne, figures) is persistent and stays.
+   */
+  retireTransients(except) {
+    const fx = config.act3.storyFlash;
+    for (const k of Object.keys(this.flashes)) {
+      if (k !== except) {
+        this.flashes[k] = Math.max(this.flashes[k], fx.inSec + fx.holdSec);
+      }
+    }
+    this.rainLeft = Math.min(this.rainLeft, 1.2);
+    if (this.haloTime >= 0) this.haloTime = Math.max(this.haloTime, 5.6);
+    if (this.sunTime >= 0) {
+      this.sunTime = Math.max(this.sunTime, config.act3.sun.durationSec - 1.5);
     }
   }
 

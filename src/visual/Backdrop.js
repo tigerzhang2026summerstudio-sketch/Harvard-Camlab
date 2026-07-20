@@ -79,8 +79,41 @@ export class Backdrop {
   update(time, dt) {
     if (!this.mesh || !this.mesh.visible) return;
     const b = config.backdrop;
-    const target = b.opacityByPhase[this.state.phase] ?? 0;
-    this.opacity += (target - this.opacity) * Math.min(1, dt * 0.4);
+    const phase = this.state.phase;
+    let target = b.opacityByPhase[phase] ?? 0;
+
+    // 若隐若现: during the acts the wall surfaces on its own clock —
+    // a slow swell into faint visibility, then it sinks away again.
+    if (phase === 'act1' || phase === 'act2' || phase === 'act3') {
+      this.surfIn = (this.surfIn ?? b.surface.everySec * (0.3 + Math.random())) - dt;
+      if (this.surfIn <= 0 && this.surfT === undefined) this.surfT = 0;
+      if (this.surfT !== undefined) {
+        this.surfT += dt;
+        const f = this.surfT / b.surface.holdSec;
+        if (f >= 1) {
+          this.surfT = undefined;
+          this.surfIn = b.surface.everySec * (0.6 + Math.random() * 0.8);
+        } else {
+          target = Math.max(target, b.surface.opacity * Math.sin(f * Math.PI));
+        }
+      }
+    }
+
+    // THE ENDING: the real photograph comes fully out over the epilogue.
+    if (phase === 'epilogue') {
+      const er = b.endReveal;
+      const t = this.state.phaseTime - er.inAt;
+      let env = 0;
+      if (t > 0) {
+        if (t < er.inSec) env = t / er.inSec;
+        else if (t < er.inSec + er.holdSec) env = 1;
+        else env = Math.max(0, 1 - (t - er.inSec - er.holdSec) / er.outSec);
+      }
+      const e = env * env * (3 - 2 * env); // smooth both ends
+      target = Math.max(target, er.opacity * e);
+    }
+
+    this.opacity += (target - this.opacity) * Math.min(1, dt * 0.9);
     this.material.opacity = clamp01(this.opacity);
 
     // The wall breathes: a slow drift and a slower swell.

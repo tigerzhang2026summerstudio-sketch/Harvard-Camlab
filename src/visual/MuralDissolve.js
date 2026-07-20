@@ -80,6 +80,7 @@ export class MuralDissolve {
     this.ready = false;
     this.dissolve = 1; // born as scattered motes
     this.alpha = 0;    // and invisible until something assembles it
+    this.photo = 0;    // photoThrough: 0..1 presence of the REAL image
 
     const img = new Image();
     img.onload = () => {
@@ -225,6 +226,27 @@ export class MuralDissolve {
     this.points.frustumCulled = false;
     parent.add(this.points);
 
+    // photoThrough: the ACTUAL photograph on a soft-edged plane that can
+    // fade in through the condensed particles — unmistakably readable.
+    if (this.opts.photoThrough) {
+      const tex = new THREE.CanvasTexture(featherImage(img));
+      tex.colorSpace = THREE.SRGBColorSpace;
+      this.photoMaterial = new THREE.MeshBasicMaterial({
+        map: tex,
+        transparent: true,
+        opacity: 0,
+        blending: THREE.AdditiveBlending, // light on black, soft edges
+        depthWrite: false,
+        depthTest: false,
+      });
+      this.photoMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(worldW, worldH),
+        this.photoMaterial,
+      );
+      this.photoMesh.position.set(this.opts.x, this.opts.y, 5);
+      parent.add(this.photoMesh);
+    }
+
     console.info(`[murals] ${this.opts.url}: ${seed.length} particles`);
   }
 
@@ -234,5 +256,28 @@ export class MuralDissolve {
     this.uniforms.uPPWU.value = ppwu;
     this.uniforms.uDissolve.value = this.dissolve;
     this.uniforms.uAlpha.value = this.alpha;
+    if (this.photoMaterial) {
+      this.photoMaterial.opacity = this.photo * (this.opts.photoMax ?? 0.85);
+    }
   }
+}
+
+/** The image with its edges feathered to transparency (no hard frame). */
+function featherImage(img) {
+  const w = Math.min(1024, img.width);
+  const h = Math.round(w * (img.height / img.width));
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, w, h);
+  ctx.globalCompositeOperation = 'destination-in';
+  ctx.translate(w / 2, h / 2);
+  ctx.scale(w / 2, h / 2);
+  const grad = ctx.createRadialGradient(0, 0, 0.55, 0, 0, 1);
+  grad.addColorStop(0, 'rgba(0,0,0,1)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(-1, -1, 2, 2);
+  return canvas;
 }

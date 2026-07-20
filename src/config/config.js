@@ -413,6 +413,25 @@ export const config = {
     },
     panAmount: 0.035,   // slow horizontal drift (×worldWidth)
     breatheAmount: 0.05, // slow scale breathing
+
+    // 若隐若现 — on its own clock the wall SURFACES into visibility for a
+    // few breaths, then sinks back to its faint base (acts only).
+    surface: {
+      everySec: 40,     // average time between surfacings (±40%)
+      holdSec: 9,       // one full swell: rise, hold a moment, sink
+      opacity: 0.03,    // the peak (well above the phase base levels)
+    },
+
+    // THE ENDING — after the dissolution, the real Cave 217 photograph
+    // comes fully out for the first time, holds over the epilogue line,
+    // and sinks to black before the loop returns.
+    endReveal: {
+      inAt: 3,          // seconds into the epilogue
+      inSec: 5,
+      holdSec: 7,
+      outSec: 5,
+      opacity: 0.13,    // clearly visible — the reveal is the point
+    },
   },
 
   // ── ACT 2 — the knob-grown world ───────────────────────────────────
@@ -595,13 +614,18 @@ export const config = {
         x: 0.335, yFrac: 0.27, heightFrac: 0.17 },
       // role 'story': real Cave 217 details that condense while their
       // pad's story is told, then fray away again. plasterSkip drops the
-      // pale plaster background so only the painting becomes particles.
+      // pale plaster background so only the painting becomes particles;
+      // photoThrough fades the ACTUAL photograph in through the held
+      // particles (soft-edged), so the image finally reads clearly.
       { file: 'cave-sun-contemplation.jpg', role: 'story', story: 'sun',
-        x: -0.3, yFrac: 0.16, heightFrac: 0.34, plasterSkip: true },
+        x: -0.3, yFrac: 0.16, heightFrac: 0.34, plasterSkip: true,
+        photoThrough: true, photoMax: 0.85 },
       { file: 'cave-prison.jpg', role: 'story', story: 'prison',
-        x: 0.3, yFrac: 0.16, heightFrac: 0.34, plasterSkip: true },
+        x: 0.3, yFrac: 0.16, heightFrac: 0.34, plasterSkip: true,
+        photoThrough: true, photoMax: 0.85 },
       { file: 'cave-music-sky.jpg', role: 'story', story: 'mixed',
-        x: 0, yFrac: 0.3, heightFrac: 0.24, plasterSkip: true },
+        x: 0, yFrac: 0.3, heightFrac: 0.24, plasterSkip: true,
+        photoThrough: true, photoMax: 0.85 },
     ],
   },
 
