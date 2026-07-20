@@ -31,17 +31,71 @@ export class StoryScenes {
       const [title, line] = config.prison.lines[index];
       this.captions.showStory(title, line);
     });
+    this.pending = []; // scheduled interlude steps { at, fn }
     state.on('phase', ({ phase }) => {
+      this.pending = []; // a phase change cancels any stale interlude
       if (phase === 'epilogue') {
         this.epilogueLineShown = false;
         this.lotusAt = -1e9;
       }
+      if (phase === 'act2') this.scheduleAct2Interlude();
+      if (phase === 'act3') this.scheduleAct3Interlude();
     });
+  }
+
+  /** A slow gleam surveys the finished ground, then the linking line. */
+  scheduleAct2Interlude() {
+    const il = config.interludes.act2;
+    const W = config.worldWidth;
+    const H = config.worldHeight;
+    const t0 = this.time + il.atSec;
+    this.pending.push({ at: t0, fn: () => {
+      const [title, line] = il.line;
+      this.captions.showStory(title, line);
+    } });
+    for (let i = 0; i < 14; i += 1) {
+      this.pending.push({ at: t0 + i * 0.3, fn: () => this.particles.burst({
+        x: ((i + 0.5) / 14 - 0.5) * W * 0.92,
+        y: -0.37 * H + Math.random() * 30,
+        color: Math.random() < 0.55 ? config.palette.beryl : config.palette.white,
+        count: 80, speed: 20, size: 2.4, life: 3.2,
+        upBias: 0.7, jitter: 30, driftX: 60, minSpeedFrac: 0.4,
+      }) });
+    }
+  }
+
+  /** A ring of light circles the throne before the assembly is called. */
+  scheduleAct3Interlude() {
+    const il = config.interludes.act3;
+    const H = config.worldHeight;
+    const t0 = this.time + il.atSec;
+    this.pending.push({ at: t0, fn: () => {
+      const [title, line] = il.line;
+      this.captions.showStory(title, line);
+    } });
+    for (let i = 0; i < 16; i += 1) {
+      const ang = (i / 16) * Math.PI * 2;
+      this.pending.push({ at: t0 + i * 0.22, fn: () => this.particles.burst({
+        x: Math.cos(ang) * 260,
+        y: -0.1 * H + Math.sin(ang) * 90,
+        color: Math.random() < 0.6 ? config.palette.gold : config.palette.white,
+        count: 60, speed: 16, size: 2.4, life: 2.6,
+        upBias: 0.4, jitter: 14, minSpeedFrac: 0.5,
+      }) });
+    }
   }
 
   update(time) {
     this.time = time;
     const s = this.state;
+
+    if (this.pending.length) {
+      const due = this.pending.filter((p) => time >= p.at);
+      if (due.length) {
+        this.pending = this.pending.filter((p) => time < p.at);
+        for (const p of due) p.fn();
+      }
+    }
 
     if (s.phase === 'prison') {
       // The prison mural holds on the wall — dim, patient, re-condensing.

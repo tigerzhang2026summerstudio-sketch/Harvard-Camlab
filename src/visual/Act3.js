@@ -48,6 +48,8 @@ export class Act3 {
     this.rainLeft = 0;
     this.rainTimer = 0;
     this.awakeningTime = -1;
+    this.haloTime = -1;        // rotating halo rays after the true body
+    this.haloAcc = 0;
     this.universalOn = false;  // universal vision raises the panel murals
     this.sunTime = -1;         // the sinking sun
     this.waterTime = -1;       // the sweeping wave
@@ -155,6 +157,9 @@ export class Act3 {
         this.targets.amitabha = Math.max(this.targets.amitabha, 0.5);
         break;
       case 'amitabha':
+        this.targets[action] = 1;
+        this.haloTime = 0; // his light sweeps the whole land
+        break;
       case 'avalokitesvara':
       case 'mahasthamaprapta':
         this.targets[action] = 1;
@@ -312,16 +317,51 @@ export class Act3 {
     if (this.rainTimer > 0) return;
     this.rainTimer = config.act3.rain.interval;
 
+    // Two falls per tick; most are blossom RINGS (a thin expanding circle
+    // drifting down reads as an open flower), the rest soft petal puffs.
     const petals = ['cinnabar', 'gold', 'white'];
-    this.particles.burst({
-      x: rand(-0.48, 0.48) * config.worldWidth,
-      y: config.worldHeight * rand(0.38, 0.5),
-      color: config.palette[petals[Math.floor(Math.random() * petals.length)]],
-      count: 22, speed: 12, size: 2.6, life: rand(5.5, 8),
-      upBias: 0, jitter: 30,
-      driftY: config.act3.rain.fallDrift,
-      driftX: rand(-15, 15),
-    });
+    for (let i = 0; i < 2; i += 1) {
+      const ring = Math.random() < 0.6;
+      this.particles.burst({
+        x: rand(-0.48, 0.48) * config.worldWidth,
+        y: config.worldHeight * rand(0.38, 0.52),
+        color: config.palette[petals[Math.floor(Math.random() * petals.length)]],
+        count: ring ? 26 : 20,
+        speed: ring ? 26 : 12,
+        size: ring ? 2.3 : 2.6,
+        life: rand(5.5, 8),
+        upBias: 0, jitter: ring ? 4 : 30,
+        minSpeedFrac: ring ? 0.85 : 0.25,
+        driftY: config.act3.rain.fallDrift,
+        driftX: rand(-15, 15),
+      });
+    }
+  }
+
+  /** After the true body: four spokes of light wheel slowly around him. */
+  updateHalo(dt) {
+    if (this.haloTime < 0) return;
+    this.haloTime += dt;
+    if (this.haloTime >= 7) { this.haloTime = -1; return; }
+    this.haloAcc += dt;
+    const cx = config.act3.figures.amitabha.x * config.worldWidth;
+    const cy = 0.16 * config.worldHeight;
+    const env = Math.sin(Math.min(1, this.haloTime / 7) * Math.PI); // in & out
+    while (this.haloAcc >= 0.03) {
+      this.haloAcc -= 0.03;
+      const base = this.haloTime * 0.7;
+      for (let s = 0; s < 4; s += 1) {
+        const ang = base + (s / 4) * Math.PI * 2;
+        const d = rand(90, 330);
+        this.particles.burst({
+          x: cx + Math.cos(ang) * d,
+          y: cy + Math.sin(ang) * d * 0.8,
+          color: Math.random() < 0.6 ? config.palette.gold : config.palette.white,
+          count: Math.round(8 * env) + 2,
+          speed: 8, size: 2.2, life: 1.4, upBias: 0.1, jitter: 4,
+        });
+      }
+    }
   }
 
   /** 第一观 — a great soft sun sinks in the west, red to ember-gold. */
@@ -439,6 +479,7 @@ export class Act3 {
 
     this.updateSouls(dt);
     this.updateRain(dt);
+    this.updateHalo(dt);
     this.updateSun(dt);
     this.updateWater(dt);
     this.updateFlashes(dt, time, ppwu);

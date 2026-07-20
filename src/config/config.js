@@ -118,6 +118,20 @@ export const config = {
     line: ['心光 · WHAT REMAINS', 'The vision has returned to the dark —\nbut the mind that saw it keeps its light.'],
   },
 
+  // ── INTERLUDES — breathing room after each act arrives ─────────────
+  // A few seconds after the act title fades, a small scripted scene
+  // surveys what has been made and speaks one linking line.
+  interludes: {
+    act2: {
+      atSec: 9,
+      line: ['大地已成 · THE GROUND IS LAID', 'Walk the beryl in your mind —\nthen raise the jeweled world upon it.'],
+    },
+    act3: {
+      atSec: 9,
+      line: ['圣众将临 · THE ASSEMBLY NEARS', 'The world stands ready, shining and still.\nCall the holy ones with the pads.'],
+    },
+  },
+
   // ── AUDIO ──────────────────────────────────────────────────────────
   audio: {
     masterVolumeDb: -6,

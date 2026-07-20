@@ -39,6 +39,7 @@ export class Act2 {
     this.windDir = 1;                     // joystick X flips the drift
     this.seedTimer = 0;
     this.sparkTimer = 0;
+    this.gustAcc = 0;                     // coda windstorm emission
     this.captions = null;                 // set by main
     this.storyTold = new Array(8).fill(false);
 
@@ -89,7 +90,27 @@ export class Act2 {
     let wind = g[3];
     // Dissolution: as the coda deepens, turbulence rises — the un-growing
     // world sways harder and sheds dandelion-drift while it fades.
-    if (s.phase === 'coda') wind = Math.max(wind, (1 - fade) * 0.85);
+    if (s.phase === 'coda') {
+      wind = Math.max(wind, (1 - fade) * 0.95);
+      // WINDSTORM: as the world un-grows, gusts tear light sideways off
+      // the dissolving vision and carry it into the dark.
+      this.gustAcc += dt;
+      while (this.gustAcc >= 0.35) {
+        this.gustAcc -= 0.35;
+        const dir = this.windDir * (Math.random() < 0.8 ? 1 : -1);
+        this.particles.burst({
+          x: rand(-0.45, 0.45) * config.worldWidth,
+          y: rand(-0.35, 0.3) * config.worldHeight,
+          color: pick([config.palette.gold, config.palette.beryl,
+            config.palette.white, config.palette.malachite]),
+          count: Math.round(46 * (1 - fade) + 8),
+          speed: 26, size: 2.3, life: rand(1.8, 2.8),
+          upBias: 0.1, jitter: 60,
+          driftX: dir * rand(260, 420) * (1 - fade * 0.5),
+          minSpeedFrac: 0.4,
+        });
+      }
+    }
 
     // Side-effects riding the sky dials: rays gild and swell the glow,
     // clouds quicken the whole world's drift.
