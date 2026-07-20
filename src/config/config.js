@@ -145,11 +145,12 @@ export const config = {
     accents: {
       bpm: 48,             // the slow grid Act-1 chimes quantize onto
       quantize: '8n',
-      chimeLevelDb: -12,   // Act 1 key chimes (kept under the score)
+      chimeLevelDb: -7,    // Act 1 key chimes — they ARE Act 1's voice
+                           // until a real part1 track is dropped in
       chimeRoot: 3,        // pentatonic root semitone — MATCH THE SCORE's
                            // key here (0=C, 2=D, 3=D#, 5=F, 7=G, …)
       chimeMinGapSec: 0.14, // flurries thin to a cascade, never mud
-      chimeLowpassHz: 2100, // rounds the bell tops into the mix
+      chimeLowpassHz: 3200, // rounds the bell tops into the mix
       bedLevelDb: -14,     // Act 2 generative self-playing layer
       padLevelDb: -6,      // Act 3 bells / gongs / swells
       reverbDecaySec: 7,

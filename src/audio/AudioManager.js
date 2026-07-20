@@ -141,7 +141,13 @@ export class AudioManager {
     }));
   }
 
-  /** Equal-power crossfade to the phase's track. */
+  /**
+   * Crossfade to the phase's track. Stone Prison lives ONLY in the
+   * prologue/prison scene — every other phase must silence it fully.
+   * Plain rampTo (not curve scheduling) so the fade can never be lost
+   * to a scheduling exception; each returning track restarts from its
+   * top so the score begins fresh, not mid-loop.
+   */
   onPhase(phase) {
     if (!this.unlocked) return;
     const name = {
@@ -153,23 +159,14 @@ export class AudioManager {
 
     const sec = config.acts.crossfadeSec;
     const now = Tone.now();
-    const steps = 32;
-    for (const [trackName, { gain }] of Object.entries(this.tracks)) {
-      const from = gain.gain.value;
-      const to = trackName === name ? 1 : 0;
-      if (Math.abs(from - to) < 0.001) continue;
-      // cos/sin curve — the pair keeps summed power constant mid-fade
-      const curve = new Float32Array(steps);
-      for (let i = 0; i < steps; i += 1) {
-        const t = i / (steps - 1);
-        curve[i] = from + (to - from) * Math.sin(t * Math.PI / 2);
+    for (const [trackName, { player, gain }] of Object.entries(this.tracks)) {
+      const target = trackName === name ? 1 : 0;
+      // A track coming back from silence starts again from its top.
+      if (target === 1 && gain.gain.value < 0.05) {
+        try { player.stop(now); player.start(now); } catch { /* keep playing */ }
       }
-      try {
-        gain.gain.cancelScheduledValues(now);
-        gain.gain.setValueCurveAtTime(curve, now, sec);
-      } catch {
-        gain.gain.rampTo(to, sec);
-      }
+      gain.gain.cancelScheduledValues(now);
+      gain.gain.rampTo(target, sec);
     }
   }
 
@@ -197,7 +194,7 @@ export class AudioManager {
     const midi = oct * 12 + snapped + a.chimeRoot;
     const time = Tone.getTransport().nextSubdivision(a.quantize);
     this.chimeSynth.triggerAttackRelease(
-      Tone.Frequency(midi, 'midi'), '1n', time, 0.25 + velocity * 0.45,
+      Tone.Frequency(midi, 'midi'), '1n', time, 0.3 + velocity * 0.55,
     );
   }
 
