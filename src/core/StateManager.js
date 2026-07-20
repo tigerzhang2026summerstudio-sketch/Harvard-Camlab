@@ -92,10 +92,8 @@ export class StateManager {
   onKey(e, synthetic = false) {
     this.touch(synthetic);
     if (e.on && this.phase === 'prologue') this.go('prison');
-    else if (e.on && this.phase === 'prison') {
-      // Keys pace the story — debounced so a chord doesn't skip lines.
-      if (this.phaseTime - this.prisonLineAt > 1.2) this.prisonAdvance();
-    }
+    // (In the prison the story keeps its OWN pace — lines advance only
+    //  on the lineSec timer, no matter how the keys are played.)
     if (e.on && this.phase === 'act1') {
       this.fullness = clamp01(this.fullness + e.velocity * config.acts.act1EnergyPerStrike);
       // (act1 → act2 is checked per-frame in update(): the meter AND the

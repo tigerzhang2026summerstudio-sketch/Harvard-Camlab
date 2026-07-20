@@ -193,17 +193,25 @@ export class Act1 {
     const v = a1.variety;
     const spec = this.specFor(e.note, e.velocity);
 
-    // In the prison, light cannot yet escape: strikes bloom small,
-    // gray-blue and earthbound — no sun, no echoes, no streaks.
+    // In the prison, light cannot yet escape — and it cannot rush the
+    // story. Strikes only gather AROUND the scene the current line has
+    // raised: a faint swirl of motes circling the image.
     if (this.state.phase === 'prison') {
+      const anchors = config.prison.sceneAnchors;
+      const anchor = anchors[Math.min(this.state.prisonStep, anchors.length - 1)];
+      const ang = Math.random() * Math.PI * 2;
+      const r = rand(130, 220);
       this.particles.burst({
-        ...spec,
-        color: spec.color.lerp(new THREE.Color(config.palette.lapis), 0.75),
-        count: Math.round(spec.count * 0.22),
-        speed: spec.speed * 0.35,
-        size: spec.size * 0.8,
-        life: spec.life * 0.8,
-        upBias: 0,
+        x: anchor[0] * config.worldWidth + Math.cos(ang) * r,
+        y: anchor[1] * config.worldHeight + Math.sin(ang) * r * 0.7,
+        color: spec.color.lerp(new THREE.Color(config.palette.lapis), 0.6),
+        count: Math.round(spec.count * 0.16),
+        speed: spec.speed * 0.25,
+        size: spec.size * 0.75,
+        life: spec.life,
+        upBias: 0.05,
+        swirl: 0.65, // the light circles, it does not scatter
+        jitter: 22,
       });
       return;
     }

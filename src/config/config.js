@@ -108,6 +108,16 @@ export const config = {
   prison: {
     lineSec: 9,
     mural: 'cave-prison.jpg',  // condenses dimly on the wall through the scene
+    // Where each line's scenery stands (×W, ×H): strikes during the
+    // scene only gather AROUND the current image, never elsewhere.
+    sceneAnchors: [
+      [0, -0.3],        // the city
+      [0.24, -0.24],    // the seven walls
+      [-0.18, -0.12],   // the queen
+      [-0.18, -0.1],    // her cell
+      [-0.36, 0.22],    // Vulture Peak
+      [0.02, 0.06],     // the Buddha
+    ],
     lines: [
       ['王舍城 · RĀJAGṚHA', 'In the great city of Rājagṛha,\nthe prince seized his father the king.'],
       ['七重牢 · THE SEVEN WALLS', 'He locked him behind seven walls;\nno one was allowed to go to him.'],
