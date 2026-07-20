@@ -17,6 +17,7 @@
 import * as THREE from 'three';
 import { config } from '../config/config.js';
 import { GrowthLayer } from './GrowthLayer.js';
+import { ComboEngine } from './ComboEngine.js';
 import { clamp01, lerp, rand } from '../core/Clock.js';
 
 /** The sun disc: a GrowthLayer revealed center-out by the fullness meter. */
@@ -67,6 +68,10 @@ export class Act1 {
     this.tracers = [];  // moving light-emitters: streaks, meteors
     this.echoes = [];   // pending echo blooms
     this.meteorIn = rand(6, 14); // seconds until the first shooting light
+
+    // The pattern-reader: chords/runs/repeats/low+high gather the fire
+    // into recognizable 图案 and ember-formed lines of the sutra.
+    this.combos = new ComboEngine(state, particles);
   }
 
   /** Map a note+velocity to a burst spec (position/color/energy). */
@@ -198,6 +203,9 @@ export class Act1 {
     // The struck note blooms — in one of many forms.
     this.formBurst(spec, e.velocity);
 
+    // …and the pattern-reader watches for combo gestures.
+    this.combos.onKey(e.note, e.velocity, spec);
+
     // Low strikes near the floor sometimes send light racing outward
     // along the beryl surface — a ripple over the frozen water.
     if (spec.y < -0.18 * config.worldHeight && Math.random() < 0.35) {
@@ -325,6 +333,7 @@ export class Act1 {
 
   update(time, dt, ppwu) {
     const s = this.state;
+    this.combos.update(time);
 
     // The sun kindles with the meter, holds through the acts, and sets
     // again in the coda; the prologue starts it dark.

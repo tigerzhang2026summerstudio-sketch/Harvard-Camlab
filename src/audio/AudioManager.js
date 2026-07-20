@@ -177,6 +177,28 @@ export class AudioManager {
     );
   }
 
+  /** Act 1: a combo 图案 earns a small flourish above the per-key chimes. */
+  comboAccent(family, tier = 1) {
+    if (!this.unlocked || this.state.phase === 'prologue') return;
+    const now = Tone.now();
+    if (family === 'lowHigh') {          // earth + sky: gong below, bell above
+      this.gongSynth.triggerAttackRelease('D2', '2n', now, 0.5);
+      this.chimeSynth.triggerAttackRelease('A5', '2n', now + 0.35, 0.35);
+    } else if (family === 'repeat') {    // the growing mandala climbs with it
+      this.chimeSynth.triggerAttackRelease(
+        Tone.Frequency(70 + tier * 5, 'midi'), '2n', now, 0.4,
+      );
+    } else {                             // chord / run: a pentatonic sprinkle
+      const n = Math.min(3 + tier, 7);
+      for (let i = 0; i < n; i += 1) {
+        this.chimeSynth.triggerAttackRelease(
+          Tone.Frequency(75 + PENTATONIC[i % PENTATONIC.length] + 12 * Math.floor(i / PENTATONIC.length), 'midi'),
+          '8n', now + i * 0.13, 0.3,
+        );
+      }
+    }
+  }
+
   /** Act 3: each story rings its own bell/gong/swell. */
   storyAccent(action) {
     if (!this.unlocked || this.state.phase !== 'act3') return;

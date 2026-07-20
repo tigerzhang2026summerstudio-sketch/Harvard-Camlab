@@ -190,6 +190,65 @@ export class ParticleSystem {
     return n;
   }
 
+  /**
+   * Spawn particles that CONVERGE onto explicit target points instead of
+   * flying apart — the combo 图案 and the ember-formed sutra text.
+   * No shader changes needed: velocity integrates with drag toward an
+   * asymptote of v/drag, so a mote spawned at (target − v/drag) drifts in
+   * and settles exactly on its target as it slows.
+   *
+   * pts: array of { x, y, col? } — offsets (world units) around x/y;
+   * col is an optional per-point THREE.Color (else `color` is used).
+   * scatter: how far the embers gather in from. stagger: birth spread (s).
+   */
+  settle({
+    pts, x = 0, y = 0, color = '#ffffff', size = 2.6, life = 5,
+    scatter = 160, stagger = 0.9,
+  }) {
+    const DRAG = 1.8; // must match the vertex shader's drag constant
+    const base = this.scratchColor.set(color);
+    const { aOrigin, aVelocity, aColor, aSize, aBirth, aLife, aSeed } = this.attrs;
+    const n = Math.min(
+      Math.round(pts.length * Math.min(1, this.spawnScale)),
+      this.capacity,
+    );
+    if (n <= 0) return 0;
+    const stride = pts.length / n;
+    const start = this.cursor;
+
+    for (let k = 0; k < n; k += 1) {
+      const p = pts[Math.min(pts.length - 1, Math.floor(k * stride))];
+      const i = (start + k) % this.capacity;
+      const i3 = i * 3;
+
+      const tx = x + p.x;
+      const ty = y + p.y;
+      const ang = Math.random() * Math.PI * 2;
+      const m = scatter * (0.3 + 0.7 * Math.random());
+      aOrigin.array[i3]     = tx - Math.cos(ang) * m;
+      aOrigin.array[i3 + 1] = ty - Math.sin(ang) * m;
+      aOrigin.array[i3 + 2] = 0;
+      aVelocity.array[i3]     = Math.cos(ang) * m * DRAG;
+      aVelocity.array[i3 + 1] = Math.sin(ang) * m * DRAG;
+      aVelocity.array[i3 + 2] = 0;
+
+      const c = p.col ?? base;
+      const v = 0.92 + Math.random() * 0.16;
+      aColor.array[i3]     = c.r * v;
+      aColor.array[i3 + 1] = c.g * v;
+      aColor.array[i3 + 2] = c.b * v;
+
+      aSize.array[i]  = size * (0.65 + 0.7 * Math.random());
+      aBirth.array[i] = this.time + Math.random() * stagger;
+      aLife.array[i]  = life * (0.85 + 0.3 * Math.random());
+      aSeed.array[i]  = Math.random();
+    }
+
+    this.markUpdated(start, n);
+    this.cursor = (start + n) % this.capacity;
+    return n;
+  }
+
   /** Push only the written spans to the GPU (ring buffer may wrap → 2 spans). */
   markUpdated(start, n) {
     const spans = start + n <= this.capacity

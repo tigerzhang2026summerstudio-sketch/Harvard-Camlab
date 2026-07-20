@@ -220,6 +220,57 @@ export const config = {
       emberCount: 6,         // long-lived motes left glowing at the spot
       meteorEverySec: 20,    // avg seconds between shooting lights (act 1)
     },
+
+    // COMBOS — special ways of playing that gather the fire into
+    // recognizable 图案, and (rate-limited) into ember-formed lines of
+    // the sutra as the pattern frays. Four gestures:
+    //   chord   3+ different keys at once → lotus/moon/sun/canopy/pagoda
+    //           (5+ keys may condense a real Cave-217 mural crop)
+    //   run     6+ notes in 2s across the keys → a sweeping ribbon
+    //   repeat  one key 3+ times in rhythm → a mandala that grows
+    //   lowHigh a bass + a treble key together → a pillar of light
+    combos: {
+      enabled: true,
+      globalCooldownSec: 2.6,   // min gap between any two combo patterns
+      familyCooldownSec: { chord: 7, run: 9, repeat: 5, lowHigh: 12 },
+      chordWindowSec: 0.14,     // keys this close together count as one chord
+      chordMin: 3,              // distinct notes needed
+      runWindowSec: 2.0,        // a flurry inside this window…
+      runMin: 6,                // …of at least this many notes…
+      runSpanMin: 7,            // …spanning at least this many semitones
+      repeatWindowSec: 2.6,     // same key struck repeatMin+ times
+      repeatMin: 3,
+      lowHighWindowSec: 0.2,    // bass + treble struck near-together
+      lowNote: 52,
+      highNote: 66,
+      patternPoints: 2600,      // motes per 图案 (× quality particleScale)
+      patternLifeSec: 5.5,      // resolve ≈1.5s in, hold, then sublime away
+      gatherDist: 170,          // how far the embers fly in from
+      muralChance: 0.35,        // big chords: chance of a real mural crop
+      muralMinChord: 5,
+      muralFiles: ['cave-sun-contemplation.jpg', 'cave-prison.jpg', 'cave-music-sky.jpg'],
+      // The dying light re-forms as a bilingual line of the sutra.
+      text: {
+        enabled: true,
+        everySec: 15,           // at most one passage this often
+        delaySec: 3.4,          // after the 图案 begins (≈ as it frays)
+        lifeSec: 5.2,
+        widthFrac: 0.36,        // Chinese line width ×worldWidth
+        points: 3400,           // motes for the characters (× quality)
+        passages: [
+          ['西方净土', 'In the west — a land without sorrow'],
+          ['光明遍照', 'Its light floods the ten directions'],
+          ['日悬如鼓', 'The sun hangs in the sky like a drum'],
+          ['水想成冰', 'See the water; see it become ice'],
+          ['冰化琉璃', 'The ice turns to shining beryl'],
+          ['心作心是', 'The mind that sees it becomes it'],
+          ['莲华化生', 'Souls awaken inside opening lotuses'],
+          ['无有众苦', 'There, no suffering is even heard'],
+          ['一心不乱', 'Hold the image; let nothing scatter'],
+          ['皆说妙法', 'Every light there speaks the Dharma'],
+        ],
+      },
+    },
   },
 
   // ── BACKDROP — the cave wall breathing behind the darkness ─────────

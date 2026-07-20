@@ -124,6 +124,8 @@ const audio = new AudioManager(state);
 // Act3 resolves which story each pad tells (pad 8 is a sequence), then
 // rings that story's accent.
 act3.onStory = (action) => audio.storyAccent(action);
+// Combo 图案 in Act 1 ring a small flourish of their own.
+act1.combos.onCombo = (family, tier) => audio.comboAccent(family, tier);
 window.addEventListener('pointerdown', () => audio.unlock());
 window.addEventListener('keydown', () => audio.unlock());
 

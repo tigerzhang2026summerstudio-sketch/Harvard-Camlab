@@ -167,4 +167,4 @@ To use real murals:
 Missing files never break the show — they log a console warning and the
 procedural silhouettes take over.
 
-*(REA
+*(README grows with each build step: MIDI mapping, keyboard fallback, etc.)*
