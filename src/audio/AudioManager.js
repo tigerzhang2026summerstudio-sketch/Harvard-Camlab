@@ -34,11 +34,11 @@ export class AudioManager {
     // story a pad tells (pad 8 is a sequence) and calls it back.
   }
 
-  /** Call from any real user gesture (click / keydown). Idempotent. */
+  /** Called from the corner button's click (a real gesture). Idempotent. */
   async unlock() {
     if (this.unlocked) return;
     this.unlocked = true;
-    this.chip.remove();
+    this.chip.textContent = '♪ …';
 
     await Tone.start();
     Tone.getDestination().volume.value = config.audio.masterVolumeDb;
@@ -53,6 +53,8 @@ export class AudioManager {
 
     // Fade in whatever phase we are already in.
     this.onPhase(this.state.phase);
+    this.ready = true; // clicks during loading are ignored, not queued
+    this.refreshChip();
     console.info('[audio] unlocked & running');
   }
 
@@ -276,19 +278,43 @@ export class AudioManager {
   toggleMute() {
     const dest = Tone.getDestination();
     dest.mute = !dest.mute;
+    this.refreshChip();
     return dest.mute;
   }
 
   // ── The unlock chip ──────────────────────────────────────────────────
+  /**
+   * The corner sound OPTION: a persistent pill button, bottom-right.
+   * Sound stays OFF until it is clicked (the click doubles as the
+   * browser's autoplay unlock); afterwards it toggles mute on/off.
+   */
   buildChip() {
-    this.chip = document.createElement('div');
-    this.chip.textContent = '♪ click or press any key to enable sound';
+    this.chip = document.createElement('button');
+    this.chip.id = 'sound-toggle';
     this.chip.style.cssText = `
       position: fixed; right: 16px; bottom: 16px; z-index: 20;
-      padding: 6px 12px; border-radius: 999px;
+      padding: 6px 12px; border-radius: 999px; cursor: pointer;
       background: rgba(4,10,18,0.8); border: 1px solid rgba(232,193,90,0.4);
-      color: #e8c15a; font: 12px/1.4 ui-monospace, Menlo, monospace;
-      pointer-events: none;`;
+      color: #e8c15a; font: 12px/1.4 ui-monospace, Menlo, monospace;`;
+    this.chip.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      if (!this.unlocked) { this.unlock(); return; }
+      if (!this.ready) return; // still loading — don't queue toggles
+      this.toggleMute();
+      this.chip.blur(); // space/enter must stay keys, not re-toggles
+    });
     document.body.appendChild(this.chip);
+    this.refreshChip();
+  }
+
+  refreshChip() {
+    if (!this.unlocked) {
+      this.chip.textContent = '♪ sound off — click to turn on';
+      this.chip.style.opacity = '1';
+      return;
+    }
+    const muted = Tone.getDestination().mute;
+    this.chip.textContent = muted ? '♪ sound off' : '♪ sound on';
+    this.chip.style.opacity = muted ? '1' : '0.55';
   }
 }

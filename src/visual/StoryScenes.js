@@ -10,7 +10,10 @@
  * once (backdrop opacityByPhase.epilogue) before the loop returns.
  */
 import { config } from '../config/config.js';
-import { lotusPoints, preloadMural, muralPointsFor } from './ComboPatterns.js';
+import {
+  lotusPoints, cityPoints, sevenWallsPoints, queenPoints, cagePoints,
+  peakPoints, preloadMural, muralPointsFor,
+} from './ComboPatterns.js';
 
 export class StoryScenes {
   constructor(state, particles, captions) {
@@ -26,10 +29,13 @@ export class StoryScenes {
       5200 * Math.max(0.4, config.qualityScale[config.quality].particleScale),
     );
     preloadMural(config.prison.mural, this.budget);
+    // The final line reveals the Buddha (SVG art — keep its whites).
+    preloadMural('buddha-placeholder.svg', this.budget, { plasterSkip: false });
 
     state.on('prisonLine', ({ index }) => {
       const [title, line] = config.prison.lines[index];
       this.captions.showStory(title, line);
+      this.prisonStage(index);
     });
     this.pending = []; // scheduled interlude steps { at, fn }
     state.on('phase', ({ phase }) => {
@@ -41,6 +47,97 @@ export class StoryScenes {
       if (phase === 'act2') this.scheduleAct2Interlude();
       if (phase === 'act3') this.scheduleAct3Interlude();
     });
+  }
+
+  /**
+   * The prison prologue as a STAGE PLAY: every line of the story raises
+   * its own scenery out of the dark — the city, the seven walls, the
+   * queen with her offering, her cell, the far peak she bows toward,
+   * and finally the Buddha's arrival.
+   */
+  prisonStage(index) {
+    const W = config.worldWidth;
+    const H = config.worldHeight;
+    const b = Math.round(this.budget * 0.55); // scenery stays background-dim
+    const hold = { size: 2.2, life: 8, scatter: 130, stagger: 1.6 };
+    const queenX = -0.18 * W;
+
+    switch (index) {
+      case 0: // 王舍城 — the great city rises across the horizon
+        this.particles.settle({
+          pts: cityPoints(0.85 * W, 0.24 * H, Math.round(b * 1.3)),
+          x: 0, y: -0.3 * H, ...hold,
+        });
+        break;
+      case 1: // 七重牢 — seven walls close around the king, in the east
+        this.particles.settle({
+          pts: sevenWallsPoints(0.26 * H, b),
+          x: 0.24 * W, y: -0.24 * H, ...hold,
+        });
+        break;
+      case 2: { // 韦提希 — the queen crosses toward the walls, bowl in hand
+        this.particles.settle({
+          pts: queenPoints(0.2 * H, b),
+          x: queenX, y: -0.12 * H, ...hold,
+        });
+        // her offering drifts quietly toward the prison
+        for (let i = 0; i < 8; i += 1) {
+          this.pending.push({ at: this.time + 1.5 + i * 0.7, fn: () => this.particles.burst({
+            x: queenX + 0.05 * W, y: -0.06 * H,
+            color: config.palette.gold,
+            count: 26, speed: 8, size: 2.0, life: 3.4,
+            upBias: 0.1, jitter: 8, driftX: 90,
+          }) });
+        }
+        break;
+      }
+      case 3: // 幽闭 — the bars come down around her
+        this.particles.settle({
+          pts: cagePoints(0.13 * W, 0.36 * H, b),
+          x: queenX, y: -0.1 * H, ...hold, scatter: 200, stagger: 0.8,
+        });
+        break;
+      case 4: { // 悲泣 — the far peak appears; her plea rises toward it
+        this.particles.settle({
+          pts: peakPoints(0.2 * H, b),
+          x: -0.36 * W, y: 0.22 * H, ...hold,
+        });
+        for (let i = 0; i < 14; i += 1) {
+          const f = i / 13;
+          this.pending.push({ at: this.time + 1.2 + f * 3.5, fn: () => this.particles.burst({
+            x: queenX + (-0.36 * W - queenX + 0.03 * W) * f,
+            y: -0.05 * H + (0.27 * H + 0.05 * H) * f,
+            color: Math.random() < 0.7 ? config.palette.white : config.palette.gold,
+            count: 16, speed: 6, size: 2.0, life: 2.6,
+            upBias: 0.4, jitter: 6,
+          }) });
+        }
+        break;
+      }
+      case 5: { // 佛来 — the Buddha appears before her cell, radiant
+        const buddha = muralPointsFor('buddha-placeholder.svg');
+        if (buddha) {
+          const hW = 0.4 * H;
+          this.particles.settle({
+            pts: buddha.pts.map((p) => ({
+              x: p.x * hW, y: p.y * hW, col: p.col.clone().multiplyScalar(0.85),
+            })),
+            x: 0.02 * W, y: 0.06 * H,
+            size: 2.4, life: 8.5, scatter: 220, stagger: 1.8,
+          });
+        }
+        for (let i = 0; i < 6; i += 1) { // soft radiance spreading from him
+          this.pending.push({ at: this.time + 2 + i * 0.6, fn: () => this.particles.burst({
+            x: 0.02 * W, y: 0.06 * H,
+            color: Math.random() < 0.6 ? config.palette.gold : config.palette.white,
+            count: 60, speed: 40, size: 2.2, life: 3,
+            upBias: 0.15, jitter: 20, minSpeedFrac: 0.75,
+          }) });
+        }
+        break;
+      }
+      default: break;
+    }
   }
 
   /** A slow gleam surveys the finished ground, then the linking line. */

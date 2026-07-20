@@ -390,6 +390,155 @@ export function ribbonPoints(len, dir, budget) {
   return pts;
 }
 
+// ── Prison-story stage scenery (one 图案 per line of the tale) ────────
+
+/** Rājagṛha: a distant walled city — crenellated wall, gate, towers. */
+export function cityPoints(w, h, budget) {
+  const pts = [];
+  const dimGold = col(config.palette.gold).multiplyScalar(0.55);
+  const dimWhite = col(config.palette.white).multiplyScalar(0.4);
+  const lapis = col(config.palette.lapis).multiplyScalar(1.3);
+
+  const nWall = Math.floor(budget * 0.42);
+  for (let k = 0; k < nWall; k += 1) {   // city wall with battlements
+    const x = rand(-0.5, 0.5) * w;
+    const tooth = (Math.floor((x + w) / 30) % 2) * h * 0.05;
+    const u = Math.random();
+    if (u < 0.55) { // crenellated top edge
+      pts.push({ x, y: h * 0.16 + tooth + rand(-1.5, 1.5), col: (Math.random() < 0.6 ? dimGold : dimWhite).clone() });
+    } else {        // sparse masonry glints below
+      pts.push({ x, y: rand(0, h * 0.14), col: lapis.clone().multiplyScalar(rand(0.5, 1)) });
+    }
+  }
+  const towers = [-0.42, -0.21, 0.02, 0.24, 0.43];
+  const perTower = Math.floor((budget * 0.5) / towers.length);
+  for (const tx of towers) {             // watch-towers over the wall
+    const th = h * rand(0.55, 1.0);
+    const tw = w * 0.035;
+    for (let k = 0; k < perTower; k += 1) {
+      const u = Math.random();
+      if (u < 0.5) {      // tower sides
+        const side = Math.random() < 0.5 ? -1 : 1;
+        pts.push({ x: tx * w + side * tw + rand(-1.5, 1.5), y: rand(h * 0.16, th), col: dimGold.clone().multiplyScalar(rand(0.7, 1.2)) });
+      } else if (u < 0.8) { // roof line + upturned tips
+        const t = rand(-1.2, 1.2);
+        pts.push({ x: tx * w + t * tw, y: th + Math.max(0, Math.abs(t) - 0.8) * h * 0.06, col: dimWhite.clone() });
+      } else {            // a lit window
+        pts.push({ x: tx * w + rand(-0.6, 0.6) * tw, y: rand(h * 0.3, th * 0.9), col: dimGold.clone().multiplyScalar(1.6) });
+      }
+    }
+  }
+  while (pts.length < budget) {          // the city gate, center
+    const a = rand(0, Math.PI);
+    pts.push({ x: Math.cos(a) * w * 0.03, y: Math.sin(a) * h * 0.12, col: dimWhite.clone() });
+  }
+  return pts;
+}
+
+/** The seven nested walls that closed around the king. */
+export function sevenWallsPoints(R, budget) {
+  const pts = [];
+  const lapis = col(config.palette.lapis).multiplyScalar(1.6);
+  const beryl = col(config.palette.beryl).multiplyScalar(0.7);
+  const white = col(config.palette.white).multiplyScalar(0.35);
+  const per = Math.floor(budget / 7);
+  for (let i = 0; i < 7; i += 1) {
+    const r = R * (0.25 + (0.75 * i) / 6);
+    const c = i % 2 ? beryl : lapis;
+    for (let k = 0; k < per; k += 1) {
+      const u = Math.random();
+      if (u < 0.7) { // the arch of each wall
+        const a = rand(0.08, 0.92) * Math.PI;
+        pts.push({ x: Math.cos(a) * r, y: Math.sin(a) * r * 0.8 + rand(-1.5, 1.5), col: (Math.random() < 0.12 ? white : c).clone().multiplyScalar(rand(0.7, 1.2)) });
+      } else {       // its feet running to the ground
+        const side = Math.random() < 0.5 ? -1 : 1;
+        pts.push({ x: side * r * Math.cos(0.08 * Math.PI), y: rand(-0.12 * R, Math.sin(0.08 * Math.PI) * r * 0.8), col: c.clone().multiplyScalar(0.7) });
+      }
+    }
+  }
+  return pts;
+}
+
+/** Queen Vaidehī — a robed figure carrying the offering bowl. */
+export function queenPoints(R, budget) {
+  const pts = [];
+  const white = col(config.palette.white);
+  const gold = col(config.palette.gold);
+  for (let k = 0; k < budget; k += 1) {
+    const u = Math.random();
+    if (u < 0.12) {        // head
+      const a = Math.random() * Math.PI * 2;
+      const r = Math.sqrt(Math.random()) * R * 0.09;
+      pts.push({ x: Math.cos(a) * r, y: R * 0.42 + Math.sin(a) * r, col: white.clone().multiplyScalar(0.9) });
+    } else if (u < 0.6) {  // long robe, widening to the ground
+      const t = Math.random();
+      const halfW = R * (0.1 + t * 0.16);
+      const edge = Math.random() < 0.6;
+      const x = edge ? (Math.random() < 0.5 ? -1 : 1) * halfW : rand(-1, 1) * halfW;
+      pts.push({ x, y: R * 0.3 - t * R * 0.82, col: white.clone().multiplyScalar(edge ? 0.75 : 0.4) });
+    } else if (u < 0.72) { // shoulders + arms reaching forward
+      const t = Math.random();
+      pts.push({ x: t * R * 0.22, y: R * (0.24 - t * 0.14), col: white.clone().multiplyScalar(0.6) });
+    } else if (u < 0.86) { // the offering bowl, warm and bright
+      const a = Math.random() * Math.PI;
+      pts.push({ x: R * 0.24 + Math.cos(a) * R * 0.06, y: R * 0.08 - Math.abs(Math.sin(a)) * R * 0.04, col: gold.clone().multiplyScalar(1.4) });
+    } else {               // honey-light rising from the bowl
+      const t = Math.random();
+      pts.push({ x: R * 0.24 + rand(-0.03, 0.03) * R, y: R * (0.1 + t * 0.2), col: gold.clone().multiplyScalar(1.0 - t * 0.6) });
+    }
+  }
+  return pts;
+}
+
+/** The cell: cold vertical bars with rails — darkness given shape. */
+export function cagePoints(w, h, budget) {
+  const pts = [];
+  const lapis = col(config.palette.lapis).multiplyScalar(1.8);
+  const beryl = col(config.palette.beryl).multiplyScalar(0.8);
+  const bars = 7;
+  for (let k = 0; k < budget; k += 1) {
+    const u = Math.random();
+    if (u < 0.72) { // the bars
+      const b = Math.floor(Math.random() * bars);
+      pts.push({
+        x: ((b / (bars - 1)) - 0.5) * w + rand(-1.2, 1.2),
+        y: rand(-0.5, 0.5) * h,
+        col: (Math.random() < 0.7 ? lapis : beryl).clone().multiplyScalar(rand(0.7, 1.2)),
+      });
+    } else {        // top & bottom rails
+      const top = Math.random() < 0.5;
+      pts.push({ x: rand(-0.54, 0.54) * w, y: (top ? 0.5 : -0.5) * h + rand(-1.5, 1.5), col: lapis.clone() });
+    }
+  }
+  return pts;
+}
+
+/** Vulture Peak in the far distance, its summit faintly lit. */
+export function peakPoints(R, budget) {
+  const pts = [];
+  const lapis = col(config.palette.lapis).multiplyScalar(1.5);
+  const white = col(config.palette.white);
+  for (let k = 0; k < budget; k += 1) {
+    const u = Math.random();
+    if (u < 0.55) {        // the two ridges
+      const t = Math.random();
+      const left = Math.random() < 0.55;
+      const x = left ? -R + t * R * 1.15 : R * 0.15 + t * R * 0.85;
+      const y = left ? -0.4 * R + t * R * 0.9 : 0.5 * R - t * R * 0.85;
+      pts.push({ x, y: y + rand(-2, 2), col: lapis.clone().multiplyScalar(rand(0.7, 1.2)) });
+    } else if (u < 0.9) {  // sparse mountain body
+      const t = Math.random();
+      const halfW = R * (0.12 + t * 0.85);
+      pts.push({ x: rand(-1, 1) * halfW, y: 0.5 * R - t * R * 0.9, col: lapis.clone().multiplyScalar(0.5) });
+    } else {               // the summit, where the Buddha dwells
+      const a = Math.random() * Math.PI * 2;
+      const r = Math.sqrt(Math.random()) * R * 0.08;
+      pts.push({ x: R * 0.15 + Math.cos(a) * r, y: R * 0.52 + Math.sin(a) * r, col: white.clone().multiplyScalar(rand(0.8, 1.4)) });
+    }
+  }
+  return pts;
+}
+
 // ── Ember-formed text ─────────────────────────────────────────────────
 
 /**

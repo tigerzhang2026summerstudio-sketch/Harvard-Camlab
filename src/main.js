@@ -122,16 +122,15 @@ const meditations = new Meditations(state, captions);
 // The narrated bookends: Vaidehī's prison story and the epilogue lotus.
 const storyScenes = new StoryScenes(state, particles, captions);
 
-// Audio: score crossfades + accents. The browser only allows sound after
-// a real gesture, so the first click/keypress unlocks it (MIDI can't).
+// Audio: score crossfades + accents. Sound is an OPTION — it stays off
+// until the corner "♪" button is clicked (that click doubles as the
+// browser's autoplay unlock; the button then toggles mute).
 const audio = new AudioManager(state);
 // Act3 resolves which story each pad tells (pad 8 is a sequence), then
 // rings that story's accent.
 act3.onStory = (action) => audio.storyAccent(action);
 // Combo 图案 in Act 1 ring a small flourish of their own.
 act1.combos.onCombo = (family, tier) => audio.comboAccent(family, tier);
-window.addEventListener('pointerdown', () => audio.unlock());
-window.addEventListener('keydown', () => audio.unlock());
 
 // ── Main loop ─────────────────────────────────────────────────────────
 const clock = new THREE.Clock();
