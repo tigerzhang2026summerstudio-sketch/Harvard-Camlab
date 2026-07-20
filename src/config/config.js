@@ -87,8 +87,9 @@ export const config = {
     act2DialTarget: 0.55,      // EVERY dial must pass this to raise the throne
     // SOFT MINIMUMS — the show can't be rushed: each act keeps the stage
     // at least this long even when its exit condition is already met.
-    act1MinSec: 100,           // Act I runtime floor (meter can fill early)
-    act2MinSec: 90,            // Act II runtime floor (dials can finish early)
+    // (The prison story already adds ~1 min before Act I begins.)
+    act1MinSec: 60,            // Act I runtime floor (meter can fill early)
+    act2MinSec: 70,            // Act II runtime floor (dials can finish early)
     act3MinSec: 75,            // dissolution pad is ignored before this
     codaFadeSec: 20,           // dissolution length
     epilogueSec: 22,           // one lotus in the dark, then the loop
@@ -176,6 +177,10 @@ export const config = {
     padsLocked: 'The pads awaken in Act III —\ncultivate the world with the dials first.',
     dialsLocked: 'The dials awaken in Act II —\nflood the darkness with the keys first.',
     dissolutionEarly: 'The vision is not ready to be released —\nlet the contemplations deepen a little longer.',
+    // Shown when an act's meter is satisfied but its runtime floor isn't:
+    // the performer must know the piece is soaking, not stuck.
+    floodHolds: '满潮 · THE FLOOD HOLDS\nThe light must soak deep — keep playing, the ground is setting.',
+    worldHolds: '世界将熟 · THE WORLD RIPENS\nAll eight are raised — hold them there; the throne is forming.',
 
     // When no one interacts for a while, the piece meditates aloud:
     // sutra passages surface one at a time (idleSec to start, everySec

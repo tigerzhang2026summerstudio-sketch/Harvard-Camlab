@@ -43,6 +43,7 @@ export class Act2 {
     this.captions = null;                 // set by main
     this.storyTold = new Array(8).fill(false);
     this.surgeMark = new Array(8).fill(0); // highest threshold crossed per dial
+    this.holdHintAt = -1e9;               // "the world ripens" reassurance
 
     state.on('phase', ({ phase }) => {
       if (phase === 'prologue') {
@@ -124,6 +125,14 @@ export class Act2 {
 
   update(time, dt, ppwu) {
     const s = this.state;
+
+    // All dials done but Act II's runtime floor not reached: say so.
+    if (s.phase === 'act2' && s.lushness >= 1
+        && s.phaseTime < config.acts.act2MinSec
+        && time - this.holdHintAt > 24) {
+      this.holdHintAt = time;
+      this.captions?.show(config.captions.worldHolds);
+    }
 
     // The coda un-grows the world; the prologue holds it at nothing.
     // Strict acts: the world does not grow before Act II arrives.

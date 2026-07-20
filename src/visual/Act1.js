@@ -80,6 +80,7 @@ export class Act1 {
     this.captions = null;     // wired in main.js
     this.constAcc = 0;        // constellation-thread emission accumulator
     this.strikeTimes = [];    // recent strikes → anti-blowout damping
+    this.holdHintAt = -1e9;   // "the flood holds" reassurance timer
   }
 
   /** Map a note+velocity to a burst spec (position/color/energy). */
@@ -471,6 +472,15 @@ export class Act1 {
     // the loop's return to darkness rewinds the story.
     if (s.phase === 'prologue') this.milestone = 0;
     this.milestoneCheck(time);
+
+    // Meter full but the act's runtime floor not yet reached: reassure
+    // the performer that the piece is soaking, not stuck.
+    if (s.phase === 'act1' && s.fullness >= 1
+        && s.phaseTime < config.acts.act1MinSec
+        && time - this.holdHintAt > 24) {
+      this.holdHintAt = time;
+      this.captions?.show(config.captions.floodHolds);
+    }
     if (this.pendingScenes.length) {
       const due = this.pendingScenes.filter((p) => time >= p.at);
       if (due.length) {
