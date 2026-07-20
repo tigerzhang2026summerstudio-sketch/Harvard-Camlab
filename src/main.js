@@ -115,6 +115,7 @@ const captions = new Captions(state, midi);
 const transitions = new Transitions(state, particles, post);
 // The knobs and pads each tell their contemplation through the captions,
 // and the piece meditates aloud when left alone.
+act1.captions = captions;
 act2.captions = captions;
 act3.captions = captions;
 const meditations = new Meditations(state, captions);

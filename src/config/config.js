@@ -217,6 +217,25 @@ export const config = {
     satelliteRadiusPer: 36,  // + this per chord note
     satelliteScale: 0.35,    // satellite burst count fraction
 
+    // MILESTONES — Act I tells its first three contemplations as visible
+    // chapters while the fullness meter climbs: still water sweeps in,
+    // then it crystallizes to ice, then the beryl ground freezes true.
+    milestones: {
+      water: {
+        at: 0.3,
+        caption: ['第二观 · THE WATER', 'See the water, clear and still —\nlet it spread level to every horizon.'],
+      },
+      ice: {
+        at: 0.65,
+        caption: ['冰想 · THE FREEZING', 'Now see the water freeze:\ncrystal by crystal, the stillness locks.'],
+        flakes: 6,           // frost stars that crystallize along the floor
+      },
+      beryl: {
+        at: 1.0,
+        caption: ['第三观 · THE BERYL GROUND', 'The ice becomes beryl — a ground of light,\nlevel as the palm of a hand.'],
+      },
+    },
+
     // 第一观 begins the show: an ember sun on the western horizon that
     // every key strike feeds — it brightens and climbs as the act fills.
     sun: {

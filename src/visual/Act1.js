@@ -18,6 +18,7 @@ import * as THREE from 'three';
 import { config } from '../config/config.js';
 import { GrowthLayer } from './GrowthLayer.js';
 import { ComboEngine } from './ComboEngine.js';
+import { flakePoints } from './ComboPatterns.js';
 import { clamp01, lerp, rand } from '../core/Clock.js';
 
 /** The sun disc: a GrowthLayer revealed center-out by the fullness meter. */
@@ -72,6 +73,11 @@ export class Act1 {
     // The pattern-reader: chords/runs/repeats/low+high gather the fire
     // into recognizable 图案 and ember-formed lines of the sutra.
     this.combos = new ComboEngine(state, particles);
+
+    // Milestones: Act I tells water → ice → beryl as the meter climbs.
+    this.milestone = 0;       // 0 none · 1 water seen · 2 frozen · 3 beryl
+    this.pendingScenes = [];  // scheduled milestone effects { at, fn }
+    this.captions = null;     // wired in main.js
   }
 
   /** Map a note+velocity to a burst spec (position/color/energy). */
@@ -320,6 +326,80 @@ export class Act1 {
     }
   }
 
+  // ── Act I milestone scenes (第二观 · 冰想 · 第三观) ─────────────────
+
+  milestoneCheck(time) {
+    if (this.state.phase !== 'act1') return;
+    const ms = config.act1.milestones;
+    const f = this.state.fullness;
+    if (this.milestone === 0 && f >= ms.water.at) { this.milestone = 1; this.waterScene(time); }
+    else if (this.milestone === 1 && f >= ms.ice.at) { this.milestone = 2; this.iceScene(time); }
+    else if (this.milestone === 2 && f >= ms.beryl.at) { this.milestone = 3; this.berylScene(time); }
+  }
+
+  /** 第二观: a front of still water sweeps west→east along the floor. */
+  waterScene(time) {
+    const ms = config.act1.milestones.water;
+    this.captions?.showStory(ms.caption[0], ms.caption[1]);
+    const W = config.worldWidth;
+    const H = config.worldHeight;
+    for (let i = 0; i < 16; i += 1) {
+      const fx = i / 15;
+      this.pendingScenes.push({
+        at: time + fx * 2.4,
+        fn: () => this.particles.burst({
+          x: (fx - 0.5) * W * 0.95,
+          y: -0.38 * H + rand(-18, 30),
+          color: Math.random() < 0.6 ? config.palette.beryl : config.palette.white,
+          count: 130, speed: 28, size: 2.6, life: 2.9,
+          upBias: 0.25, jitter: 32, driftX: 120, minSpeedFrac: 0.5,
+        }),
+      });
+    }
+  }
+
+  /** 冰想: frost stars crystallize one by one along the water. */
+  iceScene(time) {
+    const ms = config.act1.milestones.ice;
+    this.captions?.showStory(ms.caption[0], ms.caption[1]);
+    const W = config.worldWidth;
+    const H = config.worldHeight;
+    for (let i = 0; i < ms.flakes; i += 1) {
+      const x = ((i + 0.5) / ms.flakes - 0.5) * W * 0.86 + rand(-40, 40);
+      this.pendingScenes.push({
+        at: time + i * 0.55,
+        fn: () => this.particles.settle({
+          pts: flakePoints(rand(55, 95), 700),
+          x, y: rand(-0.3, -0.16) * H,
+          size: 2.3, life: 5.2, scatter: 110, stagger: 0.5,
+        }),
+      });
+    }
+  }
+
+  /** 第三观: a golden gleam races out from the center — the ground is true. */
+  berylScene(time) {
+    const ms = config.act1.milestones.beryl;
+    this.captions?.showStory(ms.caption[0], ms.caption[1]);
+    const W = config.worldWidth;
+    const H = config.worldHeight;
+    for (let i = 0; i < 10; i += 1) {
+      const fx = i / 9;
+      for (const dir of [-1, 1]) {
+        this.pendingScenes.push({
+          at: time + fx * 1.6,
+          fn: () => this.particles.burst({
+            x: dir * fx * W * 0.48,
+            y: -0.36 * H + rand(-14, 24),
+            color: Math.random() < 0.5 ? config.palette.gold : config.palette.white,
+            count: 90, speed: 24, size: 2.5, life: 2.6,
+            upBias: 0.5, jitter: 26, driftX: dir * 150, minSpeedFrac: 0.5,
+          }),
+        });
+      }
+    }
+  }
+
   /** A shooting light crosses part of the sky, trailing motes. */
   launchMeteor() {
     const W = config.worldWidth;
@@ -349,6 +429,18 @@ export class Act1 {
   update(time, dt, ppwu) {
     const s = this.state;
     this.combos.update(time);
+
+    // Milestone chapters fire as the meter crosses their thresholds;
+    // the loop's return to darkness rewinds the story.
+    if (s.phase === 'prologue') this.milestone = 0;
+    this.milestoneCheck(time);
+    if (this.pendingScenes.length) {
+      const due = this.pendingScenes.filter((p) => time >= p.at);
+      if (due.length) {
+        this.pendingScenes = this.pendingScenes.filter((p) => time < p.at);
+        for (const p of due) p.fn();
+      }
+    }
 
     // The sun kindles with the meter, holds through the acts, and sets
     // again in the coda; the prologue starts it dark.

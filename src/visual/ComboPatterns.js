@@ -195,6 +195,42 @@ export function pagodaPoints(R, budget) {
   return pts;
 }
 
+/** A six-armed ice crystal (Act I's freezing milestone). */
+export function flakePoints(R, budget) {
+  const pts = [];
+  const beryl = col(config.palette.beryl);
+  const white = col(config.palette.white);
+  const icy = (f) => new THREE.Color().lerpColors(white, beryl, f * 0.55)
+    .multiplyScalar(0.9 + (1 - f) * 0.5);
+  const perArm = Math.floor((budget * 0.85) / 6);
+  for (let a = 0; a < 6; a += 1) {
+    const ang = (a / 6) * Math.PI * 2 + Math.PI / 12;
+    const ca = Math.cos(ang);
+    const sa = Math.sin(ang);
+    for (let k = 0; k < perArm; k += 1) {
+      const u = Math.random();
+      if (u < 0.55) { // main spine
+        const d = Math.random() * R;
+        pts.push({ x: ca * d + rand(-1.5, 1.5), y: sa * d * 0.9 + rand(-1.5, 1.5), col: icy(d / R) });
+      } else {        // side ticks at two stations, ±60° off the spine
+        const st = Math.random() < 0.5 ? 0.45 : 0.72;
+        const tickAng = ang + (Math.random() < 0.5 ? 1 : -1) * Math.PI / 3;
+        const d = Math.random() * R * 0.26;
+        pts.push({
+          x: ca * R * st + Math.cos(tickAng) * d,
+          y: (sa * R * st + Math.sin(tickAng) * d) * 0.9,
+          col: icy(st),
+        });
+      }
+    }
+  }
+  while (pts.length < budget) { // hexagonal heart
+    const a = Math.random() * Math.PI * 2;
+    pts.push({ x: Math.cos(a) * R * 0.14, y: Math.sin(a) * R * 0.13, col: icy(0).multiplyScalar(1.2) });
+  }
+  return pts;
+}
+
 // ── Geometry ──────────────────────────────────────────────────────────
 
 /** Dunhuang ceiling-medallion mandala; `tier` adds rings (repeat combos grow). */
