@@ -54,6 +54,15 @@ export class Tutorial {
         font-family: Georgia, 'Times New Roman', serif;
         opacity: 1; transition: opacity 1.6s ease;
         text-shadow: 0 0 18px rgba(30, 111, 176, 0.35);
+        /* the show poster's lotus-mandala breathes behind the words */
+        background:
+          radial-gradient(ellipse 60% 60% at 50% 46%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.82) 78%),
+          url('/ui/poster-mandala.png') center 46% / min(72vh, 60vw) no-repeat;
+        animation: tut-emblem 14s ease-in-out infinite;
+      }
+      @keyframes tut-emblem {
+        0%, 100% { background-color: rgba(0,0,0,0); }
+        50% { background-color: rgba(0,0,0,0.25); }
       }
       #tutorial.tut-hidden { opacity: 0; }
       #tutorial h1 {

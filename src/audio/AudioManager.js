@@ -109,6 +109,23 @@ export class AudioManager {
       volume: -10,
     }).connect(this.padBus);
 
+    // The dissolution's WIND: brown noise through a swept bandpass whose
+    // level follows the coda's three movements (see update()).
+    this.windGain = new Tone.Gain(0).connect(this.limiter);
+    this.windFilter = new Tone.Filter(500, 'bandpass').connect(this.windGain);
+    this.windNoise = new Tone.Noise('brown').connect(this.windFilter);
+    this.windNoise.start();
+
+    // The prison's cold DRONE: two low oscillators under a heavy lowpass
+    // that lifts when the Buddha arrives (final story line).
+    this.droneGain = new Tone.Gain(0).connect(this.limiter);
+    this.droneFilter = new Tone.Filter(130, 'lowpass').connect(this.droneGain);
+    this.droneOsc1 = new Tone.Oscillator(55, 'sine').connect(this.droneFilter);
+    this.droneOsc2 = new Tone.Oscillator(82.5, 'triangle').connect(this.droneFilter);
+    this.droneOsc2.volume.value = -9;
+    this.droneOsc1.start();
+    this.droneOsc2.start();
+
     // Generative bed: on each half-beat, MAYBE play — density follows K3.
     this.bedLoop = new Tone.Loop((time) => {
       const music = this.state.knobs[2];      // K3
@@ -168,6 +185,33 @@ export class AudioManager {
       gain.gain.cancelScheduledValues(now);
       gain.gain.rampTo(target, sec);
     }
+  }
+
+  /**
+   * Per-frame (cheap): the synth beds follow the drama — the storm
+   * noise swells and dies with the coda's three movements, the prison
+   * drone holds through the opening dark and brightens when the Buddha
+   * comes. Both sit far under any real score tracks.
+   */
+  update() {
+    if (!this.unlocked || !this.ready) return;
+    const s = this.state;
+    const a = config.audio.accents;
+
+    let storm = 0;
+    if (s.phase === 'coda') {
+      const ct = Math.min(1, s.phaseTime / config.acts.codaFadeSec);
+      storm = ct < 0.25 ? (ct / 0.25) * 0.5
+        : ct < 0.7 ? 0.5 + ((ct - 0.25) / 0.45) * 0.5
+          : Math.max(0, 1 - (ct - 0.7) / 0.22);
+    }
+    this.windGain.gain.rampTo(Tone.dbToGain(a.windLevelDb) * storm, 0.3);
+    this.windFilter.frequency.rampTo(350 + storm * 950, 0.3);
+
+    const inPrison = s.phase === 'prologue' || s.phase === 'prison';
+    this.droneGain.gain.rampTo(inPrison ? Tone.dbToGain(a.droneLevelDb) : 0, 1.5);
+    const lifted = s.phase === 'prison' && s.prisonStep >= 5;
+    this.droneFilter.frequency.rampTo(lifted ? 420 : 130, 2.5);
   }
 
   // ── Interactive accents ──────────────────────────────────────────────

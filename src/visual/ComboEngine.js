@@ -23,7 +23,8 @@ import {
 } from './ComboPatterns.js';
 
 const IMAGERY = ['lotus', 'moon', 'sun', 'canopy', 'pagoda', 'kalavinka', 'apsara'];
-const APSARA_FILES = ['apsara-left-placeholder.svg', 'apsara-right-placeholder.svg'];
+// The real flute-playing 飞天 (white plaster ground samples cleanly).
+const APSARA_FILES = ['apsara-flute.jpg'];
 
 export class ComboEngine {
   constructor(state, particles) {
@@ -44,9 +45,10 @@ export class ComboEngine {
     if (cc.enabled) {
       // Weathered photo crops need more motes than the parametric shapes.
       for (const f of cc.muralFiles) preloadMural(f, this.budget(cc.patternPoints * 2.4));
-      // The apsara 图案 samples the flying-figure SVG art (keep whites).
+      // The apsara 图案 samples the real flute-playing 飞天 — its white
+      // plaster ground drops away, leaving only the figure and ribbons.
       for (const f of APSARA_FILES) {
-        preloadMural(f, this.budget(cc.patternPoints), { plasterSkip: false });
+        preloadMural(f, this.budget(cc.patternPoints), { plasterSkip: true });
       }
     }
   }

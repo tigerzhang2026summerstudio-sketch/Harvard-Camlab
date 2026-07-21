@@ -153,6 +153,32 @@ act3.onStory = (action) => audio.storyAccent(action);
 // Combo 图案 in Act 1 ring a small flourish of their own.
 act1.combos.onCombo = (family, tier) => audio.comboAccent(family, tier);
 
+// ── Auto-quality ──────────────────────────────────────────────────────
+// If the projector machine can't hold frame rate (especially at 48:9),
+// degrade gracefully: first drop the pixel ratio, then thin the bursts.
+// Measured over 4s windows so one hitch never triggers it.
+let fpsTime = 0;
+let fpsFrames = 0;
+let degradeStep = 0;
+function autoQuality(dt) {
+  fpsTime += dt;
+  fpsFrames += 1;
+  if (fpsTime < 4) return;
+  const fps = fpsFrames / fpsTime;
+  fpsTime = 0;
+  fpsFrames = 0;
+  if (degradeStep === 0 && fps < 38 && renderer.getPixelRatio() > 1) {
+    degradeStep = 1;
+    renderer.setPixelRatio(1);
+    onResize();
+    console.info(`[quality] ${fps.toFixed(0)} fps — pixel ratio dropped to 1`);
+  } else if (degradeStep <= 1 && fps < 33) {
+    degradeStep = 2;
+    particles.spawnScale = 0.65;
+    console.info(`[quality] ${fps.toFixed(0)} fps — burst density reduced`);
+  }
+}
+
 // ── Main loop ─────────────────────────────────────────────────────────
 const clock = new THREE.Clock();
 let elapsed = 0;
@@ -186,6 +212,8 @@ renderer.setAnimationLoop(() => {
   meditations.update(dt);
   storyScenes.update(elapsed);
   darkSpace.update(elapsed, dt);
+  audio.update();
+  autoQuality(dt);
   post.render();
 });
 

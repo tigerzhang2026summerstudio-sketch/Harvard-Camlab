@@ -557,7 +557,8 @@ export class Act3 {
       * Math.min(1, dt / config.act3.throne.riseSec * 2);
     for (const mural of this.panelMurals) {
       mural.dissolve = 1 - this.panelAssemble;
-      mural.alpha = Math.min(1, this.panelAssemble * 5);
+      mural.alpha = Math.min(1, this.panelAssemble * 5) * (1 - this.panelAssemble * 0.6);
+      mural.photo = this.panelAssemble; // the real 飞天 come through fully assembled
       mural.update(time, ppwu);
     }
 

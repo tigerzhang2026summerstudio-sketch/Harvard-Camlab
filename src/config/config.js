@@ -164,6 +164,8 @@ export const config = {
                            // key here (0=C, 2=D, 3=D#, 5=F, 7=G, …)
       chimeMinGapSec: 0.14, // flurries thin to a cascade, never mud
       chimeLowpassHz: 3200, // rounds the bell tops into the mix
+      windLevelDb: -16,    // the dissolution's storm (noise bed, coda only)
+      droneLevelDb: -20,   // the prison's cold drone (prologue/prison)
       bedLevelDb: -14,     // Act 2 generative self-playing layer
       padLevelDb: -6,      // Act 3 bells / gongs / swells
       reverbDecaySec: 7,
@@ -660,12 +662,20 @@ export const config = {
         retint: 0.1, intensity: 0.7, photoThrough: true, photoMax: 0.5 },
       // role 'panel': materialize on the Universal Vision pad (B1),
       // scatter in the coda.
-      // (intensity kept LOW: the SVG art is pure bright strokes and
-      //  blows out at full additive glow — see 第十二观.)
-      { file: 'apsara-left-placeholder.svg', role: 'panel',
-        x: -0.335, yFrac: 0.27, heightFrac: 0.17, intensity: 0.5 },
-      { file: 'apsara-right-placeholder.svg', role: 'panel',
-        x: 0.335, yFrac: 0.27, heightFrac: 0.17, intensity: 0.5 },
+      // REAL 飞天 (Wikimedia scans): the ribbon-pair on a dark ground
+      // (gamma thins the ochre) in the west; the flute-player on white
+      // plaster (plasterSkip keeps only the figure) in the east. Both
+      // reveal their actual photograph at the Universal Vision.
+      { file: 'apsara-pair.jpg', role: 'panel',
+        x: -0.335, yFrac: 0.27, heightFrac: 0.2, cutoff: 0.3,
+        gamma: 1.3, gain: 1.9, retint: 0.25, intensity: 0.65,
+        photoThrough: true, photoMax: 0.45 },
+      // (no photoThrough here: its WHITE plaster ground would flare into
+      //  a bright oval under additive blending — the plaster-skipped
+      //  particles alone draw the figure cleanly.)
+      { file: 'apsara-flute.jpg', role: 'panel',
+        x: 0.335, yFrac: 0.27, heightFrac: 0.2, plasterSkip: true,
+        retint: 0.2, intensity: 0.7 },
       // role 'story': real Cave 217 details that condense while their
       // pad's story is told, then fray away again. plasterSkip drops the
       // pale plaster background so only the painting becomes particles;
