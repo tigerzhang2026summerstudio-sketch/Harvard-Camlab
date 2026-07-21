@@ -5,6 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>The Painted Cave — Visualizing the Pure Land</title>
     <style>
+      /* Bundled serifs (offline): EB Garamond for the Latin text, a tiny
+         Noto Serif SC subset (only the ~100 hanzi the piece uses) for 中文.
+         Falls back to the system Songti/STSong serif if a glyph is missing. */
+      @font-face {
+        font-family: 'EB Garamond';
+        src: url('/fonts/EBGaramond.ttf') format('truetype');
+        font-weight: 400 800; font-style: normal; font-display: swap;
+      }
+      @font-face {
+        font-family: 'EB Garamond';
+        src: url('/fonts/EBGaramond-Italic.ttf') format('truetype');
+        font-weight: 400 800; font-style: italic; font-display: swap;
+      }
+      @font-face {
+        font-family: 'Noto Serif SC';
+        src: url('/fonts/NotoSerifSC-subset.woff2') format('woff2');
+        font-weight: 400 700; font-style: normal; font-display: swap;
+      }
+
       /* The installation is pure black; the page must never show browser chrome colors. */
       html, body {
         margin: 0;

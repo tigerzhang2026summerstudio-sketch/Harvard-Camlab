@@ -158,28 +158,41 @@ export class Act2 {
     // world sways harder and sheds dandelion-drift while it fades.
     if (s.phase === 'coda') {
       // THE DISSOLUTION, in three movements over codaFadeSec:
-      //   fraying   (0–25%)  the world loosens, gusts begin
-      //   storm     (25–70%) full windstorm tears the light sideways
-      //   ascension (70–100%) the storm dies; the last sparks rise
+      //   fraying (0–20%)   the world loosens, gusts begin
+      //   storm   (20–62%)  full windstorm tears the light sideways
+      //   FLOOD   (62–86%)  the whole wall fills with a rising sea of
+      //                     light, brighter and denser than anything
+      //   COLLAPSE(86–96%)  the flood implodes fast — everything to black
+      const cc = config.act2.coda;
       const ct = clamp01(s.phaseTime / config.acts.codaFadeSec);
-      const storm = ct < 0.25 ? (ct / 0.25) * 0.5
-        : ct < 0.7 ? 0.5 + ((ct - 0.25) / 0.45) * 0.5
-          : Math.max(0, 1 - (ct - 0.7) / 0.22);
-      wind = Math.max(wind, storm * 1.05);
+      const storm = ct < 0.2 ? (ct / 0.2) * 0.5
+        : ct < 0.62 ? 0.5 + ((ct - 0.2) / 0.42) * 0.5
+          : ct < 0.86 ? 1
+            : Math.max(0, 1 - (ct - 0.86) / 0.1);
+      // The flood: 0 → 1 as the screen fills (0.58–0.86), then 1 → 0 as
+      // it collapses (0.86–0.96); dark by ~0.96 with a breath of black
+      // before the epilogue.
+      let flood = 0;
+      if (ct > 0.58 && ct <= 0.86) flood = (ct - 0.58) / 0.28;
+      else if (ct > 0.86 && ct < 0.96) flood = 1 - (ct - 0.86) / 0.1;
+      wind = Math.max(wind, storm * 1.1);
+      // Global radiance swells with the flood — a whiteout at its peak,
+      // then falls away to black as it collapses.
+      this.post.setSwell(1 + flood * cc.swellAtPeak);
 
-      const gustEvery = 0.5 - storm * 0.32; // gentle → relentless → gone
+      const gustEvery = 0.42 - storm * 0.28; // gentle → relentless → gone
       this.gustAcc += dt;
       while (this.gustAcc >= gustEvery) {
         this.gustAcc -= gustEvery;
         if (storm < 0.05) break;
         const dir = this.windDir * (Math.random() < 0.8 ? 1 : -1);
         this.particles.burst({
-          x: rand(-0.45, 0.45) * config.worldWidth,
-          y: rand(-0.35, 0.3) * config.worldHeight,
+          x: rand(-0.5, 0.5) * config.worldWidth,
+          y: rand(-0.4, 0.35) * config.worldHeight,
           color: pick([config.palette.gold, config.palette.beryl,
             config.palette.white, config.palette.malachite]),
-          count: Math.round(18 + 68 * storm),
-          speed: 26, size: 2.3, life: rand(1.8, 2.8),
+          count: Math.round(24 + 92 * storm),
+          speed: 26, size: 2.4, life: rand(1.8, 2.8),
           upBias: 0.1, jitter: 60,
           driftX: dir * rand(240, 470) * (0.5 + storm * 0.5),
           minSpeedFrac: 0.4,
@@ -190,33 +203,36 @@ export class Act2 {
       // world, fast and angular, keeping the screen full through the
       // whole storm.
       this.shardAcc = (this.shardAcc ?? 0) + dt;
-      const shardEvery = 0.42 - storm * 0.26;
+      const shardEvery = 0.32 - storm * 0.22;
       while (this.shardAcc >= shardEvery) {
         this.shardAcc -= shardEvery;
         if (storm < 0.08) break;
         this.particles.burst({
-          x: rand(-0.46, 0.46) * config.worldWidth,
-          y: rand(-0.34, 0.36) * config.worldHeight,
+          x: rand(-0.5, 0.5) * config.worldWidth,
+          y: rand(-0.4, 0.4) * config.worldHeight,
+          count: 22, speed: rand(440, 760), size: 2.2,
           color: pick([config.palette.white, config.palette.gold,
             config.palette.beryl, config.palette.cinnabar]),
-          count: 16, speed: rand(420, 720), size: 2.1,
           life: rand(0.45, 0.85), upBias: 0, jitter: 2,
           minSpeedFrac: 0.96, swirl: rand(-0.3, 0.3),
         });
       }
 
-      // Ascension: what the wind could not take rises of its own accord.
-      if (ct > 0.62) {
-        this.ascAcc = (this.ascAcc ?? 0) + dt;
-        while (this.ascAcc >= 0.28) {
-          this.ascAcc -= 0.28;
+      // THE FLOOD — a rising sea of light fills the WHOLE panorama,
+      // then collapses to black. Not faint: this is the last thing seen.
+      this.floodAcc = (this.floodAcc ?? 0) + dt;
+      while (this.floodAcc >= cc.fillEverySec) {
+        this.floodAcc -= cc.fillEverySec;
+        if (flood <= 0.02) break;
+        const n = Math.max(1, Math.round(cc.fillBurstsAtPeak * flood));
+        for (let i = 0; i < n; i += 1) {
           this.particles.burst({
-            x: rand(-0.46, 0.46) * config.worldWidth,
-            y: rand(-0.42, 0.1) * config.worldHeight,
-            color: Math.random() < 0.6 ? config.palette.white : config.palette.gold,
-            count: 30, speed: 10, size: 2.0,
-            life: rand(4, 6.5),
-            upBias: 2.6, jitter: 50, driftY: 55,
+            x: rand(-0.5, 0.5) * config.worldWidth,
+            y: rand(-0.5, 0.5) * config.worldHeight,
+            color: Math.random() < 0.7 ? config.palette.white : config.palette.gold,
+            count: Math.round(cc.fillCountAtPeak * flood),
+            speed: rand(70, 210), size: 2.7,
+            life: rand(0.7, 1.5), upBias: 0.35, jitter: 26, minSpeedFrac: 0.3,
           });
         }
       }

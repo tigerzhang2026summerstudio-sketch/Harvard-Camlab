@@ -201,9 +201,12 @@ export class AudioManager {
     let storm = 0;
     if (s.phase === 'coda') {
       const ct = Math.min(1, s.phaseTime / config.acts.codaFadeSec);
-      storm = ct < 0.25 ? (ct / 0.25) * 0.5
-        : ct < 0.7 ? 0.5 + ((ct - 0.25) / 0.45) * 0.5
-          : Math.max(0, 1 - (ct - 0.7) / 0.22);
+      // matches Act2's visual movements: build, hold through the flood,
+      // then collapse to silence with the black.
+      storm = ct < 0.2 ? (ct / 0.2) * 0.5
+        : ct < 0.62 ? 0.5 + ((ct - 0.2) / 0.42) * 0.5
+          : ct < 0.86 ? 1
+            : Math.max(0, 1 - (ct - 0.86) / 0.1);
     }
     this.windGain.gain.rampTo(Tone.dbToGain(a.windLevelDb) * storm, 0.3);
     this.windFilter.frequency.rampTo(350 + storm * 950, 0.3);

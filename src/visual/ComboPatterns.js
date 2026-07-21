@@ -554,8 +554,8 @@ export function textPoints(zh, en, worldWidth, budget) {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-  const zhFont = `${zhPx}px "Songti SC", "Noto Serif SC", "STSong", serif`;
-  const enFont = `italic ${enPx}px "Georgia", "Times New Roman", serif`;
+  const zhFont = `500 ${zhPx}px "Noto Serif SC", "Songti SC", "STSong", serif`;
+  const enFont = `italic ${enPx}px "EB Garamond", Georgia, serif`;
   ctx.font = zhFont;
   const zhW = ctx.measureText(zh).width;
   ctx.font = enFont;

@@ -521,6 +521,15 @@ export const config = {
     banners: { count: 14 },                    // K7: hanging ribbon-banners
     clouds: { count: 20 },                     // K8: drifting bands of light
 
+    // THE DISSOLUTION'S FINALE (see Act2 coda): the storm floods the
+    // whole wall with a rising sea of light, then collapses to black.
+    coda: {
+      fillEverySec: 0.05,   // how often flood bursts spawn (fast = dense)
+      fillBurstsAtPeak: 9,  // bursts per tick at the flood's peak…
+      fillCountAtPeak: 48,  // …and particles per burst (× the flood ramp)
+      swellAtPeak: 0.9,     // extra global radiance at the peak (whiteout)
+    },
+
     // Side-effects that ride along with the sky dials
     refine: {
       warmthDefault: 0.5,        // neutral color temperature at rest

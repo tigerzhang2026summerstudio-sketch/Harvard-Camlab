@@ -91,9 +91,10 @@ export class Captions {
       #captions {
         position: fixed; left: 0; right: 0; bottom: 13vh; z-index: 6;
         text-align: center; pointer-events: none;
-        font-family: Georgia, 'Times New Roman', serif; font-style: italic;
-        font-size: clamp(15px, 1.7vw, 26px); line-height: 1.75;
-        letter-spacing: 0.14em; color: #e8d9ae;
+        font-family: 'EB Garamond', 'Noto Serif SC', 'Songti SC', 'STSong', serif;
+        font-style: italic;
+        font-size: clamp(16px, 1.8vw, 28px); line-height: 1.8;
+        letter-spacing: 0.06em; color: #e8d9ae;
         /* dark halo FIRST so the words survive any particle storm… */
         text-shadow:
           0 1px 3px rgba(0, 0, 0, 0.95), 0 0 10px rgba(0, 0, 0, 0.9),
@@ -102,16 +103,17 @@ export class Captions {
         opacity: 0; transition: opacity 2s ease;
       }
       #captions .cap-title {
-        display: block; margin-bottom: 0.5em;
-        font-style: normal; font-size: 0.72em;
-        letter-spacing: 0.34em; color: #e8c15a;
+        display: block; margin-bottom: 0.55em;
+        font-style: normal; font-weight: 600; font-size: 0.74em;
+        letter-spacing: 0.24em; color: #e8c15a;
       }
       #act-title {
         position: fixed; left: 0; right: 0; top: 34vh; z-index: 6;
         text-align: center; pointer-events: none;
-        font-family: Georgia, 'Times New Roman', serif;
-        font-size: clamp(26px, 3.6vw, 54px);
-        letter-spacing: 0.3em; text-indent: 0.3em; color: #e8c15a;
+        font-family: 'EB Garamond', 'Noto Serif SC', 'Songti SC', 'STSong', serif;
+        font-weight: 600;
+        font-size: clamp(28px, 3.8vw, 58px);
+        letter-spacing: 0.22em; text-indent: 0.22em; color: #e8c15a;
         text-shadow:
           0 1px 4px rgba(0, 0, 0, 0.95), 0 0 14px rgba(0, 0, 0, 0.9),
           0 0 30px rgba(0, 0, 0, 0.8), 0 0 40px rgba(232, 193, 90, 0.4);

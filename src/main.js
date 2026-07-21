@@ -43,6 +43,14 @@ import { Meditations } from './ui/Meditations.js';
   }
 }
 
+// Warm the bundled serifs so the particle-formed text (drawn to an
+// offscreen canvas) has them ready rather than falling back.
+if (document.fonts) {
+  document.fonts.load('italic 56px "EB Garamond"');
+  document.fonts.load('600 58px "EB Garamond"');
+  document.fonts.load('500 170px "Noto Serif SC"');
+}
+
 // ── Renderer ──────────────────────────────────────────────────────────
 const canvas = document.getElementById('app-canvas');
 const renderer = new THREE.WebGLRenderer({

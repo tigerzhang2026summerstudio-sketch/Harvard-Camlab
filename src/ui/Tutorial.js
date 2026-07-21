@@ -51,7 +51,7 @@ export class Tutorial {
         text-align: center; padding: 4vh 8vw; box-sizing: border-box;
         pointer-events: none; /* the instrument itself is the "begin" button */
         color: #cfe3f5;
-        font-family: Georgia, 'Times New Roman', serif;
+        font-family: 'EB Garamond', 'Noto Serif SC', 'Songti SC', 'STSong', serif;
         opacity: 1; transition: opacity 1.6s ease;
         text-shadow: 0 0 18px rgba(30, 111, 176, 0.35);
         /* the show poster's lotus-mandala breathes behind the words */
