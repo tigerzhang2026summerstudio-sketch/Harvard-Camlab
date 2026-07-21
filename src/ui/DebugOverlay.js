@@ -132,6 +132,7 @@ export class DebugOverlay {
 
     const slots = [
       { id: 'keys', label: 'Keys zone (learn channel)' },
+      { id: 'joyY', label: 'Joystick Y (birds up/down)' },
       ...Array.from({ length: 8 }, (_, i) => ({ id: `knob:${i}`, label: `Knob K${i + 1}` })),
       ...Array.from({ length: 8 }, (_, i) => ({ id: `pad:A:${i}`, label: `Pad A${i + 1}` })),
       ...Array.from({ length: 8 }, (_, i) => ({ id: `pad:B:${i}`, label: `Pad B${i + 1}` })),

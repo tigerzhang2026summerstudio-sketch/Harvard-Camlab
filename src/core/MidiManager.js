@@ -117,6 +117,12 @@ export class MidiManager {
     }
 
     if (type === 'cc') {
+      // A LEARNED joystick Y wins over the knobs — on the MK3 the stick's
+      // vertical axis often sends CC1 (mod), which would otherwise be K1.
+      if (joystick.yLearned && d1 === joystick.yCc && chOk(joystick.channel)) {
+        this.emit('joystick', { axis: 'y', value: (d2 / 127) * 2 - 1 });
+        return 'joy Y';
+      }
       if (chOk(knobs.channel)) {
         let index = knobs.ccs.indexOf(d1);
         if (index === -1 && knobs.altCcs) index = knobs.altCcs.indexOf(d1);
@@ -166,6 +172,13 @@ export class MidiManager {
       this.map.knobs.ccs[Number(a)] = d1;
       this.map.knobs.channel = channel;
       bound = `K${Number(a) + 1} ← CC ${d1} ch ${channel + 1}`;
+    } else if (kind === 'joyY' && type === 'cc') {
+      // The stick's vertical axis (bird steering). Learned CCs win over
+      // the knobs in route(), so even CC1 (mod) can drive the flock.
+      this.map.joystick.yCc = d1;
+      this.map.joystick.channel = channel;
+      this.map.joystick.yLearned = true;
+      bound = `joystick Y ← CC ${d1} ch ${channel + 1}`;
     } else if (kind === 'pad' && type === 'noteon') {
       this.map.pads[a === 'A' ? 'bankA' : 'bankB'][Number(b)] = d1;
       this.map.pads.channel = channel;

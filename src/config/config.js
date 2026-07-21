@@ -507,11 +507,15 @@ export const config = {
       max: 16,             // K5: flock size follows the dial
       trailInterval: 0.055, // calligraphy trail behind each bird
       glyphEverySec: 0.05, // how often each bird redraws its body
-      wingLen: 17,         // wing length (world units)
+      wingLen: 27,         // wing length (world units) — REAL birds now
+      bodySize: 3.4,       // body mote size
+      wingSize: 2.9,       // wing motes taper from this
       flapHz: [2.6, 4.2],  // per-bird flap speed range
-      steerAccel: 300,     // joystick pull on the flock center
+      steerAccel: 320,     // joystick pull on the flock center (X and Y)
       wanderAccel: 42,     // autonomous group-drift when the stick is idle
-      maxSpeed: 230,       // flock-center speed limit
+      maxSpeed: 250,       // flock-center speed limit
+      yMinFrac: -0.35,     // the flock may swoop nearly to the ground…
+      yMaxFrac: 0.46,      // …and climb to the top of the wall
     },
     rays: { count: 32 },                       // K6: fan of light from the apex
     banners: { count: 14 },                    // K7: hanging ribbon-banners
@@ -667,6 +671,14 @@ export const config = {
       { file: 'buddha-true-body.jpg', role: 'story', story: 'amitabha',
         x: 0, yFrac: 0.06, heightFrac: 0.52, plasterSkip: false,
         retint: 0.12, intensity: 0.7, photoThrough: true, photoMax: 0.55 },
+      // 第十观 / 第十一观 — the REAL standing attendants who flank him in
+      // the same scan, each condensing at their canonical side.
+      { file: 'avalokitesvara.jpg', role: 'story', story: 'avalokitesvara',
+        x: -0.15, yFrac: 0.04, heightFrac: 0.46, plasterSkip: false,
+        retint: 0.12, intensity: 0.7, photoThrough: true, photoMax: 0.5 },
+      { file: 'mahasthamaprapta.jpg', role: 'story', story: 'mahasthamaprapta',
+        x: 0.15, yFrac: 0.04, heightFrac: 0.46, plasterSkip: false,
+        retint: 0.12, intensity: 0.7, photoThrough: true, photoMax: 0.5 },
       // 第六观 THE TOWERS OF MUSIC — the jeweled-pavilion detail of the
       // same wall (Mogao Cave 217 architecture 01).
       { file: 'pavilion-music.jpg', role: 'story', story: 'musicStory',
@@ -680,8 +692,8 @@ export const config = {
       // reveal their actual photograph at the Universal Vision.
       { file: 'apsara-pair.jpg', role: 'panel',
         x: -0.335, yFrac: 0.27, heightFrac: 0.2, cutoff: 0.3,
-        gamma: 1.3, gain: 1.9, retint: 0.25, intensity: 0.65,
-        photoThrough: true, photoMax: 0.45 },
+        gamma: 1.3, gain: 1.9, retint: 0.25, intensity: 0.55,
+        photoThrough: true, photoMax: 0.26 },
       // (no photoThrough here: its WHITE plaster ground would flare into
       //  a bright oval under additive blending — the plaster-skipped
       //  particles alone draw the figure cleanly.)

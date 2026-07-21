@@ -243,7 +243,7 @@ export class Act3 {
         break;
       case 'gradesHigh':
       case 'gradesMid':
-      case 'gradesLow': // souls arrive in two flights
+      case 'gradesLow': { // souls arrive in two flights
         for (const [k, grade] of config.act3.gradeGroups[action].entries()) {
           this.launchSoul(grade, 0.85 - k * 0.1);
         }
@@ -252,11 +252,72 @@ export class Act3 {
             this.launchSoul(grade, 0.7 - k * 0.08);
           }
         });
+        // 第十六观 — THE RESCUE: even the greatest sinner… a dim soul
+        // rises out of the dark below, and a golden lotus descends step
+        // by step to meet it, closes around it, and blooms.
+        if (action === 'gradesLow') {
+          const H = config.worldHeight;
+          queue(0.8, () => this.particles.burst({
+            x: 0, y: -0.47 * H,
+            color: config.palette.lapis,
+            count: 110, speed: 16, size: 2.3, life: 4,
+            upBias: 2.4, jitter: 18, driftY: 95,
+          }));
+          for (let i = 0; i < 3; i += 1) { // the lotus descends in three breaths
+            queue(1.2 + i * 1.1, () => this.particles.settle({
+              pts: lotusPoints(105 + i * 18, 1500),
+              x: 0, y: (0.16 - i * 0.1) * H,
+              size: 2.4, life: 2.4, scatter: 90, stagger: 0.4,
+            }));
+          }
+          queue(4.6, () => this.particles.settle({ // …and holds where they meet
+            pts: lotusPoints(150, 2200),
+            x: 0, y: -0.06 * H,
+            size: 2.6, life: 5.5, scatter: 130, stagger: 0.6,
+          }));
+          queue(5.6, () => this.particles.burst({ // the bloom of welcome
+            x: 0, y: -0.06 * H,
+            color: config.palette.gold,
+            count: 320, speed: 120, size: 2.6, life: 3.2,
+            upBias: 0.5, jitter: 14,
+          }));
+        }
         break;
-      case 'awakening':
+      }
+      case 'awakening': { // 开悟 — her mind opens like a lotus at first light
         if (this.awakeningTime < 0) this.awakeningTime = 0;
         this.vaidehi.awaken();
+        const H = config.worldHeight;
+        const W = config.worldWidth;
+        const vx = this.vaidehi.x ?? -0.055 * W;
+        const vy = -0.4 * H;
+        for (let i = 0; i < 4; i += 1) { // radiant rings burst from the queen
+          queue(0.3 + i * 0.9, () => this.particles.burst({
+            x: vx, y: vy,
+            color: i % 2 ? config.palette.gold : config.palette.white,
+            count: 240, speed: 150 + i * 55, size: 2.4, life: 3.4,
+            upBias: 0.35, jitter: 6, minSpeedFrac: 0.92,
+          }));
+        }
+        for (let i = 0; i < 10; i += 1) { // petals spiral up around her
+          queue(0.8 + i * 0.35, () => this.particles.burst({
+            x: vx + rand(-70, 70), y: vy + rand(0, 70),
+            color: Math.random() < 0.5 ? config.palette.cinnabar : config.palette.white,
+            count: 42, speed: 30, size: 2.3, life: 4.5,
+            upBias: 2.6, swirl: 0.8, jitter: 12, driftY: 60,
+          }));
+        }
+        for (let i = 0; i < 12; i += 1) { // a wave of light washes the wall
+          const fx = i / 11;
+          queue(2 + fx * 2.4, () => this.particles.burst({
+            x: (fx - 0.5) * W * 0.95, y: rand(-0.1, 0.28) * H,
+            color: config.palette.white,
+            count: 70, speed: 20, size: 2.2, life: 3.4,
+            upBias: 1.3, jitter: 60,
+          }));
+        }
         break;
+      }
       default: break;
     }
   }

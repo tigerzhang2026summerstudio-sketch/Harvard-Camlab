@@ -167,7 +167,7 @@ export class Act2 {
           : Math.max(0, 1 - (ct - 0.7) / 0.22);
       wind = Math.max(wind, storm * 1.05);
 
-      const gustEvery = 0.75 - storm * 0.5; // gentle → relentless → gone
+      const gustEvery = 0.5 - storm * 0.32; // gentle → relentless → gone
       this.gustAcc += dt;
       while (this.gustAcc >= gustEvery) {
         this.gustAcc -= gustEvery;
@@ -178,11 +178,30 @@ export class Act2 {
           y: rand(-0.35, 0.3) * config.worldHeight,
           color: pick([config.palette.gold, config.palette.beryl,
             config.palette.white, config.palette.malachite]),
-          count: Math.round(10 + 52 * storm),
+          count: Math.round(18 + 68 * storm),
           speed: 26, size: 2.3, life: rand(1.8, 2.8),
           upBias: 0.1, jitter: 60,
-          driftX: dir * rand(220, 440) * (0.5 + storm * 0.5),
+          driftX: dir * rand(240, 470) * (0.5 + storm * 0.5),
           minSpeedFrac: 0.4,
+        });
+      }
+
+      // 破碎 — SPLINTERS: glass-shard flashes snap off the breaking
+      // world, fast and angular, keeping the screen full through the
+      // whole storm.
+      this.shardAcc = (this.shardAcc ?? 0) + dt;
+      const shardEvery = 0.42 - storm * 0.26;
+      while (this.shardAcc >= shardEvery) {
+        this.shardAcc -= shardEvery;
+        if (storm < 0.08) break;
+        this.particles.burst({
+          x: rand(-0.46, 0.46) * config.worldWidth,
+          y: rand(-0.34, 0.36) * config.worldHeight,
+          color: pick([config.palette.white, config.palette.gold,
+            config.palette.beryl, config.palette.cinnabar]),
+          count: 16, speed: rand(420, 720), size: 2.1,
+          life: rand(0.45, 0.85), upBias: 0, jitter: 2,
+          minSpeedFrac: 0.96, swirl: rand(-0.3, 0.3),
         });
       }
 

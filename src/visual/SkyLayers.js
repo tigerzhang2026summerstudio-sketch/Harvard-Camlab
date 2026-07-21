@@ -185,7 +185,7 @@ export class BirdFlock {
     let ax; let ay;
     if (steering) {
       ax = this.steerX * bc.steerAccel;
-      ay = this.steerY * bc.steerAccel * 0.8;
+      ay = this.steerY * bc.steerAccel; // full vertical authority
     } else {
       // slow layered sines — an unhurried group meander
       ax = (Math.sin(time * 0.17) * 0.6 + Math.sin(time * 0.043 + 2) * 0.4) * bc.wanderAccel;
@@ -201,25 +201,31 @@ export class BirdFlock {
     if (sp > bc.maxSpeed) { c.vx *= bc.maxSpeed / sp; c.vy *= bc.maxSpeed / sp; }
     c.x += c.vx * dt;
     c.y += c.vy * dt;
-    // soft springs at the sky's edges
-    const xLim = 0.42 * W;
-    if (c.x > xLim) c.vx -= (c.x - xLim) * 3 * dt;
-    if (c.x < -xLim) c.vx -= (c.x + xLim) * 3 * dt;
-    if (c.y > 0.42 * H) c.vy -= (c.y - 0.42 * H) * 3 * dt;
-    if (c.y < 0.04 * H) c.vy -= (c.y - 0.04 * H) * 3 * dt;
+    // Horizontal: the sky WRAPS — fly off one edge, return on the other.
+    const wrapW = W * 1.12;
+    if (c.x > wrapW / 2) c.x -= wrapW;
+    if (c.x < -wrapW / 2) c.x += wrapW;
+    // Vertical: soft springs at the configured swoop/climb limits.
+    if (c.y > bc.yMaxFrac * H) c.vy -= (c.y - bc.yMaxFrac * H) * 3 * dt;
+    if (c.y < bc.yMinFrac * H) c.vy -= (c.y - bc.yMinFrac * H) * 3 * dt;
 
     // ── The birds themselves ──────────────────────────────────────────
     const active = Math.round(growth * this.birds.length);
     for (let i = 0; i < active; i += 1) {
       const b = this.birds[i];
       const a = time * b.speed + b.phase;
-      const bx = c.x + Math.cos(a) * b.rx;
+      let bx = c.x + Math.cos(a) * b.rx;
       const by = c.y + Math.sin(a * b.wobble) * b.ry;
+      // each bird wraps the sky individually too
+      if (bx > wrapW / 2) bx -= wrapW;
+      if (bx < -wrapW / 2) bx += wrapW;
       const hx = (bx - b.px) + c.vx * 0.02; // heading ≈ own motion + flock drift
       const hy = (by - b.py) + c.vy * 0.02;
       b.px = bx;
       b.py = by;
-      const heading = Math.atan2(hy, hx || 1e-4);
+      const heading = Math.abs(hx) > wrapW * 0.4 // ignore the wrap jump
+        ? Math.atan2(c.vy, c.vx || 1e-4)
+        : Math.atan2(hy, hx || 1e-4);
 
       // Draw the bird: a body mote and two wing-lines swept back from
       // the heading, their angle beating with the flap.
@@ -231,18 +237,18 @@ export class BirdFlock {
         const back = heading + Math.PI;
         this.particles.burst({
           x: bx, y: by, color: b.tint,
-          count: 3, speed: 2, size: 2.6, life: 0.16, upBias: 0, jitter: 1.2,
+          count: 4, speed: 2, size: bc.bodySize, life: 0.16, upBias: 0, jitter: 1.6,
         });
         for (const side of [-1, 1]) {
           const wa = back + side * wingAng;
-          for (let k = 1; k <= 4; k += 1) {
-            const d = (k / 4) * bc.wingLen;
+          for (let k = 1; k <= 5; k += 1) {
+            const d = (k / 5) * bc.wingLen;
             this.particles.burst({
               x: bx + Math.cos(wa) * d,
               y: by + Math.sin(wa) * d * 0.9,
               color: b.tint,
-              count: 1, speed: 1.5, size: 2.2 - k * 0.15,
-              life: 0.16, upBias: 0, jitter: 0.8,
+              count: 1, speed: 1.5, size: bc.wingSize - k * 0.18,
+              life: 0.16, upBias: 0, jitter: 1,
             });
           }
         }
@@ -254,7 +260,7 @@ export class BirdFlock {
         b.trailAcc -= bc.trailInterval;
         this.particles.burst({
           x: bx, y: by, color: b.tint,
-          count: 2, speed: 4, size: 1.8, life: 1.5, upBias: 0, jitter: 2,
+          count: 2, speed: 4, size: 2.1, life: 1.6, upBias: 0, jitter: 2.5,
         });
       }
     }
