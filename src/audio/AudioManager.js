@@ -343,11 +343,17 @@ export class AudioManager {
 
   // ── The unlock chip ──────────────────────────────────────────────────
   /**
-   * The corner sound OPTION: a persistent pill button, bottom-right.
-   * Sound stays OFF until it is clicked (the click doubles as the
-   * browser's autoplay unlock); afterwards it toggles mute on/off.
+   * The sound OPTION: an operator control, NOT part of the show. It is
+   * hidden by default and only appears while the debug panel is open
+   * (D adds body.operator-ui). Clicking it unlocks audio the first time,
+   * then toggles mute; Shift + '+' / '−' and '0' work without it showing.
    */
   buildChip() {
+    const st = document.createElement('style');
+    st.textContent = '#sound-toggle{display:none}'
+      + 'body.operator-ui #sound-toggle{display:inline-block}';
+    document.head.appendChild(st);
+
     this.chip = document.createElement('button');
     this.chip.id = 'sound-toggle';
     this.chip.style.cssText = `

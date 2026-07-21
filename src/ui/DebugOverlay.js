@@ -37,7 +37,11 @@ export class DebugOverlay {
       // D and M always work — they are rehearsal tools, and a stray note
       // while opening a panel is harmless.
       if (k === 'm') this.toggle(this.monitorEl);
-      if (k === 'd') this.toggle(this.panelEl);
+      if (k === 'd') {
+        this.toggle(this.panelEl);
+        // The sound button is operator-only — it rides with this panel.
+        document.body.classList.toggle('operator-ui', this.panelEl.style.display !== 'none');
+      }
       // The show-altering toggles (C/R/H/A) still need Shift while
       // keyboard-play is on; say so instead of failing silently.
       if (this.midi.fallbackActive && !e.shiftKey && ['c', 'r', 'h', 'a'].includes(k)) {

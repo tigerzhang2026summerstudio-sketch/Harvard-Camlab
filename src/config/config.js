@@ -11,12 +11,11 @@
 export const config = {
   // ── DISPLAY / WORLD ────────────────────────────────────────────────
   // The "world" is one continuous horizontal panorama across all walls.
-  // All layout math is done in world units relative to these two values.
-  // worldWidth here is the 16:9 BASE — main.js widens it automatically
-  // to match the real display, so the Cave's three-projector 48:9 wall
-  // (5760×1080) needs no config change: fullscreen the browser across
-  // all three screens and reload.
-  worldWidth: 1920,
+  // Set to the CAVE's three-projector wall: 5760×1080 (48:9). main.js
+  // also auto-fits worldWidth to whatever display the browser is
+  // fullscreened on at load, so a 16:9 test monitor shows the full
+  // composition too — this pair is the deterministic Cave default.
+  worldWidth: 5760,
   worldHeight: 1080,
 
   // Cap the device pixel ratio: retina 2x is plenty, more wastes GPU.

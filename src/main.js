@@ -32,14 +32,14 @@ import { Meditations } from './ui/Meditations.js';
 // (never narrower than the 16:9 base). Move the window to the wall,
 // fullscreen it across all three screens, and reload.
 {
+  // Fit the panorama to whatever display the browser is FULLSCREENED on
+  // at load: the Cave's 5760×1080 (48:9) → 5760; a 16:9 monitor → ~1920,
+  // so the whole composition is visible either way. (Guarded so a
+  // zero-height boot can't poison every layout position with NaN; falls
+  // back to the config's 5760.) Fullscreen first, then load/reload.
   const aspect = window.innerWidth / window.innerHeight;
-  if (Number.isFinite(aspect) && aspect > 0) {
-    // clamp a touch past 48:9 — a zero-height boot must never poison
-    // every layout position with Infinity/NaN
-    config.worldWidth = Math.max(
-      config.worldWidth,
-      Math.round(config.worldHeight * Math.min(aspect, 6)),
-    );
+  if (Number.isFinite(aspect) && aspect > 0.5) {
+    config.worldWidth = Math.round(config.worldHeight * Math.min(aspect, 8));
   }
 }
 
