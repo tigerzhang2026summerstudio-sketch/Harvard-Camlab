@@ -648,6 +648,18 @@ export const config = {
     scatterDist: 300,             // how far motes fly when dissolved
     intensity: 0.95,              // additive glow — Act 3 must not blow out
     panels: [
+      // 第七观 THE LOTUS THRONE — the real jeweled pedestal beneath the
+      // central Buddha (cropped from the same scan): the flower seat
+      // condenses at center and the photograph comes through.
+      { file: 'lotus-throne.jpg', role: 'story', story: 'throne',
+        x: 0, yFrac: -0.02, heightFrac: 0.34, plasterSkip: false,
+        retint: 0.1, intensity: 0.75, photoThrough: true, photoMax: 0.5 },
+      // 第八观 THE IMAGE — the same Buddha, but seen first as pure GOLD:
+      // heavy retint turns the whole figure into a golden idea of him
+      // (particles only, no photo — the truth waits for 第九观).
+      { file: 'buddha-true-body.jpg', role: 'story', story: 'image',
+        x: 0, yFrac: 0.06, heightFrac: 0.46, plasterSkip: false,
+        retint: 0.85, intensity: 0.85 },
       // 第九观 THE TRUE BODY — the real central Amitāyus of the vivid
       // tableau (Wikimedia Dunhuang217.jpg, cropped): particles condense,
       // then the photograph itself comes through, red robe and green

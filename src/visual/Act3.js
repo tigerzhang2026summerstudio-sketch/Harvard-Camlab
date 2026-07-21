@@ -23,7 +23,7 @@ import { figureBuilder } from './Figures.js';
 import { instrumentCenters } from './Instruments.js';
 import { MuralDissolve } from './MuralDissolve.js';
 import { MuralSpotlight } from './MuralSpotlight.js';
-import { flakePoints } from './ComboPatterns.js';
+import { flakePoints, lotusPoints } from './ComboPatterns.js';
 
 export class Act3 {
   constructor(worldGroup, state, particles, post, vaidehi) {
@@ -194,10 +194,37 @@ export class Act3 {
         queue(2.4, () => this.musicFlourish());
         queue(4.8, () => this.musicFlourish());
         break;
-      case 'throne': this.throneGrowth = Math.max(this.throneGrowth, 0.12); break;
-      case 'image':
-        this.targets.amitabha = Math.max(this.targets.amitabha, 0.5);
+      case 'throne': { // the flower seat: mural + a great lotus opening
+        this.throneGrowth = Math.max(this.throneGrowth, 0.12);
+        const H = config.worldHeight;
+        queue(0.4, () => this.particles.settle({
+          pts: lotusPoints(210, 2800),
+          x: 0, y: -0.13 * H,
+          size: 2.6, life: 7, scatter: 190, stagger: 1.3,
+        }));
+        for (let i = 0; i < 6; i += 1) { // petals rise off the opening flower
+          queue(1.4 + i * 0.8, () => this.particles.burst({
+            x: rand(-160, 160), y: -0.16 * H,
+            color: Math.random() < 0.5 ? config.palette.cinnabar : config.palette.gold,
+            count: 60, speed: 26, size: 2.4, life: 4,
+            upBias: 1.6, jitter: 24, driftY: 30,
+          }));
+        }
         break;
+      }
+      case 'image': { // the golden image forms; a ring of light announces it
+        this.targets.amitabha = Math.max(this.targets.amitabha, 0.5);
+        const H = config.worldHeight;
+        for (let i = 0; i < 3; i += 1) {
+          queue(0.3 + i * 1.4, () => this.particles.burst({
+            x: 0, y: 0.08 * H,
+            color: config.palette.gold,
+            count: 220, speed: 130 + i * 40, size: 2.3, life: 3.2,
+            upBias: 0.05, jitter: 8, minSpeedFrac: 0.92,
+          }));
+        }
+        break;
+      }
       case 'amitabha':
         this.targets[action] = 1;
         this.haloTime = 0; // his light sweeps the whole land
