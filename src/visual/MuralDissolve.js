@@ -65,7 +65,12 @@ const fragmentShader = /* glsl */ `
     float d = distance(gl_PointCoord, vec2(0.5));
     float core = smoothstep(0.5, 0.1, d);
     if (core <= 0.001) discard;
-    gl_FragColor = vec4(vColor * uIntensity * (0.75 + 0.45 * core * core), vAlpha * core);
+    vec3 col = vColor * uIntensity * (0.75 + 0.45 * core * core);
+    // LUMA KEY (see ParticleSystem): dark mural motes go transparent so
+    // the painted wall behind reads through; bright ones stay.
+    float luma = dot(col, vec3(0.299, 0.587, 0.114));
+    float key = mix(0.5, 1.0, smoothstep(0.02, 0.4, luma));
+    gl_FragColor = vec4(col, vAlpha * core * key);
   }
 `;
 

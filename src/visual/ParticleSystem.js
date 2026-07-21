@@ -75,7 +75,12 @@ const fragmentShader = /* glsl */ `
     if (core <= 0.001) discard;
     float hot = core * core;                   // brighter center
     vec3 col = vColor * uIntensity * (0.65 + 0.6 * hot);
-    gl_FragColor = vec4(col, vAlpha * core);
+    // LUMA KEY: the dimmer a mote's own light, the more transparent it
+    // is — so faint halos drop out and the mural behind reads through,
+    // while bright cores stay full. (Additive: less alpha = less wash.)
+    float luma = dot(col, vec3(0.299, 0.587, 0.114));
+    float key = mix(0.5, 1.0, smoothstep(0.02, 0.4, luma));
+    gl_FragColor = vec4(col, vAlpha * core * key);
   }
 `;
 

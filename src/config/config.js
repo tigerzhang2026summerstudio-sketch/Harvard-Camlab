@@ -120,18 +120,18 @@ export const config = {
       [0.02, 0.06],     // the Buddha
     ],
     lines: [
-      ['王舍城 · RĀJAGṚHA', 'In the great city of Rājagṛha,\nthe prince seized his father the king.'],
-      ['七重牢 · THE SEVEN WALLS', 'He locked him behind seven walls;\nno one was allowed to go to him.'],
-      ['韦提希 · QUEEN VAIDEHĪ', 'Queen Vaidehī bathed, and carried honey and flour\nto the king in secret, day after day.'],
-      ['幽闭 · HER OWN CELL', 'When the prince learned of it, he raised his sword —\nand his mother too was shut away in darkness.'],
-      ['悲泣 · THE PLEA', 'Grieving, she bowed toward the Vulture Peak:\n“World-Honored One — show me a land without sorrow.”'],
-      ['佛来 · THE BUDDHA COMES', 'And the Buddha appeared to her in her cell,\nand began to teach her to SEE.'],
+      ['王舍城 · RĀJAGṚHA', '王舍大城之中，\n太子囚其父王。\nIn the great city of Rājagṛha,\nthe prince seized his father the king.'],
+      ['七重牢 · THE SEVEN WALLS', '幽之于七重室内，\n不许一人得近。\nHe locked him behind seven walls;\nno one was allowed to go to him.'],
+      ['韦提希 · QUEEN VAIDEHĪ', '韦提希夫人净身，以酥蜜和麨，\n日日密奉大王。\nQueen Vaidehī bathed, and carried honey and flour\nto the king in secret, day after day.'],
+      ['幽闭 · HER OWN CELL', '太子闻之，怒而拔剑——\n遂将母后一并幽闭于暗。\nWhen the prince learned of it, he raised his sword —\nand his mother too was shut away in darkness.'],
+      ['悲泣 · THE PLEA', '夫人悲泣，遥礼耆阇崛山：\n“世尊——愿示我无忧之国。”\nGrieving, she bowed toward the Vulture Peak:\n“World-Honored One — show me a land without sorrow.”'],
+      ['佛来 · THE BUDDHA COMES', '世尊即现于其室中，\n教之观想，令其得见。\nAnd the Buddha appeared to her in her cell,\nand began to teach her to SEE.'],
     ],
   },
 
   // ── EPILOGUE — after the dissolution, before the loop ──────────────
   epilogue: {
-    line: ['心光 · WHAT REMAINS', 'The vision has returned to the dark —\nbut the mind that saw it keeps its light.'],
+    line: ['心光 · WHAT REMAINS', '所观之境，归于寂暗——\n然见境之心，其光犹存。\nThe vision has returned to the dark —\nbut the mind that saw it keeps its light.'],
   },
 
   // ── INTERLUDES — breathing room after each act arrives ─────────────
@@ -140,11 +140,11 @@ export const config = {
   interludes: {
     act2: {
       atSec: 9,
-      line: ['大地已成 · THE GROUND IS LAID', 'Walk the beryl in your mind —\nthen raise the jeweled world upon it.'],
+      line: ['大地已成 · THE GROUND IS LAID', '于心中步此琉璃之地——\n再于其上，起众宝庄严。\nWalk the beryl in your mind —\nthen raise the jeweled world upon it.'],
     },
     act3: {
       atSec: 9,
-      line: ['圣众将临 · THE ASSEMBLY NEARS', 'The world stands ready, shining and still.\nCall the holy ones with the pads.'],
+      line: ['圣众将临 · THE ASSEMBLY NEARS', '世界既成，明净安住。\n按鼓垫，请圣众降临。\nThe world stands ready, shining and still.\nCall the holy ones with the pads.'],
     },
   },
 
@@ -186,9 +186,9 @@ export const config = {
       prologue: ['', ''],   // the tutorial speaks for the prologue
       prison: ['', ''],     // the prison scene tells its own lines
       epilogue: ['', ''],   // …as does the epilogue
-      act1: ['ACT I · THE FLOOD OF LIGHT', 'Play the keys. Water becomes ice; ice becomes beryl.\nA ground of light is laid.'],
-      act2: ['ACT II · THE JEWELED WORLD', 'Turn the dials. Trees, ponds, music, wind —\nwhat you raise remains.'],
-      act3: ['ACT III · THE SIXTEEN CONTEMPLATIONS', 'Press any pad — each press carries the rite one vision onward.\nThe visions keep their own pace; let each one finish.'],
+      act1: ['ACT I · THE FLOOD OF LIGHT\n第一幕 · 光明之潮', '击键引光。水结为冰，冰化琉璃，\n光明大地，就此铺成。\nPlay the keys. Water becomes ice; ice becomes beryl.\nA ground of light is laid.'],
+      act2: ['ACT II · THE JEWELED WORLD\n第二幕 · 众宝庄严', '转动旋钮。宝树、莲池、天乐、香风——\n凡你所立，皆不散灭。\nTurn the dials. Trees, ponds, music, wind —\nwhat you raise remains.'],
+      act3: ['ACT III · THE SIXTEEN CONTEMPLATIONS\n第三幕 · 十六观', '轻按鼓垫——每按一次，观法向前一境。\n诸观自有其时，静待其成。\nPress any pad — each press carries the rite one vision onward.\nThe visions keep their own pace; let each one finish.'],
       // The Diamond Sutra's closing gatha — the dissolution is not an
       // ending announced, but a truth contemplated.
       coda: ['一切有为法 · 如梦幻泡影', 'All conditioned things are as dreams,\nillusions, bubbles, shadows…'],
@@ -196,15 +196,15 @@ export const config = {
     // …the gatha completes mid-storm (scheduled by StoryScenes).
     codaSecond: ['如露亦如电 · 应作如是观', '…as dew, as a flash of lightning.\nContemplate them thus — and let the vision go.'],
     // Shown if a pad or dial is used before its act has arrived.
-    padsLocked: 'The pads awaken in Act III —\ncultivate the world with the dials first.',
-    dialsLocked: 'The dials awaken in Act II —\nflood the darkness with the keys first.',
-    dissolutionEarly: 'The vision is not ready to be released —\nlet the contemplations deepen a little longer.',
+    padsLocked: '鼓垫于第三幕方启——\n先以旋钮，培育此世界。\nThe pads awaken in Act III —\ncultivate the world with the dials first.',
+    dialsLocked: '旋钮于第二幕方启——\n先以键光，充满此黑暗。\nThe dials awaken in Act II —\nflood the darkness with the keys first.',
+    dissolutionEarly: '此境尚未可释——\n且令诸观，再深一层。\nThe vision is not ready to be released —\nlet the contemplations deepen a little longer.',
     // Shown when an act's meter is satisfied but its runtime floor isn't:
     // the performer must know the piece is soaking, not stuck.
-    floodHolds: '满潮 · THE FLOOD HOLDS\nThe light must soak deep — keep playing, the ground is setting.',
+    floodHolds: '满潮 · THE FLOOD HOLDS\n光须浸透——继续击键，大地正凝。\nThe light must soak deep — keep playing, the ground is setting.',
     // {pct} is replaced with the live meter percentage.
-    floodRising: '光未满 · THE FLOOD RISES\nThe ground holds {pct}% of the light it needs —\nstrike on; harder keys pour more.',
-    worldHolds: '世界将熟 · THE WORLD RIPENS\nAll eight are raised — hold them there; the throne is forming.',
+    floodRising: '光未满 · THE FLOOD RISES\n大地已纳所需之光 {pct}%——\n继续击键，重按则光愈盛。\nThe ground holds {pct}% of the light it needs —\nstrike on; harder keys pour more.',
+    worldHolds: '世界将熟 · THE WORLD RIPENS\n八钮皆举——且持之，宝座正成。\nAll eight are raised — hold them there; the throne is forming.',
 
     // When no one interacts for a while, the piece meditates aloud:
     // sutra passages surface one at a time (idleSec to start, everySec
@@ -214,19 +214,19 @@ export const config = {
       everySec: 32,
       passages: {
         act1: [
-          'Sit facing the west. Perceive the sun as a drum\nhanging in the sky — let the mind dwell there, unwavering.',
-          'Shut out scattered thought.\nLet the image stay clear, eyes open or closed.',
-          'When water turns to ice, and ice to beryl,\nthe first ground of the Pure Land is seen.',
+          '正坐面西，观日如鼓，\n悬于天际——系心一处，令其不移。\nSit facing the west. Perceive the sun as a drum\nhanging in the sky — let the mind dwell there, unwavering.',
+          '屏除散乱之想。\n令此影像分明，开目闭目皆见。\nShut out scattered thought.\nLet the image stay clear, eyes open or closed.',
+          '水结为冰，冰化琉璃，\n净土初地，于是得见。\nWhen water turns to ice, and ice to beryl,\nthe first ground of the Pure Land is seen.',
         ],
         act2: [
-          'Each jeweled tree is eight thousand yojanas tall,\nits leaves and flowers made of seven gems.',
-          'The water of eight virtues murmurs as it flows:\nsuffering, emptiness, impermanence, no-self.',
-          'Do not grasp at the vision when it comes —\nlet it deepen of its own accord.',
+          '一一宝树，高八千由旬，\n其叶其华，皆七宝所成。\nEach jeweled tree is eight thousand yojanas tall,\nits leaves and flowers made of seven gems.',
+          '八功德水，流注有声，\n演说苦、空、无常、无我。\nThe water of eight virtues murmurs as it flows:\nsuffering, emptiness, impermanence, no-self.',
+          '境界现时，莫生取著——\n任其自然，渐次深入。\nDo not grasp at the vision when it comes —\nlet it deepen of its own accord.',
         ],
         act3: [
-          'To see this Buddha is to see all Buddhas;\nthe mind that sees the Buddha IS the Buddha-mind.',
-          'His light embraces every being who remembers him,\nand never lets a single one fall.',
-          'Those who complete this contemplation\nwill open their eyes inside a lotus.',
+          '见此一佛，即见一切诸佛；\n见佛之心，即是佛心。\nTo see this Buddha is to see all Buddhas;\nthe mind that sees the Buddha IS the Buddha-mind.',
+          '其光普摄念佛众生，\n一一摄取，不舍一人。\nHis light embraces every being who remembers him,\nand never lets a single one fall.',
+          '成就此观者，\n将于莲华之中开目。\nThose who complete this contemplation\nwill open their eyes inside a lotus.',
         ],
       },
     },
@@ -243,15 +243,15 @@ export const config = {
   tutorial: {
     enabled: true,
     title: 'THE PAINTED CAVE',
-    subtitle: 'Visualizing the Pure Land',
-    quote: '“Reveal to me a land without sorrow.” — Queen Vaidehī',
+    subtitle: '观想净土 · Visualizing the Pure Land',
+    quote: '“愿示我无忧之国。” ——韦提希夫人<br>“Reveal to me a land without sorrow.” — Queen Vaidehī',
     steps: [
-      ['I · THE KEYS', 'Flood the darkness with light. Strike softly or hard — pitch places the bloom, chords open into mandalas. Fill the dark until the beryl ground freezes into being.'],
-      ['II · THE KNOBS', 'Cultivate the jeweled world: trees, lotus ponds, self-playing music, wind. What you raise remains — nothing decays while you hold it.'],
-      ['III · THE PADS', 'Any pad carries the rite of sixteen contemplations one vision onward — each must finish before the next. The last releases it all back into darkness.'],
+      ['一 · 键 · THE KEYS', '以光充满黑暗。或轻或重击键——音高定其绽放之处，和弦开为曼陀罗。填满黑暗，直至琉璃大地凝结而成。<br>Flood the darkness with light. Strike softly or hard — pitch places the bloom, chords open into mandalas. Fill the dark until the beryl ground freezes into being.'],
+      ['二 · 钮 · THE KNOBS', '培育此众宝世界：宝树、莲池、自鸣之乐、香风。凡你所立，皆不散灭——持之则不坏。<br>Cultivate the jeweled world: trees, lotus ponds, self-playing music, wind. What you raise remains — nothing decays while you hold it.'],
+      ['三 · 垫 · THE PADS', '任按一垫，皆引十六观法前行一境——一境未终，不入其次。末垫一按，尽释此境，复归于暗。<br>Any pad carries the rite of sixteen contemplations one vision onward — each must finish before the next. The last releases it all back into darkness.'],
     ],
     hint: "No controller?  ` turns on keyboard play — letter rows = keys · 1–8 = pads (9 flips bank) · , . / ; ' [ ] \\ = the 8 dials (hold to raise, Shift lowers) · Shift +/− = sound on/off · Shift+letter for toggles",
-    begin: 'strike any key to begin',
+    begin: '击任意键以启 · strike any key to begin',
   },
 
   // ── ACT 1 — chords, symmetry, and the rising-sun ritual ────────────
@@ -425,8 +425,11 @@ export const config = {
     video: 'backdrop.mp4',
     // Peak opacity per phase — the prologue stays a black prison.
     // (Values are tiny because the sRGB output transform lifts darks a lot.)
+    // Peak opacity per phase — raised so the painted wall reads through
+    // the (now luma-keyed) particles during the acts, still low enough
+    // to stay a backdrop. The prologue stays a black prison.
     opacityByPhase: {
-      prologue: 0, prison: 0.004, act1: 0.006, act2: 0.011, act3: 0.017,
+      prologue: 0, prison: 0.02, act1: 0.03, act2: 0.045, act3: 0.06,
       coda: 0, epilogue: 0.02, // the cave wall itself glows once, then fades
     },
     panAmount: 0.035,   // slow horizontal drift (×worldWidth)
@@ -437,7 +440,7 @@ export const config = {
     surface: {
       everySec: 40,     // average time between surfacings (±40%)
       holdSec: 9,       // one full swell: rise, hold a moment, sink
-      opacity: 0.03,    // the peak (well above the phase base levels)
+      opacity: 0.1,     // the peak (well above the phase base levels)
     },
 
     // THE ENDING — after the dissolution, the VIVID Pure-Land tableau
@@ -491,14 +494,14 @@ export const config = {
     // Every dial grows its own part of the story and tells it (caption)
     // the first time it is raised in Act 2 ([title, line] per knob).
     knobStories: [
-      ['第四观 · THE JEWELED TREES', 'Seven rows of jeweled trees rise —\nevery leaf a different light.'],
-      ['第五观 · THE PONDS', 'Ponds of the eight virtues; each drop\nspeaks the Dharma as it falls.'],
-      ['第六观 · THE TOWERS OF MUSIC', 'Five hundred jeweled towers, and in the sky\ninstruments that sound themselves.'],
-      ['风 · THE WIND', 'A soft wind turns the light;\nthe whole paradise breathes.'],
-      ['妙音鸟 · THE KALAVINKA BIRDS', 'Jeweled birds wheel through the sky,\ntheir flight itself a song of Dharma.'],
-      ['宝光 · THE RAYS OF LIGHT', 'From the height of the sky, rays of golden light\nfan out and warm the whole land.'],
-      ['幢幡 · THE JEWELED BANNERS', 'Banners and canopies of every color\nhang in the air, swaying in the fragrant wind.'],
-      ['天云 · THE CLOUDS OF LIGHT', 'Clouds of soft light drift above the towers,\ncarrying flowers and perfume.'],
+      ['第四观 · THE JEWELED TREES', '七重行树，次第而起——\n一一叶间，各放异光。\nSeven rows of jeweled trees rise —\nevery leaf a different light.'],
+      ['第五观 · THE PONDS', '八功德水，充满诸池；\n滴滴落下，皆演妙法。\nPonds of the eight virtues; each drop\nspeaks the Dharma as it falls.'],
+      ['第六观 · THE TOWERS OF MUSIC', '五百宝楼庄严，空中乐器，\n不鼓自鸣。\nFive hundred jeweled towers, and in the sky\ninstruments that sound themselves.'],
+      ['风 · THE WIND', '微风徐动，光影流转；\n净土全境，如一息呼吸。\nA soft wind turns the light;\nthe whole paradise breathes.'],
+      ['妙音鸟 · THE KALAVINKA BIRDS', '妙音之鸟，回翔空中，\n其飞其鸣，皆是法音。\nJeweled birds wheel through the sky,\ntheir flight itself a song of Dharma.'],
+      ['宝光 · THE RAYS OF LIGHT', '自天之顶，金光垂布，\n遍照温煦，彻满全地。\nFrom the height of the sky, rays of golden light\nfan out and warm the whole land.'],
+      ['幢幡 · THE JEWELED BANNERS', '幢幡宝盖，众色相间，\n悬于虚空，随香风摇曳。\nBanners and canopies of every color\nhang in the air, swaying in the fragrant wind.'],
+      ['天云 · THE CLOUDS OF LIGHT', '光明之云，浮于楼阁之上，\n载持天华，散布妙香。\nClouds of soft light drift above the towers,\ncarrying flowers and perfume.'],
     ],
 
     // K5–K8 sky layers
@@ -599,24 +602,24 @@ export const config = {
 
     // Every pad's story — [title, line] shown as a caption when pressed.
     stories: {
-      prison: ['缘起 · THE PRISON', 'Queen Vaidehī, imprisoned by her own son, begged the Buddha:\nreveal to me a land without sorrow.'],
-      sun: ['第一观 · THE SETTING SUN', 'Face the west. See the sun about to set,\nhanging in the sky like a suspended drum.'],
-      water: ['第二观 · WATER & ICE', 'See water, clear and still —\nthen see it freeze to shining, translucent ice.'],
-      groundFreeze: ['第三观 · THE BERYL GROUND', 'The ice becomes beryl: a ground of light,\nlevel as the palm of a hand.'],
-      treesStory: ['第四观 · THE JEWELED TREES', 'Seven rows of jeweled trees stand full-grown —\ncontemplate each leaf, a different light.'],
-      pondsStory: ['第五观 · THE PONDS', 'The water of eight virtues shines;\neach drop speaks the Dharma as it falls.'],
-      musicStory: ['第六观 · THE TOWERS OF MUSIC', 'The towers stand; instruments hang in the sky,\nsounding themselves without a hand.'],
-      throne: ['第七观 · THE LOTUS THRONE', 'On the jeweled ground a great lotus unfolds —\na seat awaiting the Buddha of Infinite Life.'],
-      image: ['第八观 · THE IMAGE', 'First see his image only: golden, seated on the lotus —\nthe mind that makes the Buddha is the Buddha.'],
-      amitabha: ['第九观 · THE TRUE BODY', 'Amitāyus himself: his body the gold\nof a hundred thousand million suns.'],
-      avalokitesvara: ['第十观 · AVALOKITEŚVARA', 'The bodhisattva of compassion at his left hand,\na standing Buddha shining in her crown.'],
-      mahasthamaprapta: ['第十一观 · MAHĀSTHĀMAPRĀPTA', 'The bodhisattva of great power at his right hand —\nwhere he walks, worlds tremble into bloom.'],
-      universal: ['第十二观 · THE UNIVERSAL VISION', 'See yourself born there, seated in a lotus bud —\nflowers of light rain over the whole land.'],
-      mixed: ['第十三观 · THE MIXED VISION', 'Now vast, now small, now image, now true —\nthe vision flickers between all of his forms.'],
-      gradesHigh: ['第十四观 · THE HIGHEST REBIRTHS', 'Those of deepest devotion rise on diamond daises,\nwelcomed by the entire holy assembly.'],
-      gradesMid: ['第十五观 · THE MIDDLE REBIRTHS', 'The middle-born arrive in lotuses\nthat open after a night and a day.'],
-      gradesLow: ['第十六观 · THE LOWEST REBIRTHS', 'Even the greatest sinner, saying the Name ten times,\nis met at death by a lotus of gold.'],
-      awakening: ['开悟 · THE AWAKENING', 'Seeing the land, Vaidehī rejoiced;\nher mind opened like a lotus at first light.'],
+      prison: ['缘起 · THE PRISON', '韦提希为其子所囚，哀求于佛：\n愿见无忧之国。\nQueen Vaidehī, imprisoned by her own son, begged the Buddha:\nreveal to me a land without sorrow.'],
+      sun: ['第一观 · THE SETTING SUN', '面向西方，谛观落日，\n悬于天际，状如悬鼓。\nFace the west. See the sun about to set,\nhanging in the sky like a suspended drum.'],
+      water: ['第二观 · WATER & ICE', '观水澄清，湛然不动——\n复见其凝，成莹澈之冰。\nSee water, clear and still —\nthen see it freeze to shining, translucent ice.'],
+      groundFreeze: ['第三观 · THE BERYL GROUND', '冰化琉璃，成光明地，\n平正如掌。\nThe ice becomes beryl: a ground of light,\nlevel as the palm of a hand.'],
+      treesStory: ['第四观 · THE JEWELED TREES', '七重行树，皆已成就——\n谛观一一叶，各现异光。\nSeven rows of jeweled trees stand full-grown —\ncontemplate each leaf, a different light.'],
+      pondsStory: ['第五观 · THE PONDS', '八功德水，光明莹澈；\n滴滴落时，皆演妙法。\nThe water of eight virtues shines;\neach drop speaks the Dharma as it falls.'],
+      musicStory: ['第六观 · THE TOWERS OF MUSIC', '宝楼耸立，乐器悬空，\n无人抚弄，自然成音。\nThe towers stand; instruments hang in the sky,\nsounding themselves without a hand.'],
+      throne: ['第七观 · THE LOTUS THRONE', '宝地之上，大莲华开——\n为无量寿佛之座。\nOn the jeweled ground a great lotus unfolds —\na seat awaiting the Buddha of Infinite Life.'],
+      image: ['第八观 · THE IMAGE', '先观其像：金色之身，坐于莲上——\n是心作佛，是心是佛。\nFirst see his image only: golden, seated on the lotus —\nthe mind that makes the Buddha is the Buddha.'],
+      amitabha: ['第九观 · THE TRUE BODY', '无量寿佛真身：其身金色，\n如百千万亿日。\nAmitāyus himself: his body the gold\nof a hundred thousand million suns.'],
+      avalokitesvara: ['第十观 · AVALOKITEŚVARA', '大悲观世音，侍佛之左，\n宝冠之中，有一立佛放光。\nThe bodhisattva of compassion at his left hand,\na standing Buddha shining in her crown.'],
+      mahasthamaprapta: ['第十一观 · MAHĀSTHĀMAPRĀPTA', '大势至菩萨，侍佛之右——\n所行之处，世界震动华开。\nThe bodhisattva of great power at his right hand —\nwhere he walks, worlds tremble into bloom.'],
+      universal: ['第十二观 · THE UNIVERSAL VISION', '观自身生于彼土，坐莲华中——\n光华如雨，遍洒全地。\nSee yourself born there, seated in a lotus bud —\nflowers of light rain over the whole land.'],
+      mixed: ['第十三观 · THE MIXED VISION', '或大或小，或像或真——\n于诸形相间，明灭变现。\nNow vast, now small, now image, now true —\nthe vision flickers between all of his forms.'],
+      gradesHigh: ['第十四观 · THE HIGHEST REBIRTHS', '上品至诚者，乘金刚台而升，\n圣众全体，前来迎接。\nThose of deepest devotion rise on diamond daises,\nwelcomed by the entire holy assembly.'],
+      gradesMid: ['第十五观 · THE MIDDLE REBIRTHS', '中品往生者，处莲华中，\n经一日一夜，华乃开敷。\nThe middle-born arrive in lotuses\nthat open after a night and a day.'],
+      gradesLow: ['第十六观 · THE LOWEST REBIRTHS', '虽极重罪人，称名十念，\n命终之时，金莲来迎。\nEven the greatest sinner, saying the Name ten times,\nis met at death by a lotus of gold.'],
+      awakening: ['开悟 · THE AWAKENING', '见此国土，韦提希欢喜，\n其心开解，如莲华于初光中绽放。\nSeeing the land, Vaidehī rejoiced;\nher mind opened like a lotus at first light.'],
       dissolution: ['一切有为法 · 如梦幻泡影', 'All conditioned things are as dreams,\nillusions, bubbles, shadows…'],
     },
 
@@ -658,14 +661,14 @@ export const config = {
     plasterSat: 0.36,             // …and less saturated than this
     retint: 0.35,                 // 0 = photo colors · 1 = full mineral palette
     scatterDist: 300,             // how far motes fly when dissolved
-    intensity: 0.95,              // additive glow — Act 3 must not blow out
+    intensity: 0.8,               // additive glow — Act 3 must not blow out
     panels: [
       // 第七观 THE LOTUS THRONE — the real jeweled pedestal beneath the
       // central Buddha (cropped from the same scan): the flower seat
       // condenses at center and the photograph comes through.
       { file: 'lotus-throne.jpg', role: 'story', story: 'throne',
         x: 0, yFrac: -0.02, heightFrac: 0.34, plasterSkip: false,
-        retint: 0.1, intensity: 0.75, photoThrough: true, photoMax: 0.5 },
+        retint: 0.1, intensity: 0.62, photoThrough: true, photoMax: 0.36 },
       // 第八观 THE IMAGE — the same Buddha, but seen first as pure GOLD:
       // heavy retint turns the whole figure into a golden idea of him
       // (particles only, no photo — the truth waits for 第九观).
@@ -678,20 +681,20 @@ export const config = {
       // mandorla true. The procedural figure stands beneath it.
       { file: 'buddha-true-body.jpg', role: 'story', story: 'amitabha',
         x: 0, yFrac: 0.06, heightFrac: 0.52, plasterSkip: false,
-        retint: 0.12, intensity: 0.7, photoThrough: true, photoMax: 0.55 },
+        retint: 0.12, intensity: 0.58, photoThrough: true, photoMax: 0.38 },
       // 第十观 / 第十一观 — the REAL standing attendants who flank him in
       // the same scan, each condensing at their canonical side.
       { file: 'avalokitesvara.jpg', role: 'story', story: 'avalokitesvara',
         x: -0.15, yFrac: 0.04, heightFrac: 0.46, plasterSkip: false,
-        retint: 0.12, intensity: 0.7, photoThrough: true, photoMax: 0.5 },
+        retint: 0.12, intensity: 0.58, photoThrough: true, photoMax: 0.36 },
       { file: 'mahasthamaprapta.jpg', role: 'story', story: 'mahasthamaprapta',
         x: 0.15, yFrac: 0.04, heightFrac: 0.46, plasterSkip: false,
-        retint: 0.12, intensity: 0.7, photoThrough: true, photoMax: 0.5 },
+        retint: 0.12, intensity: 0.58, photoThrough: true, photoMax: 0.36 },
       // 第六观 THE TOWERS OF MUSIC — the jeweled-pavilion detail of the
       // same wall (Mogao Cave 217 architecture 01).
       { file: 'pavilion-music.jpg', role: 'story', story: 'musicStory',
         x: 0, yFrac: 0.2, heightFrac: 0.34, plasterSkip: false,
-        retint: 0.1, intensity: 0.7, photoThrough: true, photoMax: 0.5 },
+        retint: 0.1, intensity: 0.58, photoThrough: true, photoMax: 0.36 },
       // role 'panel': materialize on the Universal Vision pad (B1),
       // scatter in the coda.
       // REAL 飞天 (Wikimedia scans): the ribbon-pair on a dark ground
@@ -701,7 +704,7 @@ export const config = {
       { file: 'apsara-pair.jpg', role: 'panel',
         x: -0.335, yFrac: 0.27, heightFrac: 0.2, cutoff: 0.3,
         gamma: 1.3, gain: 1.9, retint: 0.25, intensity: 0.55,
-        photoThrough: true, photoMax: 0.26 },
+        photoThrough: true, photoMax: 0.2 },
       // (no photoThrough here: its WHITE plaster ground would flare into
       //  a bright oval under additive blending — the plaster-skipped
       //  particles alone draw the figure cleanly.)
@@ -715,13 +718,13 @@ export const config = {
       // particles (soft-edged), so the image finally reads clearly.
       { file: 'cave-sun-contemplation.jpg', role: 'story', story: 'sun',
         x: -0.3, yFrac: 0.16, heightFrac: 0.34, plasterSkip: true,
-        photoThrough: true, photoMax: 0.5 },
+        photoThrough: true, photoMax: 0.36 },
       { file: 'cave-prison.jpg', role: 'story', story: 'prison',
         x: 0.3, yFrac: 0.16, heightFrac: 0.34, plasterSkip: true,
-        photoThrough: true, photoMax: 0.5 },
+        photoThrough: true, photoMax: 0.36 },
       { file: 'cave-music-sky.jpg', role: 'story', story: 'mixed',
         x: 0, yFrac: 0.3, heightFrac: 0.24, plasterSkip: true,
-        photoThrough: true, photoMax: 0.5 },
+        photoThrough: true, photoMax: 0.36 },
     ],
   },
 

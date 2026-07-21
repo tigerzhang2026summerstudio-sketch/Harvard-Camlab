@@ -45,12 +45,25 @@ export class Captions {
     this.show(`<span class="cap-title">${title}</span>\n${line}`);
   }
 
+  /**
+   * Wrap each \n-separated line. A pure-Chinese line renders upright
+   * (Noto Serif SC has no true italic); a line with Latin stays as the
+   * container styles it. Keeps 中文 and English visually distinct.
+   */
+  render(text) {
+    return text.split('\n').map((seg) => {
+      if (seg === '') return '<div class="cap-l">&nbsp;</div>';
+      const cjk = /[一-鿿]/.test(seg) && !/[A-Za-z]/.test(seg);
+      return `<div class="cap-l${cjk ? ' cap-cjk' : ''}">${seg}</div>`;
+    }).join('');
+  }
+
   /** The big center-screen act card ("ACT III · …") on each transition. */
   showActTitle(title) {
     if (!this.enabled) return;
     for (const t of this.actTimers) clearTimeout(t);
     this.actTimers = [];
-    this.actEl.textContent = title;
+    this.actEl.innerHTML = this.render(title);
     this.actEl.style.transitionDuration = '1.6s';
     void this.actEl.offsetWidth; // eslint-disable-line no-void
     this.actEl.style.opacity = '1';
@@ -66,7 +79,7 @@ export class Captions {
     this.timers = [];
 
     const c = config.captions;
-    this.el.innerHTML = text.replaceAll('\n', '<br>');
+    this.el.innerHTML = this.render(text);
     this.el.style.transitionDuration = `${c.fadeInSec}s`;
     // reflow so the browser notices the transition even mid-fade
     void this.el.offsetWidth; // eslint-disable-line no-void
@@ -93,8 +106,8 @@ export class Captions {
         text-align: center; pointer-events: none;
         font-family: 'EB Garamond', 'Noto Serif SC', 'Songti SC', 'STSong', serif;
         font-style: italic;
-        font-size: clamp(16px, 1.8vw, 28px); line-height: 1.8;
-        letter-spacing: 0.06em; color: #e8d9ae;
+        font-size: clamp(13px, 1.3vw, 21px); line-height: 1.45;
+        letter-spacing: 0.01em; color: #e8d9ae;
         /* dark halo FIRST so the words survive any particle storm… */
         text-shadow:
           0 1px 3px rgba(0, 0, 0, 0.95), 0 0 10px rgba(0, 0, 0, 0.9),
@@ -102,18 +115,22 @@ export class Captions {
           0 0 40px rgba(232, 193, 90, 0.25);
         opacity: 0; transition: opacity 2s ease;
       }
+      #captions .cap-l { display: block; }
+      #captions .cap-l.cap-cjk { font-style: normal; letter-spacing: 0.08em; }
       #captions .cap-title {
-        display: block; margin-bottom: 0.55em;
-        font-style: normal; font-weight: 600; font-size: 0.74em;
-        letter-spacing: 0.24em; color: #e8c15a;
+        display: block; margin-bottom: 0.35em;
+        font-style: normal; font-weight: 600; font-size: 0.72em;
+        letter-spacing: 0.14em; color: #e8c15a;
       }
+      #act-title .cap-l { display: block; }
+      #act-title .cap-l.cap-cjk { font-style: normal; font-size: 0.62em; color: #cdae63; margin-top: 0.15em; }
       #act-title {
         position: fixed; left: 0; right: 0; top: 34vh; z-index: 6;
         text-align: center; pointer-events: none;
         font-family: 'EB Garamond', 'Noto Serif SC', 'Songti SC', 'STSong', serif;
-        font-weight: 600;
-        font-size: clamp(28px, 3.8vw, 58px);
-        letter-spacing: 0.22em; text-indent: 0.22em; color: #e8c15a;
+        font-weight: 600; line-height: 1.3;
+        font-size: clamp(22px, 3vw, 46px);
+        letter-spacing: 0.14em; text-indent: 0.14em; color: #e8c15a;
         text-shadow:
           0 1px 4px rgba(0, 0, 0, 0.95), 0 0 14px rgba(0, 0, 0, 0.9),
           0 0 30px rgba(0, 0, 0, 0.8), 0 0 40px rgba(232, 193, 90, 0.4);
