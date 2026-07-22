@@ -523,13 +523,19 @@ export const config = {
     banners: { count: 14 },                    // K7: hanging ribbon-banners
     clouds: { count: 20 },                     // K8: drifting bands of light
 
-    // THE DISSOLUTION'S FINALE (see Act2 coda): the storm floods the
-    // whole wall with a rising sea of light, then collapses to black.
+    // THE DISSOLUTION'S FINALE (see Act2 coda): the whole wall becomes
+    // ONE calm field of light (一片), held, then the standing sheet
+    // drifts slowly apart and fades away together (慢慢消失分散) — no
+    // flicker, no shards, no whiteout collapse.
     coda: {
-      fillEverySec: 0.05,   // how often flood bursts spawn (fast = dense)
-      fillBurstsAtPeak: 9,  // bursts per tick at the flood's peak…
-      fillCountAtPeak: 48,  // …and particles per burst (× the flood ramp)
-      swellAtPeak: 0.9,     // extra global radiance at the peak (whiteout)
+      formEnd: 0.42,        // the field builds to full by this fraction…
+      holdEnd: 0.6,         // …holds full to here, then replenishment stops
+      fieldEverySec: 0.06,  // how often field points spawn
+      fieldBursts: 10,      // scatter points per tick (× the build ramp)
+      fieldCount: 38,       // motes per point
+      fieldLifeMin: 5,      // long life → the sheet lingers as it disperses
+      fieldLifeMax: 8.5,
+      disperseSpeed: 150,   // gentle outward drift (× position) — never fast
     },
 
     // Side-effects that ride along with the sky dials
