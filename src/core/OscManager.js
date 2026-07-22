@@ -1,12 +1,18 @@
 /**
- * OscManager — OSC input over a WebSocket, normalized to the SAME events
- * MidiManager emits ('key' | 'knob' | 'pad' | 'joystick'), so OSC, USB
- * MIDI and the computer keyboard all drive the piece through one path.
+ * OscManager — OSC input over a WebSocket. The WiFi controller sends the
+ * SAME raw MIDI bytes it would over USB, wrapped in OSC at /midi/raw:
  *
- * It connects to the relay in tools/osc-bridge (see oscConfig.url) and
- * accepts either raw OSC binary (decoded here — bundles + messages, int/
- * float/string args) or JSON {address, args:[…]} for flexibility. The
- * address scheme is documented in config/oscConfig.js.
+ *     /midi/raw  <status:int> <d1:int> <d2:int> <channel:int>
+ *
+ * so this class is just a transport: it decodes the OSC packet and hands
+ * the raw MIDI to MidiManager.ingestOscMidi (wired in main.js via
+ * onRawMidi), which does ALL the routing — one map, one MIDI-learn, one
+ * monitor, shared with USB MIDI. A legacy semantic scheme (/pc/key, …)
+ * is still accepted for non-MIDI senders and emits normalized events
+ * directly; both are documented in config/oscConfig.js.
+ *
+ * Wire format: raw OSC binary (decoded here — bundles + messages, int/
+ * float/string args) or JSON {address, args:[…]} for flexibility.
  */
 import { oscConfig } from '../config/oscConfig.js';
 
@@ -16,6 +22,7 @@ export class OscManager {
     this.ws = null;
     this.live = false;
     this.onLiveChange = null; // main.js hooks this to mute the kbd fallback
+    this.onRawMidi = null;    // main.js → MidiManager.ingestOscMidi
   }
 
   on(type, cb) { (this.listeners[type] ??= new Set()).add(cb); }
@@ -76,6 +83,19 @@ export class OscManager {
   route(address, a) {
     const { addresses } = oscConfig;
     const num = (v) => (typeof v === 'string' ? parseFloat(v) : v);
+
+    // Primary protocol: raw MIDI over OSC. Forward the four bytes to
+    // MidiManager, which routes them exactly like a USB message.
+    if (address === addresses.midiRaw) {
+      const status = Math.round(num(a[0])) || 0;
+      const d1 = Math.round(num(a[1])) || 0;
+      const d2 = Math.round(num(a[2])) || 0;
+      const channel = Math.round(num(a[3])) || 0;
+      this.onRawMidi?.(status, d1, d2, channel);
+      return;
+    }
+
+    // ── Legacy semantic scheme (optional; for non-MIDI OSC senders) ──
     if (address === addresses.key) {
       const note = Math.round(num(a[0]));
       const vel = num(a[1]) ?? 0;

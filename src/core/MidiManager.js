@@ -88,6 +88,17 @@ export class MidiManager {
 
   onMidiMessage(e, sourceName) {
     const [statusByte, d1 = 0, d2 = 0] = e.data;
+    this.handleRaw(statusByte, d1, d2, sourceName);
+  }
+
+  /**
+   * Decode one raw MIDI message and route it — the SINGLE path shared by
+   * USB Web MIDI and by OSC (the WiFi controller sends raw MIDI bytes at
+   * /midi/raw; see OscManager). Everything downstream — the routing map,
+   * channel filtering, MIDI-learn, the on-screen monitor — is identical
+   * no matter which transport the bytes arrived on.
+   */
+  handleRaw(statusByte, d1 = 0, d2 = 0, sourceName = 'midi') {
     const kind = statusByte & 0xf0;
     const channel = statusByte & 0x0f;
     if (kind === 0xf0) return; // ignore system/clock messages
@@ -103,6 +114,19 @@ export class MidiManager {
 
     const semantic = this.route(type, channel, d1, d2);
     this.emit('midi', { source: sourceName, type, channel, d1, d2, semantic });
+  }
+
+  /**
+   * OSC entry point: the WiFi sender emits /midi/raw with four ints
+   * {status, d1, d2, channel}. "status" is the usual MIDI status byte and
+   * "channel" the usual 0-based MIDI channel — some senders bake the
+   * channel into the status byte's low nibble AND send it separately, so
+   * we rebuild the full status from both (masking status' low nibble and
+   * OR-ing the channel arg) to be correct either way.
+   */
+  ingestOscMidi(status, d1 = 0, d2 = 0, channel = 0, sourceName = 'osc') {
+    const statusByte = (status & 0xf0) | (channel & 0x0f);
+    this.handleRaw(statusByte, d1, d2, sourceName);
   }
 
   /** Map a raw message to a semantic event; returns a label for the monitor. */

@@ -30,7 +30,25 @@ somewhere public and set that URL to your `wss://…` instead.
 
 ## What to send (address scheme)
 
-Any OSC source works as long as it sends these addresses:
+**Primary — raw MIDI over OSC.** The controller sends the same MIDI
+bytes it would over USB, in one message:
+
+| Address     | Args                                              | Meaning |
+|-------------|---------------------------------------------------|---------|
+| `/midi/raw` | `status` (int), `d1` (int), `d2` (int), `channel` (int) | one raw MIDI message |
+
+`status`/`d1`/`d2`/`channel` are the usual MIDI bytes (status byte, two
+data bytes, 0-based channel). The browser routes them through the same
+`midiMap.js` as USB MIDI, so notes → keys/pads, CCs → knobs, pitch-bend
+→ joystick, and MIDI-learn all work identically over WiFi. This is what
+the controller's C sender emits:
+
+```c
+int raw_args[4] = { status, d1, d2, channel };
+osc_send_ints("/midi/raw", raw_args, 4);
+```
+
+**Legacy — semantic scheme (optional, for non-MIDI OSC senders):**
 
 | Address     | Args                                   | Meaning |
 |-------------|----------------------------------------|---------|
