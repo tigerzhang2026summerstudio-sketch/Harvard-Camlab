@@ -90,7 +90,7 @@ export class Act3 {
     this.color = new THREE.Color();
 
     state.on('phase', ({ phase }) => {
-      if (phase === 'prologue') {
+      if (phase === 'prologue' || phase === 'intro') {
         for (const n of Object.keys(this.targets)) this.targets[n] = 0;
         this.souls = [];
         this.rainLeft = 0;
@@ -616,7 +616,8 @@ export class Act3 {
     const s = this.state;
     let fade = 1;
     if (s.phase === 'coda') fade = clamp01(1 - s.phaseTime / config.acts.codaFadeSec);
-    if (s.phase === 'prologue' || s.phase === 'prison' || s.phase === 'epilogue') fade = 0;
+    if (s.phase === 'intro' || s.phase === 'prologue'
+        || s.phase === 'prison' || s.phase === 'epilogue') fade = 0;
 
     const throneTarget = (s.phase === 'act3' || s.phase === 'coda') ? fade : 0;
     this.throneGrowth += (throneTarget - this.throneGrowth)

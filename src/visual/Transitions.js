@@ -17,7 +17,8 @@ export class Transitions {
     state.on('phase', ({ phase }) => {
       // Dark scenes arrive silently: the loop's return, the prison cell,
       // and the after-vision epilogue get no swell and no wash.
-      if (phase === 'prologue' || phase === 'prison' || phase === 'epilogue') return;
+      if (phase === 'intro' || phase === 'prologue'
+          || phase === 'prison' || phase === 'epilogue') return;
       this.t = 0;
       this.washed = false;
     });

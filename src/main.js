@@ -27,6 +27,7 @@ import { DarkSpace } from './visual/DarkSpace.js';
 import { Tutorial } from './ui/Tutorial.js';
 import { Captions } from './ui/Captions.js';
 import { Meditations } from './ui/Meditations.js';
+import { IntroFlight } from './sequence/IntroFlight.js';
 
 // ── Display adaptation ────────────────────────────────────────────────
 // One 16:9 monitor or the Cave's three-projector 48:9 wall: the
@@ -132,10 +133,14 @@ const act2 = new Act2(worldGroup, state, particles, post);
 state.on('knob', (e) => act2.onKnob(e));
 midi.on('joystick', (e) => act2.onJoystick(e));
 
-// OSC over WebSocket (keyboard on WiFi → relay → browser). It feeds the
-// SAME state handlers as MIDI, so all three inputs coexist; when OSC is
-// live it silences the computer-keyboard fallback (config.osc).
+// OSC over WebSocket (the controller on WiFi → relay → browser). The
+// controller sends raw MIDI at /midi/raw, which we hand to MidiManager
+// so USB and WiFi decode through ONE routing map — its 'key'/'knob'/
+// 'pad'/'joystick' events are already wired to the state above. The
+// legacy semantic scheme (/pc/*) still emits directly, for non-MIDI
+// senders. When OSC is live the computer-keyboard fallback is silenced.
 const osc = new OscManager();
+osc.onRawMidi = (status, d1, d2, channel) => midi.ingestOscMidi(status, d1, d2, channel);
 osc.on('key', (e) => state.onKey(e));
 osc.on('knob', (e) => state.onKnob(e));
 osc.on('pad', (e) => state.onPad(e));
@@ -163,6 +168,8 @@ act1.captions = captions;
 act2.captions = captions;
 act3.captions = captions;
 const meditations = new Meditations(state, captions);
+// The flight into Cave 217 — the piece's front door, before the prologue.
+const introFlight = new IntroFlight(state, captions);
 // The narrated bookends: Vaidehī's prison story and the epilogue lotus.
 const storyScenes = new StoryScenes(state, particles, captions);
 // The black space itself is alive: dust, ink clouds, ghost murals,
@@ -223,8 +230,8 @@ renderer.setAnimationLoop(() => {
   let groundFade = 1;
   if (state.phase === 'coda') {
     groundFade = Math.max(0, 1 - state.phaseTime / config.acts.codaFadeSec);
-  } else if (state.phase === 'prologue' || state.phase === 'prison'
-      || state.phase === 'epilogue') {
+  } else if (state.phase === 'intro' || state.phase === 'prologue'
+      || state.phase === 'prison' || state.phase === 'epilogue') {
     groundFade = 0;
   }
   ground.update(elapsed, ppwu, state.fullness * groundFade, dt);
@@ -238,6 +245,7 @@ renderer.setAnimationLoop(() => {
   meditations.update(dt);
   storyScenes.update(elapsed);
   darkSpace.update(elapsed, dt);
+  introFlight.update(dt);
   audio.update();
   autoQuality(dt);
   post.render();
@@ -249,7 +257,7 @@ if (import.meta.env.DEV) {
   window.__paintedCave = {
     midi, osc, state, particles, post, ground, act1, act2, act3, vaidehi,
     tutorial, captions, transitions, backdrop, meditations, storyScenes,
-    darkSpace, audio, renderer,
+    darkSpace, audio, renderer, introFlight,
     keyBurst: (note, velocity) => act1.onKey({ on: true, note, velocity }),
     now: () => elapsed,
     ppwu: pixelsPerWorldUnit,
@@ -261,6 +269,18 @@ if (import.meta.env.DEV) {
 // toggles then require Shift, same rule as the overlay panels.
 window.addEventListener('keydown', (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
+  // Intro shell keys work in ANY keyboard mode: Space launches from the
+  // attract screen (and doubles as the hold-to-skip key during the
+  // flight, through the same onKey path as MIDI/OSC); Esc aborts the
+  // flight back to attract.
+  if (state.phase === 'intro') {
+    if (e.code === 'Space') {
+      e.preventDefault();
+      if (!e.repeat) state.onKey({ on: true, note: 60, velocity: 0.6 });
+      return;
+    }
+    if (e.key === 'Escape') { state.introAbort(); return; }
+  }
   if (midi.fallbackActive && !e.shiftKey) return;
   const k = e.key.toLowerCase();
   if (k === 'f') {
@@ -281,6 +301,12 @@ window.addEventListener('keydown', (e) => {
   // typed character AND physical key so layouts can't break it.)
   if (e.shiftKey && (e.key === '+' || e.code === 'Equal')) audio.soundOn();
   if (e.shiftKey && (e.key === '_' || e.key === '-' || e.code === 'Minus')) audio.soundOff();
+});
+// Releasing Space ends the hold-to-skip gesture (matches the keydown above).
+window.addEventListener('keyup', (e) => {
+  if (state.phase === 'intro' && e.code === 'Space') {
+    state.onKey({ on: false, note: 60, velocity: 0 });
+  }
 });
 
 // ── Cursor auto-hide (show mode) ──────────────────────────────────────

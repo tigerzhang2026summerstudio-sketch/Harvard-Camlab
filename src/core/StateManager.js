@@ -1,7 +1,8 @@
 /**
- * StateManager — the dramaturgy. Owns the seven-phase arc:
+ * StateManager — the dramaturgy. Owns the eight-phase arc:
  *
- *   prologue → prison (first key: Vaidehī's story, key-paced)
+ *   intro (attract screen → the flight into Cave 217, on rails)
+ *        → prologue → prison (first key: Vaidehī's story, key-paced)
  *            → act1 (story told) → act2 (ground full + soft minimum)
  *            → act3 (lushness + soft minimum) → coda (dissolution pad)
  *            → epilogue (one lotus in the dark) → …pause… → prologue
@@ -19,13 +20,19 @@
 import { config } from '../config/config.js';
 import { clamp01, lerp, pick, rand } from './Clock.js';
 
-export const PHASES = ['prologue', 'prison', 'act1', 'act2', 'act3', 'coda', 'epilogue'];
+export const PHASES = ['intro', 'prologue', 'prison', 'act1', 'act2', 'act3', 'coda', 'epilogue'];
 
 export class StateManager {
   constructor() {
     this.listeners = {};
-    this.phase = 'prologue';
+    this.phase = config.intro.enabled ? 'intro' : 'prologue';
     this.phaseTime = 0;
+
+    // Intro sub-state: the attract screen waits; the flight is on rails.
+    this.introMode = 'attract';   // 'attract' | 'flight'
+    this.introTime = 0;           // seconds into the flight
+    this.introHolding = false;    // a key is currently held (skip gesture)
+    this.introHold = 0;           // how long it has been held
 
     this.fullness = 0;                    // Act 1 energy meter (0..1)
     this.knobs = new Array(8).fill(0);    // last seen K1..K8 values
@@ -60,10 +67,11 @@ export class StateManager {
     this.phase = phase;
     this.phaseTime = 0;
     this.autoStep = 0;
-    if (phase === 'prologue') {
+    if (phase === 'prologue' || phase === 'intro') {
       // The vision has dissolved; the next visualization starts from nothing.
       this.fullness = 0;
       this.knobs.fill(0);
+      if (phase === 'intro') this.setIntroMode('attract');
     } else if (phase === 'act2' || phase === 'act3') {
       // Whether reached by playing or by a rehearsal jump, these acts stand
       // on a finished ground.
@@ -85,12 +93,65 @@ export class StateManager {
     else this.emit('prisonLine', { index: this.prisonStep });
   }
 
-  reset() { this.go('prologue'); }
+  reset() { this.go(config.intro.enabled ? 'intro' : 'prologue'); }
   toggleAuto() { this.autoEnabled = !this.autoEnabled; return this.autoEnabled; }
+
+  // ── Intro sub-state (attract ⇄ flight → prologue) ────────────────────
+  setIntroMode(mode) {
+    if (mode === this.introMode) return;
+    this.introMode = mode;
+    this.introTime = 0;
+    this.introHolding = false;
+    this.introHold = 0;
+    this.emit('introMode', { mode });
+  }
+
+  /** Attract → the flight lifts off (any key/pad, Space, or autopilot). */
+  introLaunch() {
+    if (this.phase !== 'intro' || this.introMode === 'flight') return;
+    this.setIntroMode('flight');
+  }
+
+  /** Esc during the flight — back to the waiting attract screen. */
+  introAbort() {
+    if (this.phase !== 'intro') return;
+    this.setIntroMode('attract');
+  }
+
+  /** A held key (holdToSkipSec) jumps straight to the prologue. */
+  introSkip() {
+    if (this.phase !== 'intro') return;
+    this.go('prologue');
+  }
+
+  /** IntroFlight calls this when beat 10 fades — the normal handoff. */
+  introComplete() {
+    if (this.phase !== 'intro' || this.introMode !== 'flight') return;
+    this.go('prologue');
+  }
+
+  /**
+   * The intro consumes ALL performer input: in attract any press
+   * launches; in flight a press only arms the hold-to-skip gesture.
+   * Returns true so the routers don't emit to the acts.
+   */
+  introInput(on) {
+    if (this.introMode === 'attract') {
+      if (on) this.introLaunch();
+    } else if (on) {
+      this.introHolding = true;
+      this.introHold = 0;
+    } else {
+      this.introHolding = false;
+      this.introHold = 0;
+    }
+    return true;
+  }
 
   // ── Input routing (real MIDI and autopilot both come through here) ───
   onKey(e, synthetic = false) {
     this.touch(synthetic);
+    if (this.phase === 'intro') { this.introInput(e.on); return; }
     if (e.on && this.phase === 'prologue') this.go('prison');
     // (In the prison the story keeps its OWN pace — lines advance only
     //  on the lineSec timer, no matter how the keys are played.)
@@ -104,6 +165,7 @@ export class StateManager {
 
   onKnob(e, synthetic = false) {
     this.touch(synthetic);
+    if (this.phase === 'intro') return; // the flight is on rails — no dials
     this.knobs[e.index] = e.value;
     // NOTE: the act2→act3 transition is checked per-frame in update(),
     // not here — checking only on knob events missed the case where the
@@ -113,6 +175,7 @@ export class StateManager {
 
   onPad(e, synthetic = false) {
     this.touch(synthetic);
+    if (this.phase === 'intro') { this.introInput(e.on); return; }
     // Act 3 runs as a fixed rite (any pad advances it, in order) — the
     // dissolution is reached only THROUGH the rite, so no pad shortcuts
     // the phase here; Act3 calls go('coda') itself at the rite's end.
@@ -127,6 +190,18 @@ export class StateManager {
   update(dt) {
     this.phaseTime += dt;
     this.idleTime += dt;
+
+    // The intro flight: hold-any-key skips; a failsafe ends the flight
+    // even if IntroFlight never calls introComplete (the show can't hang
+    // on its own front door).
+    if (this.phase === 'intro' && this.introMode === 'flight') {
+      this.introTime += dt;
+      if (this.introHolding) {
+        this.introHold += dt;
+        if (this.introHold >= config.intro.holdToSkipSec) this.introSkip();
+      }
+      if (this.introTime >= config.intro.durationSec + 4) this.introComplete();
+    }
 
     // The prison story advances itself if no key hurries it along.
     if (this.phase === 'prison'
@@ -162,7 +237,10 @@ export class StateManager {
     }
     if (this.phase === 'epilogue'
         && this.phaseTime >= config.acts.epilogueSec + config.acts.loopPauseSec) {
-      this.go('prologue');
+      // The loop comes back around to the front door: the attract screen
+      // waits for the next audience (or straight to the prologue when the
+      // intro is disabled).
+      this.go(config.intro.enabled ? 'intro' : 'prologue');
     }
 
     if (this.autoEnabled && this.idleTime >= config.acts.autoIdleSec) {
@@ -176,6 +254,12 @@ export class StateManager {
     if (this.autoWait > 0) return;
 
     switch (this.phase) {
+      case 'intro': {
+        // Attract: lift off. In flight: hands folded — it's on rails.
+        if (this.introMode === 'attract') this.introLaunch();
+        this.autoWait = 2;
+        break;
+      }
       case 'prologue': {
         this.onKey({ on: true, note: 52, velocity: 0.5 }, true);
         this.autoWait = rand(1.5, 3);

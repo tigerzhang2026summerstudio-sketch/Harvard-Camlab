@@ -26,10 +26,17 @@ export class Tutorial {
     this.injectStyles();
     document.body.appendChild(this.el);
 
-    this.setVisible(t.enabled && state.phase === 'prologue');
-    state.on('phase', ({ phase }) => {
-      this.setVisible(t.enabled && phase === 'prologue');
-    });
+    // The tutorial doubles as the ATTRACT screen: it waits over the intro's
+    // starfield and dissolves when the flight launches. (With the intro
+    // disabled it keeps its old home over the prologue instead — after the
+    // flight the piece must arrive in unbroken darkness, so it never
+    // returns at prologue when the intro delivered us there.)
+    const wanted = (phase) => (config.intro.enabled
+      ? phase === 'intro' && state.introMode === 'attract'
+      : phase === 'prologue');
+    this.setVisible(t.enabled && wanted(state.phase));
+    state.on('phase', ({ phase }) => this.setVisible(t.enabled && wanted(phase)));
+    state.on('introMode', () => this.setVisible(t.enabled && wanted(state.phase)));
 
     window.addEventListener('keydown', (e) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;

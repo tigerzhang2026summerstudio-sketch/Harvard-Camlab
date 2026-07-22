@@ -484,7 +484,7 @@ export class Act1 {
 
     // Milestone chapters fire as the meter crosses their thresholds;
     // the loop's return to darkness rewinds the story.
-    if (s.phase === 'prologue') this.milestone = 0;
+    if (s.phase === 'prologue' || s.phase === 'intro') this.milestone = 0;
     this.milestoneCheck(time);
 
     // Progress feedback, both directions: meter full but the floor not
@@ -512,7 +512,8 @@ export class Act1 {
     // again in the coda; the prologue starts it dark.
     let fade = 1;
     if (s.phase === 'coda') fade = clamp01(1 - s.phaseTime / config.acts.codaFadeSec);
-    if (s.phase === 'prologue' || s.phase === 'prison' || s.phase === 'epilogue') fade = 0;
+    if (s.phase === 'intro' || s.phase === 'prologue'
+        || s.phase === 'prison' || s.phase === 'epilogue') fade = 0;
     const target = s.fullness * fade;
     this.sunReveal += (target - this.sunReveal) * Math.min(1, dt * 0.8);
     this.sun.points.position.y = this.sunY();

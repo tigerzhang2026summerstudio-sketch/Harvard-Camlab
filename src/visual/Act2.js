@@ -46,7 +46,7 @@ export class Act2 {
     this.holdHintAt = -1e9;               // "the world ripens" reassurance
 
     state.on('phase', ({ phase }) => {
-      if (phase === 'prologue') {
+      if (phase === 'prologue' || phase === 'intro') {
         this.storyTold = new Array(8).fill(false);
         this.surgeMark.fill(0);
       }
@@ -138,7 +138,7 @@ export class Act2 {
     // Strict acts: the world does not grow before Act II arrives.
     let fade = 1;
     if (s.phase === 'coda') fade = clamp01(1 - s.phaseTime / config.acts.codaFadeSec);
-    if (s.phase === 'prologue' || s.phase === 'prison'
+    if (s.phase === 'intro' || s.phase === 'prologue' || s.phase === 'prison'
         || s.phase === 'act1' || s.phase === 'epilogue') fade = 0;
 
     for (let i = 0; i < 8; i += 1) {

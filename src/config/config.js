@@ -102,6 +102,36 @@ export const config = {
     autoIdleSec: 30,           // idle time before attract mode starts playing
   },
 
+  // ── INTRO — the flight into Cave 217 (runs BEFORE the prologue) ────
+  // A ~60s first-person glide on rails: night sky → the Gobi → the
+  // Mingsha dunes → the Mogao cliff → through a cave mouth → into the
+  // chamber of Cave 217 → INTO the north-wall mural, where the
+  // prologue (Vaidehī in darkness) begins. The attract screen waits
+  // for any key/pad (or Space); during the flight, HOLDING any key
+  // holdToSkipSec skips to the prologue, Esc aborts back to attract.
+  intro: {
+    enabled: true,
+    holdToSkipSec: 1.0,
+    // The ten beats, on rails: [atSec, name, cohesion at beat start].
+    // cohesion 1 = photographic (points at their depth positions),
+    // 0 = free luminous motes. It FALLS on the way in and RISES again
+    // as the murals condense inside the cave. Camera keyframes join
+    // these in IntroFlight (build step 2); every number is tunable.
+    beats: [
+      [0,  'suspended', 1.0],   // night sky above cloud — hanging, stars
+      [6,  'drop',      1.0],   // nose dips, horizon falls away
+      [14, 'gobi',      0.97],  // the desert opens — hold the money shot
+      [24, 'dunes',     0.90],  // skim the Mingsha ridgelines
+      [34, 'oasis',     0.78],  // the green thread of the river valley
+      [42, 'cliff',     0.60],  // the Mogao wall, honeycombed with mouths
+      [50, 'doorway',   0.30],  // one dark opening — rock granulates
+      [54, 'threshold', 0.05],  // blackness, the corridor — audio goes dry
+      [57, 'chamber',   0.05],  // Cave 217 condenses (cohesion rises)
+      [62, 'painting',  0.85],  // push into the west panel → prologue
+    ],
+    durationSec: 66,            // beat 10 ends here → hand off to prologue
+  },
+
   // ── PRISON — the opening scene (Vaidehī's story, key-paced) ────────
   // Entered on the first key strike. Each line shows as a caption; any
   // key advances it (auto-advances after lineSec); the last line opens
