@@ -1,4 +1,4 @@
 node_modules/
 dist/
 .DS_Store
-tools/
+tools/node-v22.17.0-darwin-arm64/

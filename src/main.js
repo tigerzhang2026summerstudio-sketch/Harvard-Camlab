@@ -8,6 +8,8 @@
 import * as THREE from 'three';
 import { config } from './config/config.js';
 import { MidiManager } from './core/MidiManager.js';
+import { OscManager } from './core/OscManager.js';
+import { oscConfig } from './config/oscConfig.js';
 import { StateManager } from './core/StateManager.js';
 import { DebugOverlay } from './ui/DebugOverlay.js';
 import { ParticleSystem } from './visual/ParticleSystem.js';
@@ -130,6 +132,22 @@ const act2 = new Act2(worldGroup, state, particles, post);
 state.on('knob', (e) => act2.onKnob(e));
 midi.on('joystick', (e) => act2.onJoystick(e));
 
+// OSC over WebSocket (keyboard on WiFi → relay → browser). It feeds the
+// SAME state handlers as MIDI, so all three inputs coexist; when OSC is
+// live it silences the computer-keyboard fallback (config.osc).
+const osc = new OscManager();
+osc.on('key', (e) => state.onKey(e));
+osc.on('knob', (e) => state.onKnob(e));
+osc.on('pad', (e) => state.onPad(e));
+osc.on('joystick', (e) => act2.onJoystick(e));
+osc.onLiveChange = (live) => {
+  if (oscConfig.suppressKeyboardWhenLive) {
+    midi.setFallback(live ? false : midi.devices.length === 0);
+  }
+  console.info(`[osc] ${live ? 'live' : 'disconnected'}`);
+};
+osc.init();
+
 // Vaidehī kneels in the scene from the very first darkness; Act 3 raises
 // the throne, assembles the holy figures, and answers the pads.
 const vaidehi = new VaidehiFigure(worldGroup, particles);
@@ -229,7 +247,7 @@ renderer.setAnimationLoop(() => {
 // drive frames manually where requestAnimationFrame is throttled).
 if (import.meta.env.DEV) {
   window.__paintedCave = {
-    midi, state, particles, post, ground, act1, act2, act3, vaidehi,
+    midi, osc, state, particles, post, ground, act1, act2, act3, vaidehi,
     tutorial, captions, transitions, backdrop, meditations, storyScenes,
     darkSpace, audio, renderer,
     keyBurst: (note, velocity) => act1.onKey({ on: true, note, velocity }),
