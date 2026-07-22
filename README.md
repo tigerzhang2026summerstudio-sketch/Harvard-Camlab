@@ -37,6 +37,55 @@ mapped to`). If a control shows `(unmapped)`, either edit
 and use **MIDI-learn**: click *learn* next to a slot, move that control,
 done — learned bindings persist in the browser. *reset map* clears them.
 
+## Connecting over WiFi (OSC)
+
+The controller can also drive the show **wirelessly over the network**,
+instead of (or alongside) a USB cable. The sender puts each raw MIDI
+message into one OSC packet and sends it over WiFi; a tiny relay on the
+show laptop forwards it into the browser. Because it's the same MIDI, it
+routes through the same `midiMap.js` and MIDI-learn — nothing else
+changes, and USB + WiFi + keyboard all work at once.
+
+```
+controller on WiFi ──OSC/UDP──▶ osc-bridge (show laptop) ──WebSocket──▶ browser
+                    :9000                                  :8090
+```
+
+**1 — Run the relay** on the show laptop (from the project root):
+
+```bash
+tools/node-v22.17.0-darwin-arm64/bin/node tools/osc-bridge/osc-bridge.cjs
+```
+
+It prints the laptop's LAN IP addresses. Leave it running during the show.
+
+**2 — Point the sender** at `THAT-LAN-IP:9000` (put the laptop and the
+controller on the **same WiFi**). The sender emits one message per MIDI
+event — the usual status byte, two data bytes, and channel:
+
+| Address     | Args                                                    | Meaning |
+| ----------- | ------------------------------------------------------- | ------- |
+| `/midi/raw` | `status` (int), `d1` (int), `d2` (int), `channel` (int) | one raw MIDI message |
+
+```c
+// what the controller's C sender emits per event:
+int raw_args[4] = { status, d1, d2, channel };
+osc_send_ints("/midi/raw", raw_args, 4);
+```
+
+**3 — Reload the browser.** It connects to the relay automatically and
+the console logs `[osc] connected`. Now notes → keys/pads, CC → knobs,
+and pitch-bend → joystick exactly as over USB. Press `M` to watch the
+messages arrive (source `osc`). While OSC is live, the computer-keyboard
+fallback is muted so stray keypresses on the laptop can't play notes.
+
+The browser's relay URL is `src/config/oscConfig.js` (default
+`ws://localhost:8090`, since the relay runs on the same laptop). For a
+controller and Cave on **different networks**, host the relay somewhere
+public and set that URL to your `wss://…`. Full details, port overrides,
+and the optional non-MIDI semantic scheme (`/pc/key`, …) are in
+[`tools/osc-bridge/README.md`](tools/osc-bridge/README.md).
+
 ## Playing without hardware (keyboard fallback)
 
 Keyboard play turns on automatically when no MIDI device is present —
