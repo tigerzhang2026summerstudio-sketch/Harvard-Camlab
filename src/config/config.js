@@ -221,23 +221,27 @@ export const config = {
         crop: [0, 0, 1, 0.86], fogMul: 0.05, edgeFade: 0.3,
         tint: [0.75, 0.62, 0.5], window: [0, 15],
       },
-      { // beats 3–4 · Mingsha crest line leaning on the left of the path
-        file: '/flight/04_dunes_high.jpg',
-        pos: [-980, 200, -2500], width: 1500, ry: 0.5, rx: -0.3,
-        depthScale: 320, grid: [230, 150], size: 3.0,
-        crop: [0, 0.3, 1, 1], tint: [0.5, 0.4, 0.28], edgeFade: 0.18,
+      // Flying the Gobi, the MOGAO GROTTO itself rises on the horizon — the
+      // real golden cliff and its rows of cave-mouth squares (07_cliff_wide,
+      // the Wikimedia "Mogao Caves Exterior And Chambers"), each panel a
+      // different crop of the wall so you pass the grotto before you reach it.
+      { // beats 3–4 · the grotto's left flank leans in on the left
+        file: '/flight/07_cliff_wide.jpg',
+        pos: [-980, 220, -2500], width: 1650, ry: 0.5, rx: -0.06,
+        depthScale: 240, grid: [260, 170], size: 3.0,
+        crop: [0.0, 0.12, 0.42, 0.95], tint: [1.0, 0.82, 0.5], edgeFade: 0.18,
       },
-      { // beats 4–5 · down the dune slope into the green valley, right
-        file: '/flight/05_dunes_low.jpg',
-        pos: [1080, 300, -4300], width: 1400, ry: -0.55,
-        depthScale: 340, grid: [230, 150], size: 3.0,
-        tint: [0.52, 0.44, 0.34], edgeFade: 0.18,
+      { // beats 4–5 · more of the cave-square wall drifts past on the right
+        file: '/flight/07_cliff_wide.jpg',
+        pos: [1080, 300, -4300], width: 1550, ry: -0.55, rx: -0.04,
+        depthScale: 240, grid: [260, 170], size: 3.0,
+        crop: [0.58, 0.12, 1.0, 0.95], tint: [1.0, 0.8, 0.48], edgeFade: 0.18,
       },
-      { // beat 5 · Crescent Lake drifting past on the left at the oasis
-        file: '/flight/06_oasis.jpg',
-        pos: [-780, 260, -5450], width: 1300, ry: 0.5,
-        depthScale: 300, grid: [220, 150], size: 3.0,
-        tint: [0.5, 0.44, 0.36], edgeFade: 0.18,
+      { // beat 5 · the heart of the cliff, its cave squares clear, on the left
+        file: '/flight/07_cliff_wide.jpg',
+        pos: [-780, 280, -5450], width: 1420, ry: 0.5, rx: -0.04,
+        depthScale: 240, grid: [260, 170], size: 3.0,
+        crop: [0.30, 0.1, 0.72, 0.96], tint: [1.0, 0.82, 0.5], edgeFade: 0.18,
       },
       // (The flat 07_cliff_wide photo panel was removed — it read as a
       // rectangle over the wall. The Mogao façade is now built in full by

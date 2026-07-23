@@ -174,6 +174,23 @@ export class IntroWorld {
     grad.addColorStop(1, 'rgba(120,70,20,0)');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 1024, 512);
+    // Feather to FULLY transparent well inside every edge — a circular
+    // gradient can't fade within the 512-tall canvas, so its top/bottom
+    // stayed ~0.36 opaque and the plane's rectangle showed as a hard gold
+    // seam. An elliptical alpha mask erases the edges so the glow is just a
+    // soft, borderless band on the horizon.
+    ctx.globalCompositeOperation = 'destination-in';
+    ctx.save();
+    ctx.translate(512, 256);
+    ctx.scale(1, 0.5);            // squash → a wide ellipse (fades within 256 vertically)
+    const mask = ctx.createRadialGradient(0, 0, 0, 0, 0, 500);
+    mask.addColorStop(0, 'rgba(0,0,0,1)');
+    mask.addColorStop(0.72, 'rgba(0,0,0,1)');
+    mask.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = mask;
+    ctx.fillRect(-512, -512, 1024, 1024);
+    ctx.restore();
+    ctx.globalCompositeOperation = 'source-over';
     // A low, soft dawn band on the horizon — sized so its gradient
     // fades within the plane (no visible rectangle) but not so large it
     // washes the sky or silhouettes the far cliff.
