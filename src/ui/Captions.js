@@ -129,7 +129,7 @@ export class Captions {
         text-align: center; pointer-events: none;
         font-family: 'EB Garamond', 'Noto Serif SC', 'Songti SC', 'STSong', serif;
         font-weight: 600; line-height: 1.3;
-        font-size: clamp(22px, 3vw, 46px);
+        font-size: clamp(15px, 1.7vw, 30px);
         letter-spacing: 0.14em; text-indent: 0.14em; color: #e8c15a;
         text-shadow:
           0 1px 4px rgba(0, 0, 0, 0.95), 0 0 14px rgba(0, 0, 0, 0.9),

@@ -14,15 +14,17 @@ export class Tutorial {
     this.el = document.createElement('div');
     this.el.id = 'tutorial';
     this.el.innerHTML = `
-      <h1>${t.title}</h1>
-      <h2>${t.subtitle}</h2>
-      <p class="tut-quote">${t.quote}</p>
-      <div class="tut-steps">
-        ${t.steps.map(([zone, text]) => `
-          <div class="tut-step"><h3>${zone}</h3><p>${text}</p></div>`).join('')}
-      </div>
-      <p class="tut-hint">${t.hint}</p>
-      <p class="tut-begin">${t.begin}</p>`;
+      <div class="tut-inner">
+        <h1>${t.title}</h1>
+        <h2>${t.subtitle}</h2>
+        <p class="tut-quote">${t.quote}</p>
+        <div class="tut-steps">
+          ${t.steps.map(([zone, text]) => `
+            <div class="tut-step"><h3>${zone}</h3><p>${text}</p></div>`).join('')}
+        </div>
+        <p class="tut-hint">${t.hint}</p>
+        <p class="tut-begin">${t.begin}</p>
+      </div>`;
     this.injectStyles();
     document.body.appendChild(this.el);
 
@@ -55,21 +57,26 @@ export class Tutorial {
       #tutorial {
         position: fixed; inset: 0; z-index: 5;
         display: flex; flex-direction: column; justify-content: center; align-items: center;
-        text-align: center; padding: 4vh 8vw; box-sizing: border-box;
         pointer-events: none; /* the instrument itself is the "begin" button */
         color: #cfe3f5;
         font-family: 'EB Garamond', 'Noto Serif SC', 'Songti SC', 'STSong', serif;
         opacity: 1; transition: opacity 1.6s ease;
         text-shadow: 0 0 18px rgba(30, 111, 176, 0.35);
-        /* the show poster's lotus-mandala breathes behind the words */
-        background:
-          radial-gradient(ellipse 60% 60% at 50% 46%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.82) 78%),
-          url('/ui/poster-mandala.png') center 46% / min(72vh, 60vw) no-repeat;
-        animation: tut-emblem 14s ease-in-out infinite;
+        background: transparent; /* lotus-mandala dropped — clean over the starfield */
       }
-      @keyframes tut-emblem {
-        0%, 100% { background-color: rgba(0,0,0,0); }
-        50% { background-color: rgba(0,0,0,0.25); }
+      /* The intro lives in ONE centered box. On the 48:9 Cave wall it is
+         confined to the MIDDLE screen (centre third); a normal display fills
+         the width up to a readable max. A soft vignette sits behind the words. */
+      #tutorial .tut-inner {
+        display: flex; flex-direction: column; justify-content: center; align-items: center;
+        text-align: center; box-sizing: border-box;
+        width: 100%; max-width: min(1100px, 92vw); padding: 4vh 3vw;
+        background: radial-gradient(ellipse 72% 78% at 50% 50%,
+          rgba(2, 7, 14, 0.6) 42%, rgba(2, 7, 14, 0) 82%);
+      }
+      @media (min-aspect-ratio: 3 / 1) {
+        /* three-screen wall — keep the intro on the centre screen only */
+        #tutorial .tut-inner { max-width: 33.333vw; padding: 3.5vh 1.2vw; }
       }
       #tutorial.tut-hidden { opacity: 0; }
       #tutorial h1 {
@@ -82,7 +89,7 @@ export class Tutorial {
         letter-spacing: 0.42em; text-indent: 0.42em; color: #8fb7d9;
       }
       .tut-quote { margin: 3.5vh 0 4vh; font-style: italic; font-size: clamp(13px, 1.4vw, 19px); color: #a9c6e2; }
-      .tut-steps { display: flex; gap: 3.5vw; max-width: 1200px; }
+      .tut-steps { display: flex; gap: 2.4em; max-width: 1200px; }
       .tut-step { flex: 1; }
       .tut-step h3 {
         margin: 0 0 0.5em; font-weight: normal; font-size: clamp(12px, 1.1vw, 16px);
