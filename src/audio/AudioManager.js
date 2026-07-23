@@ -29,7 +29,7 @@ export class AudioManager {
     this.buildChip();
 
     state.on('phase', ({ phase }) => this.onPhase(phase));
-    state.on('key', (e) => { if (e.on) this.chime(e.note, e.velocity); });
+    state.on('key', (e) => { if (e.on) this.keyDrum(e.note, e.velocity); });
     // Pad stories ring through storyAccent(action) — Act3 resolves which
     // story a pad tells (pad 8 is a sequence) and calls it back.
   }
@@ -41,6 +41,10 @@ export class AudioManager {
     this.chip.textContent = '♪ …';
 
     await Tone.start();
+    // Tighten the scheduler so struck drums answer the hand promptly (the
+    // grid quantize used to add up to a beat of lag; keyDrum now fires at
+    // Tone.now(), and a smaller lookAhead trims the remaining latency).
+    Tone.getContext().lookAhead = 0.04;
     Tone.getDestination().volume.value = config.audio.masterVolumeDb;
 
     this.buildChain();
@@ -67,6 +71,9 @@ export class AudioManager {
     // score instead of ringing on top of it.
     this.chimeFilter = new Tone.Filter(a.chimeLowpassHz, 'lowpass').connect(this.reverb);
     this.chimeBus = new Tone.Gain(Tone.dbToGain(a.chimeLevelDb)).connect(this.chimeFilter);
+    // Act 1 drums get their own bus — straight to the reverb, no chime
+    // lowpass, so the skin attack keeps its punch.
+    this.drumBus = new Tone.Gain(Tone.dbToGain(a.drumLevelDb)).connect(this.reverb);
     this.bedBus = new Tone.Gain(Tone.dbToGain(a.bedLevelDb)).connect(this.reverb);
     this.padBus = new Tone.Gain(Tone.dbToGain(a.padLevelDb)).connect(this.reverb);
   }
@@ -82,6 +89,43 @@ export class AudioManager {
       volume: -6,
     }).connect(this.chimeBus);
     this.lastChimeAt = 0; // spacing limiter — flurries thin to a cascade
+
+    // ── Act 1 DRUMS — a traditional Chinese percussion ensemble ───────
+    // The keys play a whole 鼓乐 kit, not one voice:
+    //   排鼓 (paigu)  — the tuned drum body: a pitched membrane, defined
+    //                   pitch (low pitchDecay) so chords read as a melody.
+    //   板鼓 (bangu)  — a dry, sharp wooden crack for the attack.
+    //   大鼓 (dagu)   — a deep barrel-drum boom under low/hard strikes.
+    //   锣 (gong)     — a temple gong crowning the hardest hits (reused).
+    // Poly so fast playing rolls instead of choking.
+    this.drumSynth = new Tone.PolySynth(Tone.MembraneSynth, {
+      maxPolyphony: 8,
+      pitchDecay: 0.025,   // settle to pitch fast → tonal tuned drum
+      octaves: 2,
+      envelope: { attack: 0.001, decay: 0.5, sustain: 0, release: 1.0 },
+      volume: -3,
+    }).connect(this.drumBus);
+    this.drumSkin = new Tone.NoiseSynth({
+      noise: { type: 'pink' },
+      envelope: { attack: 0.001, decay: 0.08, sustain: 0 },
+      volume: config.audio.accents.drumSkinDb,
+    }).connect(this.drumBus);
+    // 大鼓 — deep barrel drum. Mono is fine: it only sounds on low/hard hits.
+    this.bigDrum = new Tone.MembraneSynth({
+      pitchDecay: 0.08, octaves: 6,
+      envelope: { attack: 0.001, decay: 0.7, sustain: 0, release: 1.1 },
+      volume: -4,
+    }).connect(this.drumBus);
+    // 板鼓 — a dry, high wooden crack: a very short high-passed noise slap.
+    this.banguFilter = new Tone.Filter(2400, 'highpass').connect(this.drumBus);
+    this.bangu = new Tone.NoiseSynth({
+      noise: { type: 'white' },
+      envelope: { attack: 0.0004, decay: 0.03, sustain: 0 },
+      volume: -13,
+    }).connect(this.banguFilter);
+    this.lastDrumAt = 0;   // real-time throttle (min gap between hits)
+    this.lastDrumTime = 0; // scheduled audio time — kept strictly rising
+    this.lastGongAt = 0;   // temple-gong accent spacing
 
     // The self-playing layer: soft plucked voice.
     this.pluckSynth = new Tone.PolySynth(Tone.FMSynth, {
@@ -115,6 +159,15 @@ export class AudioManager {
     this.windFilter = new Tone.Filter(500, 'bandpass').connect(this.windGain);
     this.windNoise = new Tone.Noise('brown').connect(this.windFilter);
     this.windNoise.start();
+
+    // The intro flight's WIND: pink noise through a bandpass whose level
+    // and brightness track airspeed/altitude, then CUT to silence at the
+    // threshold (see introAudio). Separate from the coda's storm wind so
+    // neither ever steps on the other.
+    this.flightWindGain = new Tone.Gain(0).connect(this.limiter);
+    this.flightWindFilter = new Tone.Filter(240, 'bandpass').connect(this.flightWindGain);
+    this.flightWindNoise = new Tone.Noise('pink').connect(this.flightWindFilter);
+    this.flightWindNoise.start();
 
     // The prison's cold DRONE: two low oscillators under a heavy lowpass
     // that lifts when the Buddha arrives (final story line).
@@ -168,22 +221,44 @@ export class AudioManager {
   onPhase(phase) {
     if (!this.unlocked) return;
     const name = {
-      prologue: 'prologue', prison: 'prologue', act1: 'part1',
+      intro: 'intro', prologue: 'prologue', prison: 'prologue', act1: 'part1',
       act2: 'part2', act3: 'part3', coda: 'coda', epilogue: 'coda',
     }[phase];
+    // Re-arm the flight's intro→prologue crossfade each time we enter it.
+    if (phase === 'intro') this.introToPrologue = false;
     if (name === this.current) return;
     this.current = name;
 
-    const sec = config.acts.crossfadeSec;
-    const now = Tone.now();
+    // Prologue → Act I is eased over a longer fade (it was too abrupt);
+    // every other change uses the normal crossfade.
+    const sec = name === 'part1'
+      ? (config.acts.crossfadeIntoAct1Sec ?? config.acts.crossfadeSec)
+      : config.acts.crossfadeSec;
+    const now = Tone.now() + 0.02;
+    // EQUAL-POWER crossfade: the incoming track follows sin, the outgoing
+    // cos, so sin²+cos²=1 — the perceived loudness stays constant with no
+    // dip or bump through the middle. Clean, every transition.
+    const N = 48;
     for (const [trackName, { player, gain }] of Object.entries(this.tracks)) {
-      const target = trackName === name ? 1 : 0;
-      // A track coming back from silence starts again from its top.
-      if (target === 1 && gain.gain.value < 0.05) {
+      const to = trackName === name ? 1 : 0;
+      const from = Math.max(0, Math.min(1, gain.gain.value));
+      // A track coming back from silence restarts from its top.
+      if (to === 1 && from < 0.05) {
         try { player.stop(now); player.start(now); } catch { /* keep playing */ }
       }
+      const curve = new Float32Array(N);
+      for (let i = 0; i < N; i += 1) {
+        const u = i / (N - 1);
+        curve[i] = to === 1
+          ? Math.sin(u * Math.PI / 2)        // 0 → 1, equal power
+          : from * Math.cos(u * Math.PI / 2); // from → 0, equal power
+      }
       gain.gain.cancelScheduledValues(now);
-      gain.gain.rampTo(target, sec);
+      try {
+        gain.gain.setValueCurveAtTime(curve, now, sec);
+      } catch {
+        gain.gain.rampTo(to, sec); // fallback if the curve API is unavailable
+      }
     }
   }
 
@@ -215,34 +290,118 @@ export class AudioManager {
     this.droneGain.gain.rampTo(inPrison ? Tone.dbToGain(a.droneLevelDb) : 0, 1.5);
     const lifted = s.phase === 'prison' && s.prisonStep >= 5;
     this.droneFilter.frequency.rampTo(lifted ? 420 : 130, 2.5);
+
+    // Off the flight (skip/abort/handoff), the flight wind is silent —
+    // introAudio drives it only while the intro is live.
+    if (s.phase !== 'intro') this.flightWindGain.gain.rampTo(0, 0.3);
+  }
+
+  /**
+   * Per frame during the intro flight (called by IntroFlight). Drives:
+   *   · the wind bed — level+brightness follow airspeed and nearness to
+   *     the ground, then CUT hard to interior silence at the threshold;
+   *   · the intro→prologue crossfade across beats 9–10, so the score is
+   *     already underway when the prologue's darkness arrives.
+   * mode 'attract' | 'flight'; t = flight seconds; speed01/alt01 ∈ [0,1].
+   */
+  introAudio(mode, t, speed01, alt01) {
+    if (!this.unlocked || !this.ready) return;
+    const ia = config.intro.audio;
+    const flying = mode === 'flight';
+
+    // ── Wind ──────────────────────────────────────────────────────────
+    const indoors = flying && t >= ia.thresholdCutSec; // beat 8 onward
+    let wind = 0;
+    let hz = ia.windMinHz;
+    if (flying && !indoors) {
+      wind = speed01 * (0.45 + 0.55 * (1 - alt01)); // airspeed × ground-rush
+      // A stronger high-air wind at the very start (suspended over the
+      // cloud sea), tapering out over the opening seconds into the normal
+      // airspeed-driven wind.
+      const startFloor = (ia.windStartFloor ?? 0)
+        * Math.max(0, 1 - t / (ia.windStartFadeSec ?? 1));
+      wind = Math.max(wind, startFloor);
+      hz = ia.windMinHz + (ia.windMaxHz - ia.windMinHz) * Math.max(speed01, startFloor * 0.5);
+    }
+    // The cut is HARD (0.04s) — do not crossfade it; that abruptness is
+    // the sound of crossing indoors.
+    this.flightWindGain.gain.rampTo(
+      indoors ? 0 : Tone.dbToGain(ia.windMaxDb) * wind, indoors ? 0.04 : 0.25,
+    );
+    this.flightWindFilter.frequency.rampTo(hz, 0.25);
+
+    // ── intro → prologue crossfade (beats 9–10) ──────────────────────
+    const intro = this.tracks.intro;       // { player, gain } (gain = node)
+    const prologue = this.tracks.prologue;
+    let introLvl = 1; // full through attract + flight, until the crossfade
+    let proLvl = 0;
+    if (flying && t >= ia.toPrologueSec) {
+      const k = Math.min(1, (t - ia.toPrologueSec) / (config.intro.durationSec - ia.toPrologueSec));
+      introLvl = 1 - k;
+      proLvl = k;
+      if (!this.introToPrologue) {
+        // the prologue score begins from its top as it first rises
+        this.introToPrologue = true;
+        this.current = 'prologue'; // so onPhase('prologue') won't re-fire
+        try { prologue?.player.stop(); prologue?.player.start(); } catch { /* keep playing */ }
+      }
+    }
+    if (intro) intro.gain.gain.rampTo(introLvl, 0.2);
+    if (prologue) prologue.gain.gain.rampTo(proLvl, 0.2);
+
+    // Last computed targets (for the D overlay / tests — ramps chase these).
+    this.introDbg = {
+      wind: indoors ? 0 : +(Tone.dbToGain(ia.windMaxDb) * wind).toFixed(4),
+      hz: Math.round(hz), intro: +introLvl.toFixed(3), prologue: +proLvl.toFixed(3),
+    };
   }
 
   // ── Interactive accents ──────────────────────────────────────────────
   /**
-   * Act 1: snap the struck key to a pentatonic chime on the slow grid.
-   * UNIFIED with the score: every strike lands in ONE two-octave window
-   * of one pentatonic scale (root = config.audio.accents.chimeRoot — set
-   * it to the score's key), velocities are compressed, and chimes keep a
-   * minimum spacing so fast playing thins to a cascade instead of mud.
+   * Act 1: every struck key is a TUNED DRUM hit (taiko/tabla). The note
+   * is snapped into ONE pentatonic scale (root = accents.chimeRoot) and
+   * folded into two low drum octaves, so playing the keyboard plays a
+   * drum melody; velocity drives the hit; hits quantize to the slow grid
+   * so the playing — hand or autopilot — reads as a groove, not noise.
    */
-  chime(note, velocity) {
+  keyDrum(note, velocity) {
     if (!this.unlocked || this.state.phase === 'prologue'
         || this.state.phase === 'prison') return;
     const a = config.audio.accents;
     const now = Tone.now();
-    if (now - this.lastChimeAt < a.chimeMinGapSec) return;
-    this.lastChimeAt = now;
+    if (now - this.lastDrumAt < a.drumMinGapSec) return;
+    this.lastDrumAt = now;
 
     const deg = note % 12;
     const snapped = PENTATONIC.reduce((x, b) => (Math.abs(b - deg) < Math.abs(x - deg) ? b : x));
-    // Fold the whole keyboard into two octaves: low keys → octave 5,
-    // high keys → octave 6. One register, one voice, one scale.
-    const oct = note < 60 ? 5 : 6;
+    // low keys → a deep drum (octave 2), high keys → a tighter one (octave 3)
+    const oct = note < 60 ? 2 : 3;
     const midi = oct * 12 + snapped + a.chimeRoot;
-    const time = Tone.getTransport().nextSubdivision(a.quantize);
-    this.chimeSynth.triggerAttackRelease(
-      Tone.Frequency(midi, 'midi'), '1n', time, 0.3 + velocity * 0.55,
-    );
+    // Fire IMMEDIATELY — no grid quantize (that delay read as latency). Keep
+    // the scheduled time strictly increasing so stacked hits never double-
+    // book a mono voice inside one audio block.
+    let time = Tone.now();
+    if (time <= this.lastDrumTime) time = this.lastDrumTime + 0.004;
+    this.lastDrumTime = time;
+    const level = 0.45 + velocity * 0.55;
+
+    // 排鼓 — the tuned drum body (the melodic voice of the keys)
+    this.drumSynth.triggerAttackRelease(Tone.Frequency(midi, 'midi'), '8n', time, level);
+    // 板鼓 — a dry wooden crack on the attack
+    this.bangu.triggerAttackRelease('32n', time, 0.4 + velocity * 0.5);
+    // the skin transient, folded quietly into the ensemble
+    this.drumSkin.triggerAttackRelease('16n', time, 0.22 + velocity * 0.4);
+    // 大鼓 — a deep barrel-drum boom under low keys or hard strikes
+    if (note < 60 || velocity > 0.72) {
+      this.bigDrum.triggerAttackRelease(
+        Tone.Frequency(24 + snapped, 'midi'), '4n', time, 0.5 + velocity * 0.4,
+      );
+    }
+    // 锣 — a temple gong crowns the hardest strikes, spaced out
+    if (velocity > 0.85 && Tone.now() - this.lastGongAt > 1.2) {
+      this.lastGongAt = Tone.now();
+      this.gongSynth.triggerAttackRelease('D2', '2n', time, 0.32);
+    }
   }
 
   /** Act 1: a combo 图案 earns a small flourish above the per-key chimes. */

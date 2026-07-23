@@ -1,0 +1,12 @@
+Flight stills — sources & licenses (all Wikimedia Commons)
+
+01_clouds.jpg     "Sea of clouds 2023.jpg" — Gcabig2024, CC BY-SA 4.0
+04_dunes_high.jpg "Dunhuang (54531617402).jpg" — xiquinhosilva, CC BY 2.0
+05_dunes_low.jpg  "Dunhuang Mingsha-shan 1995.jpg" — Prince Roy, CC BY 2.0
+06_oasis.jpg      "Crescent Lake from the Singing Sand Dunes
+                  (20230918101214).jpg" — N509FZ, CC BY-SA 4.0
+07_cliff_wide.jpg "Mogao Caves Exterior And Chambers.jpeg" —
+                  Flickr user eviltomthai, CC BY 2.0
+
+Each fetched at 1920px via the Commons thumb API. Full records:
+https://commons.wikimedia.org/wiki/File:<original name>

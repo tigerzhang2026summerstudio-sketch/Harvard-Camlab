@@ -15,6 +15,7 @@ const vertexShader = /* glsl */ `
   uniform float uTime;
   uniform float uPPWU;       // screen pixels per world unit (ortho camera)
   uniform float uSizeScale;  // artist knob: global particle size multiplier
+  uniform float uStreak;     // comet-trail strength (world speed → tail length)
 
   attribute vec3  aOrigin;
   attribute vec3  aVelocity;
@@ -23,9 +24,13 @@ const vertexShader = /* glsl */ `
   attribute float aBirth;    // uTime at spawn; negative = dead slot
   attribute float aLife;     // seconds
   attribute float aSeed;     // 0..1 per-particle randomness
+  attribute float aGrav;     // per-particle gravity (world u/s²); 0 = weightless
+  attribute float aStreak;   // per-particle comet-trail strength; 0 = round mote
 
   varying vec3  vColor;
   varying float vAlpha;
+  varying vec2  vDir;        // screen-space motion direction (for the trail)
+  varying float vStreak;     // 0..1 tail elongation
 
   void main() {
     float age = uTime - aBirth;
@@ -44,10 +49,13 @@ const vertexShader = /* glsl */ `
     // a burst blooms outward fast then hangs in the air like seed-down.
     float drag = 1.8;
     vec3 pos = aOrigin + aVelocity * (1.0 - exp(-drag * age)) / drag;
+    // Gravity arc (fireworks rise then fall) — per particle, so weightless
+    // scenes (murals, settled motes) are untouched.
+    pos.y -= 0.5 * aGrav * age * age;
 
     // Buoyant lift + seeded wander so settled motes keep drifting gently.
     float w = aSeed * 6.2831853;
-    float lift = age * 14.0 * (0.3 + 0.7 * fract(aSeed * 7.31));
+    float lift = age * 14.0 * (0.3 + 0.7 * fract(aSeed * 7.31)) * (aGrav > 0.0 ? 0.0 : 1.0);
     pos.x += sin(age * 0.9 + w * 3.0) * 6.0 * t;
     pos.y += lift + cos(age * 0.7 + w * 5.0) * 4.0 * t;
 
@@ -56,8 +64,17 @@ const vertexShader = /* glsl */ `
     vAlpha = fadeIn * fadeOut;
     vColor = aColor;
 
+    // Instantaneous velocity → the comet trail streaks along it, longer
+    // the faster the mote is moving, tapering to a round dot as it slows.
+    vec3 vinst = aVelocity * exp(-drag * age);
+    vinst.y -= aGrav * age;
+    vec4 vClip = projectionMatrix * modelViewMatrix * vec4(vinst, 0.0);
+    vDir = length(vClip.xy) > 1e-5 ? normalize(vClip.xy) * vec2(1.0, -1.0) : vec2(0.0, 1.0);
+    vStreak = clamp(length(vinst.xy) * aStreak, 0.0, 1.0) * fadeOut;
+
     gl_PointSize = aSize * uPPWU * uSizeScale
-                 * (0.7 + 0.5 * fadeIn) * (1.0 - 0.35 * t);
+                 * (0.7 + 0.5 * fadeIn) * (1.0 - 0.35 * t)
+                 * (1.0 + vStreak * 1.6);   // room for the tail
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
   }
@@ -68,12 +85,23 @@ const fragmentShader = /* glsl */ `
 
   varying vec3  vColor;
   varying float vAlpha;
+  varying vec2  vDir;
+  varying float vStreak;
 
   void main() {
-    float d = distance(gl_PointCoord, vec2(0.5));
-    float core = smoothstep(0.5, 0.05, d);     // soft round mote
+    // Comet shape: stretch the mote BACKWARD along its motion (the tail),
+    // fading toward the far end. vStreak 0 → a plain round mote.
+    vec2 p = gl_PointCoord - 0.5;
+    float along = dot(p, vDir);                       // + toward the head
+    float perp  = dot(p, vec2(-vDir.y, vDir.x));
+    float k = 1.0 + vStreak * 3.2;                    // tail elongation
+    float a = along < 0.0 ? along / k : along;        // compress the tail
+    float d = length(vec2(a, perp));
+    float core = smoothstep(0.5, 0.04, d);            // soft head + tail
+    float tail = along < 0.0 ? clamp(1.0 + along / 0.5, 0.0, 1.0) : 1.0;
+    core *= mix(1.0, tail, vStreak);
     if (core <= 0.001) discard;
-    float hot = core * core;                   // brighter center
+    float hot = core * core;                          // brighter center
     vec3 col = vColor * uIntensity * (0.65 + 0.6 * hot);
     // LUMA KEY: the dimmer a mote's own light, the more transparent it
     // is — so faint halos drop out and the mural behind reads through,
@@ -100,6 +128,8 @@ export class ParticleSystem {
       aBirth:    new THREE.BufferAttribute(new Float32Array(cap).fill(-1), 1),
       aLife:     new THREE.BufferAttribute(new Float32Array(cap), 1),
       aSeed:     new THREE.BufferAttribute(new Float32Array(cap), 1),
+      aGrav:     new THREE.BufferAttribute(new Float32Array(cap), 1),
+      aStreak:   new THREE.BufferAttribute(new Float32Array(cap), 1),
     };
     for (const [name, attr] of Object.entries(this.attrs)) {
       attr.setUsage(THREE.DynamicDrawUsage);
@@ -114,6 +144,7 @@ export class ParticleSystem {
       uPPWU:      { value: 1 },
       uSizeScale: { value: 1 },
       uIntensity: { value: config.particles.intensity },
+      uStreak:    { value: config.particles.streak ?? 0.006 },
     };
 
     const mat = new THREE.ShaderMaterial({
@@ -155,10 +186,10 @@ export class ParticleSystem {
     x = 0, y = 0, color = '#ffffff', count = 500,
     speed = 120, size = 4, life = 2.4, upBias = 0.3,
     spread = 1, jitter = 8, driftX = 0, driftY = 0,
-    swirl = 0, minSpeedFrac = 0.25,
+    swirl = 0, minSpeedFrac = 0.25, gravity = 0, streak = 0,
   }) {
     const c = this.scratchColor.set(color);
-    const { aOrigin, aVelocity, aColor, aSize, aBirth, aLife, aSeed } = this.attrs;
+    const { aOrigin, aVelocity, aColor, aSize, aBirth, aLife, aSeed, aGrav, aStreak } = this.attrs;
     const n = Math.min(Math.round(count * this.spawnScale), this.capacity);
     const start = this.cursor;
 
@@ -188,6 +219,8 @@ export class ParticleSystem {
       aBirth.array[i] = this.time;
       aLife.array[i]  = life * (0.6 + 0.8 * Math.random());
       aSeed.array[i]  = Math.random();
+      aGrav.array[i]  = gravity * (0.8 + 0.4 * Math.random());
+      aStreak.array[i] = streak;
     }
 
     this.markUpdated(start, n);
@@ -212,7 +245,7 @@ export class ParticleSystem {
   }) {
     const DRAG = 1.8; // must match the vertex shader's drag constant
     const base = this.scratchColor.set(color);
-    const { aOrigin, aVelocity, aColor, aSize, aBirth, aLife, aSeed } = this.attrs;
+    const { aOrigin, aVelocity, aColor, aSize, aBirth, aLife, aSeed, aGrav, aStreak } = this.attrs;
     const n = Math.min(
       Math.round(pts.length * Math.min(1, this.spawnScale)),
       this.capacity,
@@ -247,6 +280,8 @@ export class ParticleSystem {
       aBirth.array[i] = this.time + Math.random() * stagger;
       aLife.array[i]  = life * (0.85 + 0.3 * Math.random());
       aSeed.array[i]  = Math.random();
+      aGrav.array[i]  = 0; // settled forms are weightless — no gravity arc
+      aStreak.array[i] = 0; // settled forms are round motes — no trail
     }
 
     this.markUpdated(start, n);

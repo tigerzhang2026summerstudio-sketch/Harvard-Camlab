@@ -65,7 +65,11 @@ export class Postprocessing {
 
   setSize(w, h) {
     this.composer.setSize(w, h);
-    this.composer.setPixelRatio(Math.min(window.devicePixelRatio, config.maxPixelRatio));
+    // Track the RENDERER's pixel ratio, not devicePixelRatio directly —
+    // otherwise auto-quality dropping the renderer to 1 leaves the composer
+    // at 2×, so its output viewport is twice the canvas and the whole scene
+    // renders into one corner (empty on the wide 48:9 wall).
+    this.composer.setPixelRatio(this.renderer.getPixelRatio());
   }
 
   /** Live control hook — K7 "bloom strength" refinement knob (Act 2). */

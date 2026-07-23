@@ -21,6 +21,25 @@ export const config = {
   // Cap the device pixel ratio: retina 2x is plenty, more wastes GPU.
   maxPixelRatio: 2,
 
+  // ── THE CAVE'S WALLS (intro flight wraparound, build step 9) ───────
+  // The three-projector room, for the flight's 3D pass: three cameras
+  // share the rail's eye, each with an off-axis frustum built from its
+  // wall's REAL rectangle, composited side by side — so the side walls
+  // read as continuous space, not a stretched picture. Units are
+  // physical (meters); only the RATIOS matter.
+  //   mode 'auto'   — rig only when the canvas is ultra-wide (the
+  //                   5760×1080 wall); a 16:9 monitor stays single.
+  //   mode 'rig'    — force the three-wall composite (seam rehearsal).
+  //   mode 'single' — force the ordinary one-camera render.
+  walls: {
+    mode: 'auto',
+    rigAspect: 3.0,          // canvas aspect at/above which 'auto' rigs
+    width: 4,                // each wall's physical width…
+    height: 2.25,            // …and height (16:9 projections)
+    viewerDistance: 2.6,     // audience centre to the front wall
+    interiorAngleDeg: 90,    // side↔front wall angle (90 = box U)
+  },
+
   // Hide the mouse cursor after this many ms of inactivity (show mode).
   cursorHideDelayMs: 3000,
 
@@ -42,6 +61,9 @@ export const config = {
     // Emissive intensity of each mote. >1 lets bloom catch the cores;
     // too high and dense clusters blow out to white fog.
     intensity: 1.12,
+    // Comet trails (world speed × this = tail length, 0..1). Off by
+    // default — kept so a specific burst can opt in via its `streak`.
+    streak: 0,
   },
 
   // ── KEY BURSTS (Act 1 blooms; sizes/speeds are in world units) ─────
@@ -83,8 +105,9 @@ export const config = {
   // ── ACTS & TRANSITIONS (thresholds/durations, seconds) ─────────────
   acts: {
     crossfadeSec: 3,           // audio crossfade on act change
+    crossfadeIntoAct1Sec: 8,   // prologue→Act I is longer so it isn't abrupt
     act1FullnessTarget: 1.0,   // energy needed to freeze the beryl ground
-    act1EnergyPerStrike: 0.05, // fullness added per key at full velocity
+    act1EnergyPerStrike: 0.032, // fullness per key (slower fill → longer Act I)
     // FAILSAFE — an installation must never stall: if Act I has run this
     // long with the ground at least half-flooded, it advances anyway.
     act1FailsafeSec: 140,
@@ -92,14 +115,21 @@ export const config = {
     // SOFT MINIMUMS — the show can't be rushed: each act keeps the stage
     // at least this long even when its exit condition is already met.
     // (The prison story already adds ~1 min before Act I begins.)
-    act1MinSec: 60,            // Act I runtime floor (meter can fill early)
-    act2MinSec: 70,            // Act II runtime floor (dials can finish early)
+    act1MinSec: 95,            // Act I runtime floor (longer — more to see)
+    act2MinSec: 100,           // Act II runtime floor (slower, unhurried growth)
     act3MinSec: 75,            // dissolution pad is ignored before this
     codaFadeSec: 34,           // dissolution length — the dramatic climax
                                // (three movements: fraying → storm → ascension)
-    epilogueSec: 22,           // one lotus in the dark, then the loop
+    epilogueSec: 40,           // 心光 first → painting reassembles slowly → loop
     loopPauseSec: 8,           // black pause before the prologue returns
     autoIdleSec: 30,           // idle time before attract mode starts playing
+    // SELF-RUNNING (demo/kiosk) — the piece plays its whole arc by
+    // itself: the intro flight, then every act driven by synthetic
+    // input, looping forever. Turn on with `autoRun: true` here, the
+    // ?auto (or ?demo) URL param, or the `A` key live. autoIntroHoldSec
+    // lets the title screen breathe before the flight auto-launches.
+    autoRun: false,
+    autoIntroHoldSec: 5,
   },
 
   // ── INTRO — the flight into Cave 217 (runs BEFORE the prologue) ────
@@ -130,6 +160,189 @@ export const config = {
       [62, 'painting',  0.85],  // push into the west panel → prologue
     ],
     durationSec: 66,            // beat 10 ends here → hand off to prologue
+    fadeOutSec: 2,              // the last seconds sink to black → prologue
+
+    // ── Audio (build step 10) — the flight's score, wind, handoff ────
+    // The 'intro' track (assets/music/intro.*) plays through attract +
+    // flight. A wind bed rises with airspeed and ground-nearness, then
+    // CUTS hard to interior silence at the threshold (beat 8) — that
+    // sudden acoustic change is what convinces the body it is now
+    // indoors. The intro track crossfades to 'prologue' across beats
+    // 9–10, so the score arrives in the prologue already underway.
+    audio: {
+      windMaxDb: -8,            // flight wind at full airspeed (stronger)
+      windMinHz: 240,           // bandpass sweep: slow/low → fast/bright
+      windMaxHz: 1150,
+      windStartFloor: 0.4,      // audible high-air wind at the very start…
+      windStartFadeSec: 12,     // …tapering out over the first seconds
+      thresholdCutSec: 54,      // beat 8 — wind cuts to interior silence
+      toPrologueSec: 57,        // beat 9 — intro→prologue crossfade begins
+    },
+
+    // ── Procedural world (build step 4) — the flight without photos ──
+    // The fallback terrain the whole 60s runs on: a value-noise dune
+    // heightfield of drifting gold motes, the oasis, and the cliff.
+    // Photo point clouds (step 5+) land ON TOP of this — every photo
+    // improves the world, none is required.
+    world: {
+      duneCount: 430_000,       // dense gold spanning the FULL ground width
+      duneOutskirts: 60_000,    // sparse motes reaching beyond the frame
+      duneArea: [-6200, 6200, 1800, -8150], // x0, x1, z0, z1
+      crestHeight: 95,          // ridge crests (world units)…
+      baseHeight: 55,           // …over rolling base noise
+      oasisZ: -5300,            // where the green valley crosses
+      moteSize: 5.2,
+      sandDark: '#4a3616',      // low sand in shadow (lifted — reads gold)…
+      sandGold: '#e8b95a',      // …crests catching the dawn (brighter)
+      cloudMotes: 2600,
+      oasisMotes: 7000,
+      cliffMotes: 64_000,       // dense, bright sandstone face (mouths carved out)
+    },
+
+    // ── Photo point clouds (build step 5) — stations on the path ─────
+    // Each station is one photograph displaced into 3D by a depth map
+    // (or the procedural bottom=near fallback) and parked in world
+    // space so the camera flies PAST it with real parallax. All clouds
+    // sample the ONE global cohesion track (the beats' third column):
+    // photographic when it's high, luminous drift when it falls.
+    //   file · pos · width (world units; height follows the image)
+    //   ry (yaw) · depthScale (relief depth) · grid [w,h] (samples)
+    // The real shot list (build step 6) lives in assets/flight/ — see
+    // CREDITS.txt there for sources. crop trims skies/wires without
+    // touching the files; fogMul keeps the far cloud backdrop visible
+    // through the depth haze; rx leans a panel back like a hillside.
+    cloudDrift: 210,            // how far loosened points wander (units)
+    stations: [
+      { // beats 1–2 · the sea of clouds at dawn — far backdrop panel;
+        // the deck hides its lower reaches, so it reads as sky
+        file: '/flight/01_clouds.jpg',
+        pos: [0, 3400, -13000], width: 15000, depthScale: 1600,
+        grid: [220, 140], size: 4.5, opacity: 0.85,
+        crop: [0, 0, 1, 0.86], fogMul: 0.05, edgeFade: 0.3,
+        tint: [0.75, 0.62, 0.5], window: [0, 15],
+      },
+      { // beats 3–4 · Mingsha crest line leaning on the left of the path
+        file: '/flight/04_dunes_high.jpg',
+        pos: [-980, 200, -2500], width: 1500, ry: 0.5, rx: -0.3,
+        depthScale: 320, grid: [230, 150], size: 3.0,
+        crop: [0, 0.3, 1, 1], tint: [0.5, 0.4, 0.28], edgeFade: 0.18,
+      },
+      { // beats 4–5 · down the dune slope into the green valley, right
+        file: '/flight/05_dunes_low.jpg',
+        pos: [1080, 300, -4300], width: 1400, ry: -0.55,
+        depthScale: 340, grid: [230, 150], size: 3.0,
+        tint: [0.52, 0.44, 0.34], edgeFade: 0.18,
+      },
+      { // beat 5 · Crescent Lake drifting past on the left at the oasis
+        file: '/flight/06_oasis.jpg',
+        pos: [-780, 260, -5450], width: 1300, ry: 0.5,
+        depthScale: 300, grid: [220, 150], size: 3.0,
+        tint: [0.5, 0.44, 0.36], edgeFade: 0.18,
+      },
+      // (The flat 07_cliff_wide photo panel was removed — it read as a
+      // rectangle over the wall. The Mogao façade is now built in full by
+      // IntroWorld.buildCliff: honeycomb of cave-mouths + 九层楼 pagoda,
+      // which granulates with the global cohesion as we close on the door.)
+    ],
+
+    // ── Cave interior (build step 7) — murals condense from motes ────
+    // The chamber's surfaces, as PhotoClouds of real Cave 217 crops.
+    // Same schema as stations, plus cohesionLag: each surface samples
+    // the global cohesion that many seconds LATE, so the room gathers
+    // in order — niche → west panel → tableau → ceiling. All fade in
+    // from t=50 (window), invisible before the threshold.
+    interior: [
+      // ONE clear painting, dead ahead and centered — the great Cave 217
+      // Amitāyus tableau, the Pure Land we have flown to see. It
+      // condenses out of the motes directly in front of the camera
+      // (no side wall, no turn), dense enough that the points FUSE into
+      // a readable picture, and the camera then flies straight into its
+      // heart. A faint ceiling gives the enclosing cave; everything
+      // else is bare rock, so nothing competes with the painting.
+      { // THE PAINTING — centered on the far wall, facing the camera.
+        // Normal-blended so its ink reads dark on the luminous plaster;
+        // densely sampled so the points fuse into a legible picture.
+        file: '/murals/cave217-northwall.jpg',
+        pos: [0, 190, -8850], width: 360, blend: 'normal',
+        depthScale: 26, grid: [620, 440], size: 2.7, opacity: 1.0,
+        lumaCutoff: 0.02, tint: [1.35, 1.28, 1.08],
+        crop: [0.03, 0.02, 0.99, 0.80], // drop faded plaster + ragged edges
+        window: [50, 999], cohesionLag: 0,
+      },
+      { // the ceiling: heavens of music, faint overhead — the cave roof
+        file: '/murals/cave-music-sky.jpg',
+        pos: [0, 378, -8620], width: 420, rx: 1.5708,
+        depthScale: 50, grid: [300, 190], size: 2.6, opacity: 0.4,
+        lumaCutoff: 0.06, tint: [1.2, 1.1, 0.9],
+        window: [50, 999], cohesionLag: 1.2,
+      },
+    ],
+
+    // ── Vection layer (build step 3) — near-field motes ──────────────
+    // Faint dust/sand/ice streaking past the camera: the peripheral
+    // optical flow that makes the body feel the flight. Streak length
+    // follows speed by construction; density thins with altitude and
+    // collapses to drifting incense motes indoors. Felt, not seen.
+    vection: {
+      count: 2600,
+      box: [1000, 560, 1300],   // camera-centered field volume (w, h, d)
+      streakSec: 0.07,          // how many seconds of motion one streak spans
+      opacity: 0.42,
+      fullSpeed: 260,           // world units/sec that reads as "full flight"
+      altFloor: 0.22,           // never thinner than this (high-air crystals)
+      altFadeHeight: 2800,      // density fades toward this altitude
+      colorLow: '#d8c090',      // sand-gold near the ground…
+      colorHigh: '#c8d4ec',     // …ice-blue in the night sky
+    },
+
+    // ── The camera rail (build step 2) ───────────────────────────────
+    // One unbroken move, Soarin'-style: weightless glide, no cuts. The
+    // rail is a time-parameterized C1 spline; keyframes align with the
+    // beats (extra keys allowed — 29s makes the dune glide S-curve for
+    // gentle banking). Format: [t, [pos x,y,z], [look x,y,z], fov].
+    // World scale: y=0 desert floor, cloud deck y≈2700, the cliff face
+    // stands at z=-8200 with the doorway at (0, 110); corridor to
+    // z=-8400; the chamber spans z -8400..-8860, with THE painting
+    // centered on its far wall at (0, 190, -8850) — the camera flies
+    // straight into it (config.intro.interior).
+    camera: {
+      fovBase: 55,
+      fogDensity: 0.0002,       // black depth-haze — stages each reveal
+      rollAmpDeg: 1.2,          // slow sinusoidal glider roll…
+      rollPeriodSec: 12,
+      bobAmp: 4,                // …and vertical bob (world units)
+      bobPeriodSec: 8,
+      bankMaxDeg: 6,            // banking into lateral drift, clamped
+      bankGainDeg: 45,          //   (spec: never past ~8°)
+      bankSmooth: 2,            // 1/sec — how lazily the bank settles
+      calmAfter: [50, 55],      // roll/bob/bank fade out crossing indoors
+      keyframes: [
+        [0,  [0, 3200, 2600],    [0, 3150, -2000],  55], // 1 suspended
+        [6,  [0, 3140, 2350],    [0, 2500, -1200],  57], // 2 the drop begins
+        [14, [0, 2100, 900],     [0, 900, -2200],   66], // 2→3 through cloud
+        [24, [0, 280, -1800],    [0, 60, -4600],    62], // 3→4 gobi → dunes
+        [29, [120, 240, -3050],  [-40, 60, -5400],  61], //    (S-curve bank)
+        [34, [-140, 230, -4300], [40, 40, -6600],   60], // 4→5 toward oasis
+        [42, [-60, 200, -6300],  [0, 180, -8200],   58], // 5→6 cliff ahead
+        [50, [0, 150, -7700],    [0, 112, -8200],   52], // 6→7 the doorway
+        [54, [0, 140, -8250],    [0, 190, -8850],   52], // 7→8 threshold — already aiming at the painting
+        [57, [0, 165, -8380],    [0, 190, -8850],   54], // 8→9 chamber opens, the whole painting condensing ahead
+        [62, [0, 190, -8440],    [0, 190, -8850],   50], // 9 squared up — the WHOLE painting framed and clear
+        [66, [0, 190, -8772],    [0, 190, -8851],   34], // 10 PUSH straight into its heart —
+        // dead centre, no turn: the Pure Land fills the frame and its
+        // points sweep past the lens as the black takes it → the story
+      ],
+    },
+
+    // ── The handoff (build step 8) — into the painting → prologue ────
+    // After the fade lands in the prologue's darkness, one line rises:
+    // it seals the transition (the wall's story is now the room) and
+    // quietly asks for the first key, which begins Vaidehī's story.
+    handoff: {
+      delaySec: 1.6,
+      title: '入画 · INTO THE PAINTING',
+      line: '壁上所绘，今在四周——\n击一键，让故事开始。\nWhat was painted on the wall now surrounds you —\nstrike a key, and the story begins.',
+    },
   },
 
   // ── PRISON — the opening scene (Vaidehī's story, key-paced) ────────
@@ -144,8 +357,8 @@ export const config = {
     sceneAnchors: [
       [0, -0.3],        // the city
       [0.24, -0.24],    // the seven walls
-      [-0.18, -0.12],   // the queen
-      [-0.18, -0.1],    // her cell
+      [-0.27, -0.12],   // the queen (well left of the centre caption)
+      [-0.27, -0.1],    // her cell
       [-0.36, 0.22],    // Vulture Peak
       [0.02, 0.06],     // the Buddha
     ],
@@ -162,6 +375,7 @@ export const config = {
   // ── EPILOGUE — after the dissolution, before the loop ──────────────
   epilogue: {
     line: ['心光 · WHAT REMAINS', '所观之境，归于寂暗——\n然见境之心，其光犹存。\nThe vision has returned to the dark —\nbut the mind that saw it keeps its light.'],
+    heartAt: 1.5,   // the 心光 heart-light (lotus + line) rises FIRST, at center
   },
 
   // ── INTERLUDES — breathing room after each act arrives ─────────────
@@ -183,16 +397,21 @@ export const config = {
     masterVolumeDb: -6,
     // Score tracks live in assets/music/ as <name>.mp3/.ogg/.wav (first
     // found wins). Silent .wav placeholders ship; drop the real score in.
-    trackNames: ['prologue', 'part1', 'part2', 'part3', 'coda'],
+    trackNames: ['intro', 'prologue', 'part1', 'part2', 'part3', 'coda'],
     accents: {
-      bpm: 48,             // the slow grid Act-1 chimes quantize onto
+      bpm: 48,             // the slow grid Act-1 drums quantize onto
       quantize: '8n',
-      chimeLevelDb: -7,    // Act 1 key chimes — they ARE Act 1's voice
-                           // until a real part1 track is dropped in
+      chimeLevelDb: -7,    // (legacy bell voice — kept for combo flourishes)
       chimeRoot: 3,        // pentatonic root semitone — MATCH THE SCORE's
                            // key here (0=C, 2=D, 3=D#, 5=F, 7=G, …)
       chimeMinGapSec: 0.14, // flurries thin to a cascade, never mud
       chimeLowpassHz: 3200, // rounds the bell tops into the mix
+      // Act 1 keys are TUNED DRUMS (taiko/tabla): a pitched membrane +
+      // a skin transient, each key snapped into the pentatonic so the
+      // playing stays a drum melody, not noise.
+      drumLevelDb: -3,
+      drumSkinDb: -13,     // the hand-slap attack over the drum tone
+      drumMinGapSec: 0.08, // tighter than the bells — rolls are allowed
       windLevelDb: -16,    // the dissolution's storm (noise bed, coda only)
       droneLevelDb: -20,   // the prison's cold drone (prologue/prison)
       bedLevelDb: -14,     // Act 2 generative self-playing layer
@@ -312,6 +531,14 @@ export const config = {
         caption: ['第三观 · THE BERYL GROUND', 'The ice becomes beryl — a ground of light,\nlevel as the palm of a hand.'],
       },
     },
+
+    // Extra quiet captions (no scene effect) woven between the milestones
+    // so Act I unfolds with more to read as the light gathers.
+    loreBeats: [
+      [0.12, ['第一观 · THE SETTING SUN', '先观落日，悬鼓西垂——\n心中一轮，明照未来。\nFirst behold the setting sun, a hanging drum in the west —\nhold that one disc of light in the mind.']],
+      [0.46, ['水想成 · THE WATER HOLDS', '水既澄清，遍照无碍——\n渐见琉璃，光自内生。\nThe water clears and holds; through it a beryl light\nbegins to shine from within.']],
+      [0.82, ['地渐成 · THE GROUND FORMS', '光明渐凝，坚固不动——\n琉璃为地，众宝间错。\nThe light slowly sets, firm and unmoving:\na ground of beryl, inlaid with every jewel.']],
+    ],
 
     // 第一观 begins the show: an ember sun on the western horizon that
     // every key strike feeds — it brightens and climbs as the act fills.
@@ -479,17 +706,18 @@ export const config = {
     // to black before the loop returns.
     endImage: 'purelands-vivid.jpg',
     endReveal: {
-      inAt: 3,          // seconds into the epilogue
-      inSec: 5,
-      holdSec: 7,
+      inAt: 5,          // starts a short beat AFTER the 心光 particles appear
+      inSec: 16,        // parts fade in gently one by one over this span (slower)
+      holdSec: 8,       // the whole picture holds
       outSec: 5,
-      opacity: 0.22,    // clearly visible — the reveal is the point
+      opacity: 0.6,     // bright — the reveal is the point
+      tiles: [16, 9],   // reveal grid (cols, rows): parts appear one by one
     },
   },
 
   // ── ACT 2 — the knob-grown world ───────────────────────────────────
   act2: {
-    smoothing: 1.1,     // how quickly the world follows the knobs (1/sec)
+    smoothing: 0.5,     // slower — the world grows in unhurried, not snapping
     trees: {
       rows: 7,          // the sutra's seven rows of jeweled trees
       perSide: 4,       // trees per row on each side third
@@ -504,10 +732,10 @@ export const config = {
       count: 14,            // self-playing instruments as orbs of light
       xSpanFrac: 0.42,      // arc spread (×worldWidth/2 each side)
       yFracRange: [0.16, 0.33], // arc height band (×worldHeight)
-      sparkMaxRate: 4.5,    // rising note-motes per second at full K3
+      sparkMaxRate: 2.4,    // rising note-motes/sec at full K3 (calmer pace)
     },
     wind: {
-      seedInterval: 0.12, // seconds between drift-seed spawns at full K4
+      seedInterval: 0.22, // seconds between drift-seed spawns at full K4 (calmer)
       seedCount: 12,      // seeds per spawn (×density ×quality)
       seedSpeed: 90,      // horizontal drift speed at full wind
       rotMax: 0.018,      // whole-world mandala sway (radians) at full wind
@@ -518,8 +746,8 @@ export const config = {
     // celebratory bursts through its own region.
     surge: {
       thresholds: [0.3, 0.6, 0.9],
-      bursts: 9,          // bursts per surge (× tier)
-      count: 110,         // particles per burst
+      bursts: 6,          // bursts per surge (× tier) — gentler answer
+      count: 85,          // particles per burst
     },
     // Every dial grows its own part of the story and tells it (caption)
     // the first time it is raised in Act 2 ([title, line] per knob).
@@ -704,12 +932,14 @@ export const config = {
       // condenses at center and the photograph comes through.
       { file: 'lotus-throne.jpg', role: 'story', story: 'throne',
         x: 0, yFrac: -0.02, heightFrac: 0.34, plasterSkip: false,
+        maskShape: 'lotus', // a scalloped bloom, not a rectangle
         retint: 0.1, intensity: 0.62, photoThrough: true, photoMax: 0.36 },
       // 第八观 THE IMAGE — the same Buddha, but seen first as pure GOLD:
       // heavy retint turns the whole figure into a golden idea of him
       // (particles only, no photo — the truth waits for 第九观).
       { file: 'buddha-true-body.jpg', role: 'story', story: 'image',
         x: 0, yFrac: 0.06, heightFrac: 0.46, plasterSkip: false,
+        maskShape: 'mandorla', mask: [0.5, 0.46, 0.46, 0.5], // aura of light
         retint: 0.85, intensity: 0.85 },
       // 第九观 THE TRUE BODY — the real central Amitāyus of the vivid
       // tableau (Wikimedia Dunhuang217.jpg, cropped): particles condense,
@@ -717,19 +947,23 @@ export const config = {
       // mandorla true. The procedural figure stands beneath it.
       { file: 'buddha-true-body.jpg', role: 'story', story: 'amitabha',
         x: 0, yFrac: 0.06, heightFrac: 0.52, plasterSkip: false,
+        maskShape: 'mandorla', mask: [0.5, 0.46, 0.46, 0.5], // his mandorla
         retint: 0.12, intensity: 0.58, photoThrough: true, photoMax: 0.38 },
       // 第十观 / 第十一观 — the REAL standing attendants who flank him in
       // the same scan, each condensing at their canonical side.
       { file: 'avalokitesvara.jpg', role: 'story', story: 'avalokitesvara',
         x: -0.15, yFrac: 0.04, heightFrac: 0.46, plasterSkip: false,
+        maskShape: 'arch', // a standing figure in a niche
         retint: 0.12, intensity: 0.58, photoThrough: true, photoMax: 0.36 },
       { file: 'mahasthamaprapta.jpg', role: 'story', story: 'mahasthamaprapta',
         x: 0.15, yFrac: 0.04, heightFrac: 0.46, plasterSkip: false,
+        maskShape: 'arch',
         retint: 0.12, intensity: 0.58, photoThrough: true, photoMax: 0.36 },
       // 第六观 THE TOWERS OF MUSIC — the jeweled-pavilion detail of the
       // same wall (Mogao Cave 217 architecture 01).
       { file: 'pavilion-music.jpg', role: 'story', story: 'musicStory',
         x: 0, yFrac: 0.2, heightFrac: 0.34, plasterSkip: false,
+        maskShape: 'arch', // the jeweled pavilion, an arched hall
         retint: 0.1, intensity: 0.58, photoThrough: true, photoMax: 0.36 },
       // role 'panel': materialize on the Universal Vision pad (B1),
       // scatter in the coda.
@@ -753,13 +987,15 @@ export const config = {
       // photoThrough fades the ACTUAL photograph in through the held
       // particles (soft-edged), so the image finally reads clearly.
       { file: 'cave-sun-contemplation.jpg', role: 'story', story: 'sun',
-        x: -0.3, yFrac: 0.16, heightFrac: 0.34, plasterSkip: true,
-        photoThrough: true, photoMax: 0.36 },
+        x: -0.3, yFrac: 0.16, heightFrac: 0.4, plasterSkip: true,
+        maskShape: 'oval', // a soft disc, and made more legible:
+        intensity: 1.05, photoThrough: true, photoMax: 0.62 },
       { file: 'cave-prison.jpg', role: 'story', story: 'prison',
         x: 0.3, yFrac: 0.16, heightFrac: 0.34, plasterSkip: true,
         photoThrough: true, photoMax: 0.36 },
       { file: 'cave-music-sky.jpg', role: 'story', story: 'mixed',
         x: 0, yFrac: 0.3, heightFrac: 0.24, plasterSkip: true,
+        maskShape: 'oval', // a soft band of sky, not a rectangle
         photoThrough: true, photoMax: 0.36 },
     ],
   },

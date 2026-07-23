@@ -62,13 +62,47 @@ export class Backdrop {
         tex.colorSpace = THREE.SRGBColorSpace;
         const h = config.worldHeight * 0.96;
         const a = tex.image.width / tex.image.height;
-        this.endMaterial = new THREE.MeshBasicMaterial({
-          map: tex,
+        // A TILE-REVEAL shader: the painting comes back part by part —
+        // each tile FLICKERS on in a scattered order, then the whole
+        // picture stands. uReveal (0..1) is the reveal progress.
+        this.endMaterial = new THREE.ShaderMaterial({
           transparent: true,
-          opacity: 0,
-          blending: THREE.AdditiveBlending,
           depthWrite: false,
           depthTest: false,
+          blending: THREE.AdditiveBlending,
+          uniforms: {
+            map: { value: tex },
+            uReveal: { value: 0 },
+            uOpacity: { value: 0 },
+            uTiles: { value: new THREE.Vector2(...config.backdrop.endReveal.tiles) },
+          },
+          vertexShader: /* glsl */ `
+            varying vec2 vUv;
+            void main() {
+              vUv = uv;
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+          `,
+          fragmentShader: /* glsl */ `
+            uniform sampler2D map;
+            uniform float uReveal;
+            uniform float uOpacity;
+            uniform vec2 uTiles;
+            varying vec2 vUv;
+            float hash(vec2 t) {
+              return fract(sin(dot(t, vec2(127.1, 311.7))) * 43758.5453);
+            }
+            void main() {
+              vec2 tile = floor(vUv * uTiles);
+              float th = hash(tile) * 0.82;          // this part's turn (0..0.82)
+              float lead = uReveal - th;
+              // Each part fades in GENTLY once its turn comes — part by part
+              // (一个一个显现) but no flicker: a slow, quiet materialisation.
+              float vis = smoothstep(0.0, 0.22, lead);
+              vec4 tex = texture2D(map, vUv);
+              gl_FragColor = vec4(tex.rgb, tex.a * vis * uOpacity);
+            }
+          `,
         });
         this.endMesh = new THREE.Mesh(
           new THREE.PlaneGeometry(h * a, h),
@@ -145,22 +179,26 @@ export class Backdrop {
       }
     }
 
-    // THE ENDING: the vivid tableau comes fully out over the epilogue
-    // (its own centered plane; the faint wall stays breathing behind).
+    // THE ENDING: the vivid tableau comes back PART BY PART over the
+    // epilogue — each tile flickers on in turn, then the whole picture
+    // stands — before it sinks to black (its own centered plane; the
+    // faint wall stays breathing behind).
     if (this.endMaterial) {
+      const er = b.endReveal;
+      let reveal = 0;
       let env = 0;
       if (phase === 'epilogue') {
-        const er = b.endReveal;
         const t = this.state.phaseTime - er.inAt;
         if (t > 0) {
-          if (t < er.inSec) env = t / er.inSec;
-          else if (t < er.inSec + er.holdSec) env = 1;
+          reveal = clamp01(t / er.inSec);            // tiles appear one by one
+          if (t < er.inSec + er.holdSec) env = 1;    // whole picture holds
           else env = Math.max(0, 1 - (t - er.inSec - er.holdSec) / er.outSec);
+          env = env * env * (3 - 2 * env);           // smooth the fade-out
         }
-        env = env * env * (3 - 2 * env); // smooth both ends
       }
-      this.endMaterial.opacity += (env * b.endReveal.opacity - this.endMaterial.opacity)
-        * Math.min(1, dt * 1.2);
+      const u = this.endMaterial.uniforms;
+      u.uReveal.value = reveal;
+      u.uOpacity.value += (env * er.opacity - u.uOpacity.value) * Math.min(1, dt * 1.4);
     } else if (phase === 'epilogue') {
       // no end image shipped — fall back to revealing the wall itself
       const er = b.endReveal;

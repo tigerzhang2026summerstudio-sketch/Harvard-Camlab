@@ -70,7 +70,7 @@ export class StoryScenes {
     const H = config.worldHeight;
     const b = Math.round(this.budget * 0.55); // scenery stays background-dim
     const hold = { size: 2.2, life: 8, scatter: 130, stagger: 1.6 };
-    const queenX = -0.18 * W;
+    const queenX = -0.27 * W;   // the queen stands well left of the centre caption
 
     switch (index) {
       case 0: // 王舍城 — the great city rises across the horizon
@@ -224,8 +224,13 @@ export class StoryScenes {
     }
 
     if (s.phase === 'epilogue') {
-      // One lotus stays lit in the dark until the scene lets go.
-      if (s.phaseTime <= config.acts.epilogueSec - 4 && time - this.lotusAt >= 4.4) {
+      // 心光 FIRST: the mind's light rises at CENTER — its lotus and the
+      // line — and only a short beat later does the painting return behind
+      // it (Backdrop.endReveal, delayed via endReveal.inAt). The light of
+      // the mind that saw the vision comes before the vision reassembles.
+      const heartAt = config.epilogue.heartAt ?? 1.5;
+      if (s.phaseTime >= heartAt
+          && s.phaseTime <= config.acts.epilogueSec - 4 && time - this.lotusAt >= 4.4) {
         this.lotusAt = time;
         this.particles.settle({
           pts: lotusPoints(110, Math.round(this.budget * 0.6)),
@@ -233,7 +238,7 @@ export class StoryScenes {
           size: 2.4, life: 5.6, scatter: 130, stagger: 1.4,
         });
       }
-      if (!this.epilogueLineShown && s.phaseTime >= 2.5) {
+      if (!this.epilogueLineShown && s.phaseTime >= heartAt) {
         this.epilogueLineShown = true;
         const [title, line] = config.epilogue.line;
         this.captions.showStory(title, line);

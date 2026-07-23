@@ -18,6 +18,7 @@ import { buildTrees } from './Trees.js';
 import { buildPonds } from './Ponds.js';
 import { buildInstruments, instrumentCenters } from './Instruments.js';
 import { buildRays, buildBanners, buildClouds, BirdFlock } from './SkyLayers.js';
+import { IndraNet } from './IndraNet.js';
 import { clamp01, lerp, pick, rand } from '../core/Clock.js';
 
 export class Act2 {
@@ -34,6 +35,7 @@ export class Act2 {
     this.banners = new GrowthLayer(worldGroup, buildBanners, { intensity: 1.1 });
     this.clouds = new GrowthLayer(worldGroup, buildClouds, { intensity: 0.9 });
     this.birds = new BirdFlock(particles);
+    this.indra = new IndraNet(worldGroup); // 因陀罗网 — the jeweled net
 
     this.growth = new Array(8).fill(0);   // smoothed K1..K8
     this.windDir = 1;                     // joystick X flips the drift
@@ -231,6 +233,14 @@ export class Act2 {
 
     this.emitWindSeeds(dt, wind);
     this.emitNoteSparks(dt, g[2]);
+
+    // 因陀罗网 — the jeweled net weaves through the world as it ripens,
+    // tying every cultivated jewel to every other; it un-weaves in the
+    // coda as the growth values sink back toward nothing.
+    const netGrow = clamp01(
+      (g[0] + g[1] + g[2] + g[3] + g[4] + g[5] + g[6] + g[7]) / 8 * 1.6,
+    );
+    this.indra.update(time, netGrow, ppwu);
 
     return shared; // Act 3's layers reuse the same frame values
   }

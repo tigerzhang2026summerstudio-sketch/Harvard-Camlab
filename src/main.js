@@ -118,6 +118,16 @@ midi.on('key', (e) => state.onKey(e));
 midi.on('knob', (e) => state.onKnob(e));
 midi.on('pad', (e) => state.onPad(e));
 
+// ── Self-running (demo / kiosk) ────────────────────────────────────────
+// Play the whole arc by itself — the intro flight, then every act driven
+// by synthetic input, looping forever. On via config.acts.autoRun (a
+// permanent kiosk build) or the ?auto / ?demo URL param; `A` still
+// toggles it live. Real hands always take over and pause it.
+if (config.acts.autoRun || /[?&](auto|demo)\b/i.test(window.location.search)) {
+  state.autoEnabled = true;
+  console.info('[painted-cave] self-running mode ON — the piece plays itself, all the acts');
+}
+
 // ── Acts ──────────────────────────────────────────────────────────────
 // Act 1 (blooms, chord mandalas) listens to routed key events; the ground
 // freezes with the state's fullness meter. The tutorial rides the phase.
@@ -167,6 +177,10 @@ const transitions = new Transitions(state, particles, post);
 act1.captions = captions;
 act2.captions = captions;
 act3.captions = captions;
+// Act 3's contemplations act on the world Act 2 grew: 第四观 makes the
+// jeweled trees surge huge and settle; 第五观 blooms the ponds.
+act3.treesLayer = act2.trees;
+act3.pondsLayer = act2.ponds;
 const meditations = new Meditations(state, captions);
 // The flight into Cave 217 — the piece's front door, before the prologue.
 const introFlight = new IntroFlight(state, captions);
@@ -180,35 +194,53 @@ const darkSpace = new DarkSpace(state, particles);
 // until the corner "♪" button is clicked (that click doubles as the
 // browser's autoplay unlock; the button then toggles mute).
 const audio = new AudioManager(state);
+// The intro flight drives its own wind bed + intro→prologue crossfade.
+introFlight.audio = audio;
 // Act3 resolves which story each pad tells (pad 8 is a sequence), then
 // rings that story's accent.
 act3.onStory = (action) => audio.storyAccent(action);
 // Combo 图案 in Act 1 ring a small flourish of their own.
 act1.combos.onCombo = (family, tier) => audio.comboAccent(family, tier);
 
+// Music is ON by default: the first real user gesture that begins the piece
+// (the "strike any key to begin", or a click) unlocks the AudioContext and
+// starts the score unmuted. Browsers require a gesture before any sound, so
+// this is the earliest we can honour "default on". Idempotent + one-shot.
+const unlockAudioOnce = () => audio.unlock();
+window.addEventListener('keydown', unlockAudioOnce, { once: true });
+window.addEventListener('pointerdown', unlockAudioOnce, { once: true });
+
 // ── Auto-quality ──────────────────────────────────────────────────────
 // If the projector machine can't hold frame rate (especially at 48:9),
 // degrade gracefully: first drop the pixel ratio, then thin the bursts.
-// Measured over 4s windows so one hitch never triggers it.
+// A WARM-UP window is ignored (the heavy asset build janks the first few
+// seconds — that must never permanently degrade a machine that then runs
+// at 60fps), and degrading needs TWO consecutive slow 4s windows so a
+// single transient hitch can't trip it.
 let fpsTime = 0;
 let fpsFrames = 0;
 let degradeStep = 0;
+let warmup = 6;      // seconds of boot/asset load to ignore
+let slowStreak = 0;  // consecutive slow windows
 function autoQuality(dt) {
+  if (warmup > 0) { warmup -= dt; fpsTime = 0; fpsFrames = 0; return; }
   fpsTime += dt;
   fpsFrames += 1;
   if (fpsTime < 4) return;
   const fps = fpsFrames / fpsTime;
   fpsTime = 0;
   fpsFrames = 0;
-  if (degradeStep === 0 && fps < 38 && renderer.getPixelRatio() > 1) {
+  slowStreak = fps < 38 ? slowStreak + 1 : 0;
+  if (slowStreak < 2) return; // one slow window is a hitch, not a trend
+  if (degradeStep === 0 && renderer.getPixelRatio() > 1) {
     degradeStep = 1;
     renderer.setPixelRatio(1);
     onResize();
-    console.info(`[quality] ${fps.toFixed(0)} fps — pixel ratio dropped to 1`);
-  } else if (degradeStep <= 1 && fps < 33) {
+    console.info(`[quality] sustained ${fps.toFixed(0)} fps — pixel ratio dropped to 1`);
+  } else if (degradeStep === 1 && fps < 33) {
     degradeStep = 2;
     particles.spawnScale = 0.65;
-    console.info(`[quality] ${fps.toFixed(0)} fps — burst density reduced`);
+    console.info(`[quality] sustained ${fps.toFixed(0)} fps — burst density reduced`);
   }
 }
 
@@ -248,7 +280,10 @@ renderer.setAnimationLoop(() => {
   introFlight.update(dt);
   audio.update();
   autoQuality(dt);
-  post.render();
+  // The intro flight is a 3D perspective pass with its own scene; while
+  // it is live it replaces the orthographic panorama entirely.
+  if (introFlight.active) introFlight.render(renderer);
+  else post.render();
 });
 
 // Dev-only handle for debugging from the browser console (also lets tests
@@ -257,7 +292,7 @@ if (import.meta.env.DEV) {
   window.__paintedCave = {
     midi, osc, state, particles, post, ground, act1, act2, act3, vaidehi,
     tutorial, captions, transitions, backdrop, meditations, storyScenes,
-    darkSpace, audio, renderer, introFlight,
+    darkSpace, audio, renderer, introFlight, config,
     keyBurst: (note, velocity) => act1.onKey({ on: true, note, velocity }),
     now: () => elapsed,
     ppwu: pixelsPerWorldUnit,

@@ -387,6 +387,15 @@ export class Act1 {
     if (this.milestone === 0 && f >= ms.water.at) { this.milestone = 1; this.waterScene(time); }
     else if (this.milestone === 1 && f >= ms.ice.at) { this.milestone = 2; this.iceScene(time); }
     else if (this.milestone === 2 && f >= ms.beryl.at) { this.milestone = 3; this.berylScene(time); }
+
+    // Extra quiet lore captions (no scene effect) as the fullness climbs.
+    if (!this.loreShown) this.loreShown = new Set();
+    for (const [at, caption] of config.act1.loreBeats ?? []) {
+      if (f >= at && !this.loreShown.has(at)) {
+        this.loreShown.add(at);
+        this.captions?.showStory(caption[0], caption[1]);
+      }
+    }
   }
 
   /** 第二观: a front of still water sweeps west→east along the floor. */
@@ -484,7 +493,7 @@ export class Act1 {
 
     // Milestone chapters fire as the meter crosses their thresholds;
     // the loop's return to darkness rewinds the story.
-    if (s.phase === 'prologue' || s.phase === 'intro') this.milestone = 0;
+    if (s.phase === 'prologue' || s.phase === 'intro') { this.milestone = 0; this.loreShown?.clear(); }
     this.milestoneCheck(time);
 
     // Progress feedback, both directions: meter full but the floor not

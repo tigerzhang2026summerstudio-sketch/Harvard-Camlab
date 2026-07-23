@@ -18,7 +18,7 @@
  * through the SAME event path as real input, so it exercises everything.
  */
 import { config } from '../config/config.js';
-import { clamp01, lerp, pick, rand } from './Clock.js';
+import { clamp01, pick, rand } from './Clock.js';
 
 export const PHASES = ['intro', 'prologue', 'prison', 'act1', 'act2', 'act3', 'coda', 'epilogue'];
 
@@ -40,6 +40,7 @@ export class StateManager {
     this.idleTime = Infinity;             // no interaction yet → attract may start
     this.autoWait = 0;                    // countdown to next autopilot action
     this.autoStep = 0;                    // position in the Act-3 pad script
+    this.autoBeat = 0;                    // beat counter for the Act-1 drum groove
     this.prisonStep = 0;                  // which line of Vaidehī's story
     this.prisonLineAt = 0;                // phaseTime the line appeared
   }
@@ -255,9 +256,12 @@ export class StateManager {
 
     switch (this.phase) {
       case 'intro': {
-        // Attract: lift off. In flight: hands folded — it's on rails.
-        if (this.introMode === 'attract') this.introLaunch();
-        this.autoWait = 2;
+        // Attract: let the title breathe a moment, then lift off. In
+        // flight: hands folded — it's on rails.
+        if (this.introMode === 'attract' && this.phaseTime >= config.acts.autoIntroHoldSec) {
+          this.introLaunch();
+        }
+        this.autoWait = 1;
         break;
       }
       case 'prologue': {
@@ -266,36 +270,64 @@ export class StateManager {
         break;
       }
       case 'prison': {
-        // Rare, soft strikes — the auto-advance timer paces the story.
-        this.onKey({ on: true, note: 45 + pick([0, 3, 7]), velocity: 0.3 }, true);
-        this.autoWait = rand(8, 11);
+        // Soft, fairly frequent strikes keep motes circling the scene
+        // while the story's OWN timer still paces the lines — the cell
+        // is never a still frame, but the tale can't be rushed.
+        this.onKey({ on: true, note: 45 + pick([0, 3, 7, 10]), velocity: rand(0.2, 0.4) }, true);
+        this.autoWait = rand(2.5, 4.5);
         break;
       }
       case 'act1': {
-        // Pentatonic wandering, soft-to-medium strikes.
-        const note = 48 + pick([0, 2, 4, 7, 9]) + pick([0, 12]);
-        this.onKey({ on: true, note, velocity: rand(0.35, 0.85) }, true);
-        this.autoWait = rand(0.3, 1.2);
+        // Play the drums: a steady four-beat groove — a deep taiko on
+        // the downbeat, mid on the backbeat, higher tabla on the
+        // offbeats, with the odd ghost double — so Act 1 drives itself
+        // like a real hand-drum pattern (the keys are drums now).
+        this.autoBeat = (this.autoBeat + 1) % 8;
+        const b = this.autoBeat;
+        let note;
+        let vel;
+        if (b === 0 || b === 4) { note = 48 + pick([0, 0, 7]); vel = rand(0.8, 0.98); }
+        else if (b === 2 || b === 6) { note = 55 + pick([0, 3]); vel = rand(0.55, 0.8); }
+        else { note = 60 + pick([0, 2, 4, 7]) + pick([0, 12]); vel = rand(0.35, 0.6); }
+        this.onKey({ on: true, note, velocity: vel }, true);
+        // occasional ghost hit just after, for a little swing
+        if (Math.random() < 0.18) {
+          this.onKey({ on: true, note: note + 5, velocity: rand(0.25, 0.4) }, true);
+        }
+        this.autoWait = 0.32; // ≈ one eighth at the slow grid — a pulse
         break;
       }
       case 'act2': {
-        // All eight dials must be finished before the throne will rise —
-        // favor whichever is furthest behind.
-        let index = Math.floor(Math.random() * 8);
-        for (let i = 0; i < 8; i += 1) if (this.knobs[i] < this.knobs[index]) index = i;
-        if (Math.random() < 0.35) index = Math.floor(Math.random() * 8);
-        this.onKnob({ index, value: clamp01(lerp(this.knobs[index], 1, 0.12) + 0.01) }, true);
-        this.autoWait = rand(0.15, 0.4);
+        // Go through every placement IN TURN — raise one dial steadily so
+        // that element blooms, then move to the next (trees → ponds →
+        // towers → wind → birds → rays → banners → clouds). Once the whole
+        // world stands, keep it BREATHING — the wind and music sway (held
+        // above the dial target so the throne still rises) and an event
+        // dial re-pulses — so Act 2 never has a moment without action.
+        let focus = -1;
+        for (let i = 0; i < 8; i += 1) if (this.knobs[i] < 0.97) { focus = i; break; }
+        if (focus >= 0) {
+          this.onKnob({ index: focus, value: clamp01(this.knobs[focus] + rand(0.04, 0.08)) }, true);
+          this.autoWait = rand(0.22, 0.4);
+        } else {
+          const t = this.phaseTime;
+          this.onKnob({ index: 3, value: 0.78 + 0.2 * Math.sin(t * 0.55) }, true);       // K4 wind
+          this.onKnob({ index: 2, value: 0.80 + 0.18 * Math.sin(t * 0.33 + 1) }, true);  // K3 towers/music
+          this.autoBeat = (this.autoBeat + 1) % 6;
+          if (this.autoBeat === 0) {
+            this.onKnob({ index: pick([4, 5, 6, 7]), value: clamp01(0.72 + 0.28 * Math.random()) }, true);
+          }
+          this.autoWait = 0.22;
+        }
         break;
       }
       case 'act3': {
-        // The rite advances itself: any pad carries it one vision
-        // onward, and Act3's busy-gating enforces the pacing — early
-        // presses simply wait their turn.
+        // Call the visions steadily — Act3's busy-gating still paces each
+        // one, so pressing more often just closes the gaps between them.
         const index = Math.floor(Math.random() * 8);
-        this.onPad({ on: true, bank: 'A', index, velocity: 0.8 }, true);
+        this.onPad({ on: true, bank: 'A', index, velocity: 0.85 }, true);
         this.onPad({ on: false, bank: 'A', index, velocity: 0 }, true);
-        this.autoWait = rand(10, 13);
+        this.autoWait = rand(5, 8);
         break;
       }
       default: // coda — hands off, the timer brings the loop around

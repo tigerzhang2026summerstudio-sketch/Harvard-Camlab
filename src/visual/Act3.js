@@ -33,19 +33,24 @@ export class Act3 {
     this.vaidehi = vaidehi;
     this.captions = null; // set by main once the captions module exists
 
-    this.throne = new GrowthLayer(worldGroup, buildThrone, { intensity: 0.9 });
+    this.throne = new GrowthLayer(worldGroup, buildThrone, { intensity: 1.1 });
     this.figures = {};
     this.assembled = {};
     this.targets = {};
     for (const name of ['amitabha', 'avalokitesvara', 'mahasthamaprapta']) {
       this.figures[name] = new GrowthLayer(
-        worldGroup, figureBuilder(config.act3.figures[name]), { intensity: 0.75 },
+        worldGroup, figureBuilder(config.act3.figures[name]), { intensity: 0.95 },
       );
       this.assembled[name] = 0;
       this.targets[name] = 0;
     }
 
     this.throneGrowth = 0;
+    this.treesLayer = null;   // wired in main — Act 2's jeweled-tree layer
+    this.pondsLayer = null;
+    this.treeFlourishT = -1;  // 第四观 grow-huge-then-settle animation clock
+    this.treesGroundY = -config.worldHeight / 2
+      + config.ground.bandFrac * config.worldHeight * 0.7; // tree-base pivot
     this.souls = [];
     this.rainLeft = 0;
     this.rainTimer = 0;
@@ -215,11 +220,11 @@ export class Act3 {
       case 'image': { // the golden image forms; a ring of light announces it
         this.targets.amitabha = Math.max(this.targets.amitabha, 0.5);
         const H = config.worldHeight;
-        for (let i = 0; i < 3; i += 1) {
-          queue(0.3 + i * 1.4, () => this.particles.burst({
+        for (let i = 0; i < 4; i += 1) {
+          queue(0.3 + i * 1.2, () => this.particles.burst({
             x: 0, y: 0.08 * H,
             color: config.palette.gold,
-            count: 220, speed: 130 + i * 40, size: 2.3, life: 3.2,
+            count: 360, speed: 150 + i * 45, size: 2.8, life: 3.4,
             upBias: 0.05, jitter: 8, minSpeedFrac: 0.92,
           }));
         }
@@ -228,6 +233,12 @@ export class Act3 {
       case 'amitabha':
         this.targets[action] = 1;
         this.haloTime = 0; // his light sweeps the whole land
+        // 真身 — the true body breaks into light: a great firework crowns him
+        this.firework({
+          x: 0, y: 0.16 * config.worldHeight,
+          color: config.palette.gold, count: 420, speed: 168, size: 2.9,
+          life: 3.4, upBias: 0.72, jitter: 18, gravity: 50, streak: 0.012,
+        });
         break;
       case 'avalokitesvara':
       case 'mahasthamaprapta':
@@ -275,11 +286,11 @@ export class Act3 {
             x: 0, y: -0.06 * H,
             size: 2.6, life: 5.5, scatter: 130, stagger: 0.6,
           }));
-          queue(5.6, () => this.particles.burst({ // the bloom of welcome
+          queue(5.6, () => this.firework({ // the firework bloom of welcome
             x: 0, y: -0.06 * H,
             color: config.palette.gold,
-            count: 320, speed: 120, size: 2.6, life: 3.2,
-            upBias: 0.5, jitter: 14,
+            count: 340, speed: 140, size: 2.6, life: 3.2,
+            upBias: 0.7, jitter: 14, gravity: 55, streak: 0.011,
           }));
         }
         break;
@@ -291,12 +302,13 @@ export class Act3 {
         const W = config.worldWidth;
         const vx = this.vaidehi.x ?? -0.055 * W;
         const vy = -0.4 * H;
-        for (let i = 0; i < 4; i += 1) { // radiant rings burst from the queen
-          queue(0.3 + i * 0.9, () => this.particles.burst({
+        for (let i = 0; i < 6; i += 1) { // radiant firework rings from the queen
+          queue(0.3 + i * 0.8, () => this.firework({
             x: vx, y: vy,
             color: i % 2 ? config.palette.gold : config.palette.white,
-            count: 240, speed: 150 + i * 55, size: 2.4, life: 3.4,
-            upBias: 0.35, jitter: 6, minSpeedFrac: 0.92,
+            count: 360, speed: 160 + i * 55, size: 2.9, life: 3.6,
+            upBias: 0.5, jitter: 6, minSpeedFrac: 0.92,
+            gravity: 34, streak: 0.009,
           }));
         }
         for (let i = 0; i < 10; i += 1) { // petals spiral up around her
@@ -307,12 +319,12 @@ export class Act3 {
             upBias: 2.6, swirl: 0.8, jitter: 12, driftY: 60,
           }));
         }
-        for (let i = 0; i < 12; i += 1) { // a wave of light washes the wall
-          const fx = i / 11;
+        for (let i = 0; i < 16; i += 1) { // a wave of light washes the wall
+          const fx = i / 15;
           queue(2 + fx * 2.4, () => this.particles.burst({
             x: (fx - 0.5) * W * 0.95, y: rand(-0.1, 0.28) * H,
             color: config.palette.white,
-            count: 70, speed: 20, size: 2.2, life: 3.4,
+            count: 130, speed: 22, size: 2.5, life: 3.4,
             upBias: 1.3, jitter: 60,
           }));
         }
@@ -336,33 +348,46 @@ export class Act3 {
     }
   }
 
-  /** 第四观 — the tree rows glitter: bursts through both side thirds. */
+  /** 第四观 — the jeweled trees surge HUGE, then slowly settle to normal;
+   *  glitter runs up through the rows as they grow. */
   treesFlourish() {
     const W = config.worldWidth;
     const H = config.worldHeight;
     const groundTop = -H / 2 + config.ground.bandFrac * H * 0.7;
-    for (let i = 0; i < 12; i += 1) {
+    // start the grow-huge-then-settle animation once (waves 2 & 3 only glitter)
+    if (this.treeFlourishT < 0) this.treeFlourishT = 0;
+    for (let i = 0; i < 14; i += 1) {
       const side = i % 2 ? 1 : -1;
       this.particles.burst({
         x: side * rand(0.2, 0.46) * W,
-        y: groundTop + rand(30, 150),
+        y: groundTop + rand(30, 260),   // glitter rises higher up the big trees
         color: Math.random() < 0.6 ? config.palette.malachite : config.palette.gold,
-        count: 70, speed: 34, size: 2.4, life: 2.6, upBias: 0.5, jitter: 26,
+        count: 80, speed: 40, size: 2.5, life: 2.8, upBias: 1.2, jitter: 26,
       });
     }
   }
 
-  /** 第五观 — the ponds answer: ripple-glow along the water band. */
+  /** 第五观 — the ponds answer, unmistakably: a bright ripple-bloom along
+   *  the water band with lotus-light rising from each pond. */
   pondsFlourish() {
     const W = config.worldWidth;
     const H = config.worldHeight;
     const yWater = -H / 2 + config.ground.bandFrac * H * 0.45;
-    for (let i = 0; i < 10; i += 1) {
+    // a wide sweep of bright water-glow across the whole band
+    for (let i = 0; i < 16; i += 1) {
       this.particles.burst({
-        x: ((i + 0.5) / 10 - 0.5) * W * 0.86,
-        y: yWater + rand(-6, 10),
+        x: ((i + 0.5) / 16 - 0.5) * W * 0.92,
+        y: yWater + rand(-8, 14),
         color: Math.random() < 0.7 ? config.palette.beryl : config.palette.white,
-        count: 80, speed: 26, size: 2.3, life: 2.4, upBias: 0.6, jitter: 34,
+        count: 150, speed: 34, size: 3.0, life: 3.0, upBias: 0.7, jitter: 40,
+      });
+    }
+    // lotus-light rising from each glowing pond
+    for (let i = 0; i < 7; i += 1) {
+      this.particles.burst({
+        x: (i / 6 - 0.5) * W * 0.8, y: yWater + 6,
+        color: Math.random() < 0.5 ? config.palette.white : config.palette.gold,
+        count: 60, speed: 20, size: 2.6, life: 4.5, upBias: 2.4, jitter: 12,
       });
     }
   }
@@ -378,15 +403,38 @@ export class Act3 {
     }
   }
 
-  /** 第十三观 — the vision flickers: every instrument showers note-light. */
+  /**
+   * A FIREWORK bloom: a radial burst that rises, arcs over under its own
+   * gravity, and draws comet-trails along each mote's motion (per-particle
+   * streak, so the rest of the piece keeps its round motes). The language
+   * of arrival and blessing — the Buddha's light breaking open.
+   */
+  firework(opts) {
+    this.particles.burst({
+      count: 200, speed: 135, size: 2.7, life: 3.0, upBias: 0.75,
+      jitter: 16, minSpeedFrac: 0.3, gravity: 58, streak: 0.011, ...opts,
+    });
+  }
+
+  /** 第十三观 — the vision breaks open: a firework of the mixed vision. */
   mixedVision() {
     const H = config.worldHeight;
-    for (let i = 0; i < 12; i += 1) {
-      this.particles.burst({
-        x: rand(-0.45, 0.45) * config.worldWidth,
-        y: rand(0.05, 0.4) * H,
-        color: [config.palette.gold, config.palette.beryl, config.palette.cinnabar][i % 3],
-        count: 90, speed: 55, size: 2.6, life: 3, upBias: 0.3, jitter: 12,
+    const W = config.worldWidth;
+    // A bright central firework, then colored bursts arcing around it —
+    // the mixed vision reads as radiant light breaking open over the land.
+    this.firework({
+      x: 0, y: 0.22 * H,
+      color: config.palette.white,
+      count: 300, speed: 150, size: 3.0, life: 2.9, upBias: 0.7,
+      jitter: 30, minSpeedFrac: 0.32, gravity: 52, streak: 0.012,
+    });
+    for (let i = 0; i < 16; i += 1) {
+      this.firework({
+        x: rand(-0.45, 0.45) * W,
+        y: rand(0.05, 0.42) * H,
+        color: [config.palette.gold, config.palette.beryl, config.palette.cinnabar, config.palette.white][i % 4],
+        count: 180, speed: 100, size: 3.2, life: 3.3, upBias: 0.6,
+        jitter: 14, gravity: 55, streak: 0.012,
       });
     }
   }
@@ -669,5 +717,28 @@ export class Act3 {
     this.updateWater(dt);
     this.updateFlashes(dt, time, ppwu);
     this.updateAwakening(dt);
+    this.updateTreeFlourish(dt);
+  }
+
+  /** 第四观 — the jeweled trees swell to a great height, hold, then ease
+   *  slowly back to normal. Scales Act 2's tree layer from its ground base
+   *  (grows UP), with a slight widening. */
+  updateTreeFlourish(dt) {
+    const pts = this.treesLayer?.points;
+    if (!pts || this.treeFlourishT < 0) return;
+    this.treeFlourishT += dt;
+    const t = this.treeFlourishT;
+    const peak = 2.2;            // trees reach 2.2× height at the swell
+    const rise = 1.8, hold = 1.6, fall = 6.0; // grow · hold · slow settle
+    let s;
+    if (t < rise) s = 1 + (peak - 1) * smooth01(t / rise);
+    else if (t < rise + hold) s = peak;
+    else if (t < rise + hold + fall) s = 1 + (peak - 1) * (1 - smooth01((t - rise - hold) / fall));
+    else { s = 1; this.treeFlourishT = -1; } // done — release the layer
+    const sy = s;
+    const sx = 1 + (s - 1) * 0.3; // grow mostly upward, widen a little
+    pts.scale.set(sx, sy, 1);
+    pts.position.y = this.treesGroundY * (1 - sy); // pivot at the tree base
+    pts.position.x = 0;
   }
 }

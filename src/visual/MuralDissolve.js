@@ -132,13 +132,13 @@ export class MuralDissolve {
         const i = (gy * gw + gx) * 4;
         const a = data[i + 3] / 255;
         if (a < 0.35) continue;
-        // Optional oval mask [cx, cy, rx, ry] (fractions of the image,
-        // cy from the top): isolates a figure from a busy tableau.
-        if (this.opts.mask) {
-          const [mcx, mcy, mrx, mry] = this.opts.mask;
-          const du = (gx / gw - mcx) / mrx;
-          const dv = (gy / gh - mcy) / mry;
-          if (du * du + dv * dv > 1) continue;
+        // Scene-specific silhouette mask so the images aren't all bare
+        // rectangles: oval · mandorla (aura) · arch (niche) · lotus (throne).
+        // Back-compat: a bare `mask` box with no maskShape stays an oval.
+        const shape = this.opts.maskShape ?? (this.opts.mask ? 'oval' : null);
+        if (shape) {
+          const alpha = shapeAlpha(gx / gw, gy / gh, shape, this.opts.mask);
+          if (Math.random() > alpha) continue; // soft, feathered silhouette edge
         }
         const r = data[i] / 255; const g = data[i + 1] / 255; const b = data[i + 2] / 255;
         const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
@@ -234,7 +234,8 @@ export class MuralDissolve {
     // photoThrough: the ACTUAL photograph on a soft-edged plane that can
     // fade in through the condensed particles — unmistakably readable.
     if (this.opts.photoThrough) {
-      const tex = new THREE.CanvasTexture(featherImage(img));
+      const shape = this.opts.maskShape ?? (this.opts.mask ? 'oval' : null);
+      const tex = new THREE.CanvasTexture(featherImage(img, shape, this.opts.mask));
       tex.colorSpace = THREE.SRGBColorSpace;
       this.photoMaterial = new THREE.MeshBasicMaterial({
         map: tex,
@@ -267,8 +268,54 @@ export class MuralDissolve {
   }
 }
 
-/** The image with its edges feathered to transparency (no hard frame). */
-function featherImage(img) {
+function smoothstep(a, b, x) {
+  const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+}
+
+/**
+ * Silhouette alpha (0..1, soft-edged) for a mural point/pixel at image
+ * coords u,v ∈ [0,1] (v from the top). box = [cx, cy, rx, ry] fractions
+ * (defaults to the whole image). Shapes chosen to fit each scene:
+ *   oval      — a soft disc (sun, sky)
+ *   mandorla  — a pointed almond aura (the Buddha's body of light)
+ *   arch      — a niche: straight sides, rounded top (standing attendants)
+ *   lotus     — a scalloped bloom (the flower throne)
+ */
+export function shapeAlpha(u, v, shape, box) {
+  const [cx, cy, rx, ry] = box || [0.5, 0.5, 0.5, 0.5];
+  const du = (u - cx) / rx;   // -1..1 across the box
+  const dv = (v - cy) / ry;   // -1 (top) .. 1 (bottom)
+  const f = 0.13;             // feather width
+  switch (shape) {
+    case 'mandorla': {
+      const hw = Math.max(0, 1 - dv * dv); // half-width, → 0 at top & bottom
+      return smoothstep(f, -f, Math.abs(du) - hw);
+    }
+    case 'arch': {
+      const spring = -0.25;              // arch springs from the upper part
+      const archW = dv < spring
+        ? Math.sqrt(Math.max(0, 1 - ((dv - spring) / (-1 - spring)) ** 2))
+        : 1;
+      const inside = Math.min(archW - Math.abs(du), 1 - Math.abs(dv));
+      return smoothstep(-f, f, inside);
+    }
+    case 'lotus': {
+      const th = Math.atan2(dv, du);
+      const rr = Math.hypot(du, dv);
+      const rim = 0.82 + 0.18 * Math.cos(7 * th); // scalloped petal edge
+      const bowl = smoothstep(-0.7, -0.4, dv);     // trim the very top
+      return smoothstep(f, -f, rr - rim) * bowl;
+    }
+    case 'oval':
+    default:
+      return smoothstep(1 + f * 2, 1 - f * 2, du * du + dv * dv);
+  }
+}
+
+/** The image feathered to transparency (no hard frame); an optional shape
+ *  punches a scene-specific silhouette into the alpha. */
+function featherImage(img, shape, box) {
   const w = Math.min(1024, img.width);
   const h = Math.round(w * (img.height / img.width));
   const canvas = document.createElement('canvas');
@@ -276,6 +323,19 @@ function featherImage(img) {
   canvas.height = h;
   const ctx = canvas.getContext('2d');
   ctx.drawImage(img, 0, 0, w, h);
+  if (shape) {
+    // Per-pixel silhouette alpha so the photo shows in the scene's shape.
+    const id = ctx.getImageData(0, 0, w, h);
+    const d = id.data;
+    for (let y = 0; y < h; y += 1) {
+      for (let x = 0; x < w; x += 1) {
+        const idx = (y * w + x) * 4 + 3;
+        d[idx] = Math.round(d[idx] * shapeAlpha(x / w, y / h, shape, box));
+      }
+    }
+    ctx.putImageData(id, 0, 0);
+    return canvas;
+  }
   ctx.globalCompositeOperation = 'destination-in';
   ctx.translate(w / 2, h / 2);
   ctx.scale(w / 2, h / 2);
